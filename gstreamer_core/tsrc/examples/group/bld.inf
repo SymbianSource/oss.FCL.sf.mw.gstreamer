@@ -1,0 +1,50 @@
+/*
+* Copyright (c) 2005 Nokia Corporation and/or its subsidiary(-ies).
+* All rights reserved.
+* This component and the accompanying materials are made available
+* under the terms of "Eclipse Public License v1.0"
+* which accompanies this distribution, and is available
+* at the URL "http://www.eclipse.org/legal/epl-v10.html".
+*
+* Initial Contributors:
+* Nokia Corporation - initial contribution.
+*
+* Contributors:
+*
+* Description: 
+*
+*/
+
+
+
+#include "../helloworld/group/bld.inf"
+#include "../controller/group/bld.inf"
+#include "../adapter/group/bld.inf"				
+#include "../launch/group/bld.inf"
+#include "../metadata/group/bld.inf"
+#include "../queue/group/bld.inf"
+#include "../typefind/group/bld.inf"
+#include "../manual/init/group/bld.inf"
+#include "../manual/bin/group/bld.inf"
+#include "../manual/pad/group/bld.inf"
+
+#include "../manual/elementfactory/group/bld.inf"
+#include "../manual/query/group/bld.inf"
+
+
+#include "../manual/manual_typefind/group/bld.inf"
+#include "../manual/manual_ghostpad/group/bld.inf"
+#include "../manual/manual_dynamic/group/bld.inf"
+
+
+#include "../manual/createelements/group/bld.inf"
+#include "../manual/getelements/group/bld.inf"
+#include "../manual/linkelements/group/bld.inf"
+#include "../manual/makeelements/group/bld.inf"
+
+#include "../manual/manual_decodebin/group/bld.inf"
+#include "../manual/manual_playbin/group/bld.inf"
+#include "../manual/manual_helloworld/group/bld.inf"
+
+PRJ_EXPORTS
+										

@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<!DOCTYPE SystemDefinition SYSTEM "sysdef_1_4_0.dtd" [
+  <!ENTITY layer_real_source_path "sf/mw/gstreamer" >
+]> 
+
+<SystemDefinition name="avdomain" schema="1.4.0">
+	<systemModel>
+  <!-- Common file for prebuild layers-->
+  	<layer name="mw_layer">
+			<module name="gstreamer">
+				<unit unitID="gstreamer" mrp="" bldFile="&layer_real_source_path;/group" filter="dfs_build" name="gstreamer" />
+			</module>
+    </layer>
+    
+  	<layer name="api_test_layer">
+<!--			<module name="gstreamer_tsrc">
+				<unit unitID="gstreamer_tsrc" name="gstreamer_tsrc" bldFile="&layer_real_source_path;/tsrc/group" mrp="" filter="dfs_build" />
+			</module> -->
+    </layer>
+
+  	<layer name="module_test_layer">			
+<!--                        <module name="gstreamer_tsrc">
+				<unit unitID="gstreamer_tsrc" name="gstreamer_tsrc" bldFile="&layer_real_source_path;/mmfw/gstreamer/gst_plugins_symbian/tsrc/GStreamerTestModule/group" mrp="" filter="dfs_build" />
+			</module> -->
+    </layer>
+
+  	<layer name="pref_test_layer">
+<!--			<module name="gstreamer_tsrc_group">
+				<unit unitID="gstreamer_tsrc_group" name="gstreamer_tsrc_group" bldFile="&layer_real_source_path;/tsrc/group" mrp="" filter="TA_GSTREAMER" />
+			</module> -->
+			<module name="gstreamer_tsrc_group">
+				<unit unitID="gstreamer_tsrc_group" name="gstreamer_tsrc_group" bldFile="&layer_real_source_path;/gst_plugins_symbian/tsrc/GStreamerTestModule/group" mrp="" filter="TA_GSTREAMER" />
+			</module>
+    </layer>
+
+  	<layer name="mw_gstreamer_layer">
+			<module name="gstreamer_group">
+				<unit unitID="gstreamer_group" mrp="" bldFile="&layer_real_source_path;/group" filter="dfs_build" name="gstreamer_group" />
+			</module>
+    </layer>
+    
+  </systemModel>
+  
+</SystemDefinition>

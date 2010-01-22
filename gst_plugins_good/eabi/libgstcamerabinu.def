@@ -1,0 +1,5 @@
+EXPORTS
+	gst_camerabin_get_type @ 1 NONAME
+	gst_camerabin_image_get_type @ 2 NONAME
+	gst_camerabin_video_get_type @ 3 NONAME
+

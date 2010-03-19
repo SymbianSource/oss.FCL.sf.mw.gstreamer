@@ -71,6 +71,9 @@ struct _GstImplementsInterfaceClass {
 #define GST_IMPLEMENTS_INTERFACE_CHECK_INSTANCE_TYPE(obj, type) \
   (gst_implements_interface_check ((obj), (type)))
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GType	 gst_implements_interface_get_type    (void);
 
 /* wrapper functions to check for functionality implementation */

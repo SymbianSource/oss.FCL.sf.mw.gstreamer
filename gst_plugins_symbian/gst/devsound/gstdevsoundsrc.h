@@ -77,6 +77,7 @@ struct _GstDevsoundSrc {
   gint   samplesrecorded; 
   GList*  fmt;
   GList*  supportedbitrates;
+  gboolean eosreceived;
   
   guint speechbitrate;
   gboolean speechvadmode;

@@ -38,6 +38,8 @@ USERINCLUDE		../../include/gstreamer/gst/net
 SOURCEPATH	  ../src
 SOURCE		  gstregistrygenerator.cpp
 
+STATICLIBRARY    libcrt0.lib
+
 LIBRARY         libc.lib
 LIBRARY         libpthread.lib
 LIBRARY         libdl.lib
@@ -51,6 +53,8 @@ LIBRARY         libz.lib
 LIBRARY         libgstreamer.lib
 LIBRARY			libgstbase.lib
 LIBRARY			libgstcontroller.lib
+
+LIBRARY			euser.lib
 
 #ifdef ENABLE_ABIV2_MODE
   DEBUGGABLE_UDEBONLY

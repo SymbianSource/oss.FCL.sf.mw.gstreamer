@@ -97,6 +97,7 @@ public:
   	TUint32 fourcc;
   	int bufferreadpos;
   	guint* supportedbitrates;
+  	int iSamplesRecorded;
     CSpeechEncoderConfig* iSpeechEncoderConfig;
     CG711EncoderIntfc*    iG711EncoderIntfc;
     CG729EncoderIntfc*    iG729EncoderIntfc;
@@ -141,6 +142,9 @@ extern "C" {
 	int open_devsound(DevSoundWrapperSrc **handle);
     int open_device(DevSoundWrapperSrc **handle);
     int initialize_devsound(GstDevsoundSrc* ds);
+    int pause_devsound(GstDevsoundSrc *ds);
+    int stop_devsound(GstDevsoundSrc *ds);
+    int resume_devsound(GstDevsoundSrc *ds);
 	int close_devsound(GstDevsoundSrc* ds);
 
 	int SetConfigurations(DevSoundWrapperSrc *handle);

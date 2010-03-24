@@ -212,6 +212,49 @@ int initialize_devsound(GstDevsoundSrc* ds)
     }
 /*********************************************************/
 
+int stop_devsound(GstDevsoundSrc *ds)
+    {
+    TRACE_PRN_FN_ENT;
+    DevSoundWrapperSrc* handle = (DevSoundWrapperSrc*) ds->handle;
+    handle->dev_sound->Stop();
+    TRACE_PRN_FN_EXT;
+    return 0;
+    }
+
+int pause_devsound(GstDevsoundSrc *ds)
+    {
+    TRACE_PRN_FN_ENT;
+    DevSoundWrapperSrc* handle = (DevSoundWrapperSrc*) ds->handle;
+    if(handle->dev_sound->IsResumeSupported())
+        {
+        handle->dev_sound->Pause();
+        }
+    else
+        {
+        handle->iSamplesRecorded = handle->dev_sound->SamplesRecorded();
+        handle->dev_sound->Stop();
+        }
+    TRACE_PRN_FN_EXT;
+    return 0;
+    }
+
+int resume_devsound(GstDevsoundSrc *ds)
+    {
+    TRACE_PRN_FN_ENT;
+    DevSoundWrapperSrc* handle = (DevSoundWrapperSrc*) ds->handle;
+    if(handle->dev_sound->IsResumeSupported())
+        {
+        handle->dev_sound->Resume();
+        }
+    else
+        {
+        recordinit(handle);
+        initproperties(ds);
+        }
+    TRACE_PRN_FN_EXT;
+    return 0;
+    }
+
 int open_device(DevSoundWrapperSrc **handle)
     {
     int retcode = KErrNone;
@@ -538,11 +581,13 @@ int get_size(DevSoundWrapperSrc *handle)
 void set_rate(DevSoundWrapperSrc *handle, int rate)
     {
     handle->caps.iRate = rate;
+    TRACE_PRN_N1(_L("set_rate %d"),rate);
     }
 /******************************************************************/
 void set_channels(DevSoundWrapperSrc *handle, int channels)
     {
     handle->caps.iChannels = channels;
+    TRACE_PRN_N1(_L("set_channels %d"),channels);
     }
 /****************************************************************/
 void set_encoding(DevSoundWrapperSrc *handle, int encoding)
@@ -557,7 +602,10 @@ void set_size(DevSoundWrapperSrc *handle, int size)
 /*****************************************************************/
 void set_fourcc(DevSoundWrapperSrc *handle, int fourcc)
     {
+    TRACE_PRN_FN_ENT;
     handle->fourcc = fourcc;
+    TRACE_PRN_N1(_L("set_fourcc %d"),fourcc);
+    TRACE_PRN_FN_EXT;
     }
 
 /*******************************************************************/

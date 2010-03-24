@@ -71,6 +71,11 @@ static GstFlowReturn gst_devsound_src_create(GstBaseSrc *src, guint64 offset,
         guint size, GstBuffer **buf);
 static void *StartDevSoundThread(void *threadid);
 
+static gboolean gst_devsound_src_event(GstBaseSrc * asrc, GstEvent * event);
+
+static GstStateChangeReturn gst_devsound_src_change_state (GstElement * element,
+    GstStateChange transition);
+
 /*********************************
  * Speech Encoder Config Interface
  * ******************************/
@@ -164,7 +169,10 @@ int dataCopied = 0;
 enum command_to_consumer_thread_enum
     {
     OPEN = 2,
-    READDATA,
+    RECORDING,
+    PAUSE,
+    RESUME,
+    STOP,
     /*UPDATE,*/
     CLOSE
     };
@@ -319,6 +327,8 @@ static void gst_devsound_src_class_init(GstDevsoundSrcClass * klass)
     gobject_class->get_property = GST_DEBUG_FUNCPTR (gst_devsound_src_get_property);
     gobject_class->set_property = GST_DEBUG_FUNCPTR (gst_devsound_src_set_property);
 
+    gstelement_class->change_state = GST_DEBUG_FUNCPTR (gst_devsound_src_change_state);
+    
     g_object_class_install_property(gobject_class, PROP_DEVICE,
             g_param_spec_string("device", "Device", "Devsound device ",
                     DEFAULT_DEVICE, G_PARAM_READWRITE));
@@ -362,17 +372,19 @@ static void gst_devsound_src_class_init(GstDevsoundSrcClass * klass)
             g_param_spec_int("channels", "Channels", "Channels ", -1,
                     G_MAXINT, -1,
                     G_PARAM_READWRITE));
+    
     gstbasesrc_class->start = GST_DEBUG_FUNCPTR (gst_devsound_src_start);
     gstbasesrc_class->stop = GST_DEBUG_FUNCPTR (gst_devsound_src_stop);
     gstbasesrc_class->get_caps = GST_DEBUG_FUNCPTR (gst_devsound_src_getcaps);
     gstbasesrc_class->set_caps = GST_DEBUG_FUNCPTR (gst_devsound_src_setcaps);
-
+    gstbasesrc_class->event = GST_DEBUG_FUNCPTR (gst_devsound_src_event);
     gstbasesrc_class->create = GST_DEBUG_FUNCPTR (gst_devsound_src_create);
     }
 
 static void gst_devsound_src_init(GstDevsoundSrc * devsoundsrc)
     {
     GST_DEBUG_OBJECT(devsoundsrc, "initializing devsoundsrc");
+    gst_base_src_set_live(GST_BASE_SRC(devsoundsrc), TRUE);
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) devsoundsrc, "gst_devsound_src_init ENTER ",NULL);
     devsoundsrc->device = g_strdup(DEFAULT_DEVICE);
     devsoundsrc->handle=NULL;
@@ -423,71 +435,50 @@ static void *StartDevSoundThread(void *threadarg)
         recordinit(devsoundsrc->handle);
         initproperties(devsoundsrc);
         }
-    //cmd = READDATA;
-    while (1)
+
+    while (TRUE)
         {
-        //set/get properties
-        //***************************************
-        pre_init_setconf(devsoundsrc);
-        gst_Apply_SpeechEncoder_Update(devsoundsrc);
-        gst_Apply_G711Encoder_Update(devsoundsrc);
-        gst_Apply_G729Encoder_Update(devsoundsrc );
-        gst_Apply_IlbcEncoder_Update(devsoundsrc );
-
-        populateproperties(devsoundsrc);
-
-        supportedbitrates = devsoundsrc->supportedbitrates;
-        //numofbitrates = devsoundsrc->numofbitrates;
-        speechbitrate = devsoundsrc->speechbitrate;
-        speechvadmode = devsoundsrc->speechvadmode;
-        g711vadmode = devsoundsrc->g711vadmode;
-        g729vadmode  = devsoundsrc->g729vadmode;
-        ilbcvadmode = devsoundsrc->ilbcvadmode;
-
-
-        //****************************************
-        //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) devsoundsrc, "Before Buffer Alloc ",NULL);
-        buffersize = get_databuffer_size(devsoundsrc->handle);
-        get_databuffer(devsoundsrc->handle, &gBuffer);
-        pushBuffer = gst_buffer_new_and_alloc(buffersize);
-        //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) devsoundsrc, "After Buffer Alloc ",NULL);
-        if (GST_BUFFER_DATA(pushBuffer))
-            {
-            memcpy(GST_BUFFER_DATA(pushBuffer),gBuffer,buffersize);
-            }
-        else
-            {
-            //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) devsoundsrc, "Push buffer alloc failed ",NULL);
-            }
-
-        if (dataqueue)
-            {
-            GST_OBJECT_LOCK(devsoundsrc);
-            g_queue_push_head (dataqueue,pushBuffer);
-            GST_OBJECT_UNLOCK(devsoundsrc);
-            //signalmutex_create(devsoundsrc->handle);
-            if(dataqueue->length == 1 && (cmd != CLOSE))
-                {
-                //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) devsoundsrc, "Before signal in DevSoundt ",NULL);
-                pthread_mutex_lock(&(create_mutex1));
-                pthread_cond_signal(&(create_condition1));
-                pthread_mutex_unlock(&(create_mutex1));
-                //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) devsoundsrc, "After signal in DevSoundt ",NULL);
-                }
-            //cmd = READDATA;
-            //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) devsoundsrc, "Before DevSnd Wait ",NULL);
-            //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) devsoundsrc, "After DevSnd Wait ",NULL);
-           }
-        else
-            {
-            //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) devsoundsrc, "dataqueue is NULL, CLOSE now ",NULL);
-            cmd = CLOSE;
-            }
-
         switch (cmd)
             {
-            case READDATA:
+            case PAUSE:
+                pause_devsound(devsoundsrc);
+                break;
+                
+            case RESUME:
+                resume_devsound(devsoundsrc);
+                break;
+            
+            case STOP:
+                stop_devsound(devsoundsrc);
+                break;
+                
+            case RECORDING:
                 {
+                pre_init_setconf(devsoundsrc);
+                gst_Apply_SpeechEncoder_Update(devsoundsrc);
+                gst_Apply_G711Encoder_Update(devsoundsrc);
+                gst_Apply_G729Encoder_Update(devsoundsrc );
+                gst_Apply_IlbcEncoder_Update(devsoundsrc );
+
+                populateproperties(devsoundsrc);
+
+                supportedbitrates = devsoundsrc->supportedbitrates;
+                //numofbitrates = devsoundsrc->numofbitrates;
+                speechbitrate = devsoundsrc->speechbitrate;
+                speechvadmode = devsoundsrc->speechvadmode;
+                g711vadmode = devsoundsrc->g711vadmode;
+                g729vadmode  = devsoundsrc->g729vadmode;
+                ilbcvadmode = devsoundsrc->ilbcvadmode;
+
+                buffersize = get_databuffer_size(devsoundsrc->handle);
+                get_databuffer(devsoundsrc->handle, &gBuffer);
+                pushBuffer = gst_buffer_new_and_alloc(buffersize);
+                memcpy(GST_BUFFER_DATA(pushBuffer),gBuffer,buffersize);
+                
+                GST_OBJECT_LOCK(devsoundsrc);
+                g_queue_push_head (dataqueue,pushBuffer);
+                GST_OBJECT_UNLOCK(devsoundsrc);
+                
                 record_data(devsoundsrc->handle);
                 }
                 break;
@@ -502,21 +493,25 @@ static void *StartDevSoundThread(void *threadarg)
                 pthread_mutex_lock(&(create_mutex1));
                 pthread_cond_signal(&(create_condition1));
                 pthread_mutex_unlock(&(create_mutex1));
-				// TODO obtain mutex here
+                // TODO obtain mutex here
                 consumer_thread_state = CONSUMER_THREAD_UNINITIALIZED;
                 pthread_exit(NULL);
                 }
                 break;
             default:
                 // TODO obtain mutex here
-                consumer_thread_state = CONSUMER_THREAD_UNINITIALIZED;			
+                consumer_thread_state = CONSUMER_THREAD_UNINITIALIZED;          
                 pthread_exit(NULL);
                 break;
             }
+        pthread_mutex_lock(&(create_mutex1));
+        pthread_cond_signal(&(create_condition1));
+        pthread_mutex_unlock(&(create_mutex1));
+        
+        pthread_mutex_lock(&create_mutex1);
+        pthread_cond_wait(&create_condition1, &create_mutex1);
+        pthread_mutex_unlock(&create_mutex1);
         }
-    // TODO obtain mutex here
-    consumer_thread_state = CONSUMER_THREAD_UNINITIALIZED;
-    pthread_exit(NULL);
     }
 
 static void gst_devsound_src_set_property(GObject * object, guint prop_id,
@@ -692,7 +687,7 @@ static gboolean gst_devsound_src_start(GstBaseSrc * bsrc)
 
     if(dataqueue)
         {
-        while (dataqueue->length)
+        while (g_queue_get_length(dataqueue))
             {
             tmp_gstbuffer = (GstBuffer*)g_queue_pop_tail(dataqueue);
             gst_buffer_unref(tmp_gstbuffer);
@@ -731,6 +726,9 @@ static gboolean gst_devsound_src_stop(GstBaseSrc * bsrc)
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) src, "gst_devsound_src_stop ENTER ");
     cmd = CLOSE;
 
+    pthread_mutex_lock(&(create_mutex1));
+    pthread_cond_signal(&(create_condition1));
+    pthread_mutex_unlock(&(create_mutex1));
     //GST_OBJECT_LOCK (src);
     pthread_mutex_lock(&(create_mutex1));
     pthread_cond_wait(&(create_condition1), &(create_mutex1));
@@ -746,7 +744,7 @@ static gboolean gst_devsound_src_stop(GstBaseSrc * bsrc)
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) src, "Before QUEUE Lock in STOP ");
     GST_OBJECT_LOCK(src);
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) src, "After QUEUE Lock in STOP ");
-    while (dataqueue->length)
+    while (g_queue_get_length(dataqueue))
         {
         //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) src, "Removing DATAQUEUE elements ENTER ");
         popBuffer = (GstBuffer*)g_queue_pop_tail(dataqueue);
@@ -763,7 +761,6 @@ static gboolean gst_devsound_src_stop(GstBaseSrc * bsrc)
 
     pthread_mutex_destroy(&create_mutex1);
     pthread_cond_destroy(&(create_condition1));
-
 
     g_free(src->device);
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) src, "gst_devsound_src_stop EXIT ");
@@ -794,6 +791,16 @@ static GstFlowReturn gst_devsound_src_create(GstBaseSrc *src, guint64 offset,
     {
     GstDevsoundSrc *dsrc= GST_DEVSOUND_SRC(src);
     int bufferpos=0;
+    
+    if(!g_queue_get_length(dataqueue) && (dsrc->eosreceived == TRUE))
+        {
+        pthread_mutex_lock(&(create_mutex1));
+        pthread_cond_signal(&(create_condition1));
+        pthread_mutex_unlock(&(create_mutex1));
+        
+        return GST_FLOW_UNEXPECTED;
+        }
+    
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) dsrc, "gst_devsound_src_create ENTER ");
 
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) dsrc, "Before Buffer Alloc in CREATE ",NULL);
@@ -839,26 +846,36 @@ static GstFlowReturn gst_devsound_src_create(GstBaseSrc *src, guint64 offset,
 
             // we wait here if the dataqueue length is 0 and we need data
             // to be filled in the queue from the DevSound Thread
-            if (!dataqueue->length)
+            if (!g_queue_get_length(dataqueue))
                 {
                 //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) dsrc, "Before WAIT in CREATE ",NULL);
-                cmd = READDATA;
-                pthread_mutex_lock(&(create_mutex1));
-                pthread_cond_signal(&(create_condition1));
-                pthread_mutex_unlock(&(create_mutex1));
-                
-                pthread_mutex_lock(&(create_mutex1));
-                pthread_cond_wait(&(create_condition1), &(create_mutex1));
-                pthread_mutex_unlock(&(create_mutex1));
+                if(dsrc->eosreceived == TRUE)
+                    {
+                    return GST_FLOW_UNEXPECTED;
+                    }
+                else
+                    {
+                    cmd = RECORDING;
+                    pthread_mutex_lock(&(create_mutex1));
+                    pthread_cond_signal(&(create_condition1));
+                    pthread_mutex_unlock(&(create_mutex1));
+                    
+                    pthread_mutex_lock(&(create_mutex1));
+                    pthread_cond_wait(&(create_condition1), &(create_mutex1));
+                    pthread_mutex_unlock(&(create_mutex1));
+                    }
                 //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) dsrc, "AFTER WAIT in CREATE ",NULL);
                 }
-
+            
             //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) dsrc, "Before POP in CREATE ",NULL);
             GST_OBJECT_LOCK(dsrc);
             popBuffer = (GstBuffer*)g_queue_pop_tail(dataqueue);
             GST_OBJECT_UNLOCK(dsrc);
             //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) dsrc, "AFTER POP in CREATE ",NULL);
-
+            if(!popBuffer)
+                {
+                return GST_FLOW_UNEXPECTED;
+                }
             // copy the data from the popped buffer based on how much of the incoming
             //buffer size is left to fill. we might have filled the fresh buffer somewhat
             // where the size of the fresh buffer is more then the data remaining in the
@@ -892,6 +909,63 @@ static GstFlowReturn gst_devsound_src_create(GstBaseSrc *src, guint64 offset,
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) dsrc, "gst_devsound_src_create EXIT ",NULL);
     return GST_FLOW_OK;
     }
+
+
+static GstStateChangeReturn gst_devsound_src_change_state (GstElement * element,
+    GstStateChange transition)
+    {
+    GstStateChangeReturn ret = GST_STATE_CHANGE_SUCCESS;
+    GstDevsoundSrc *src= GST_DEVSOUND_SRC (element);
+    
+    switch (transition) {
+        
+        case GST_STATE_CHANGE_PAUSED_TO_PLAYING:
+            if(cmd == PAUSE)
+                {
+                cmd = RESUME;
+                pthread_mutex_lock(&create_mutex1);
+                pthread_cond_signal(&create_condition1);
+                pthread_mutex_unlock(&create_mutex1);
+                
+                pthread_mutex_lock(&create_mutex1);
+                pthread_cond_wait(&create_condition1, &create_mutex1);
+                pthread_mutex_unlock(&create_mutex1);
+                }
+            break;
+        default:
+            break;
+        }
+
+    ret = GST_ELEMENT_CLASS (parent_class)->change_state (element, transition);
+      if (G_UNLIKELY (ret == GST_STATE_CHANGE_FAILURE))
+        goto activate_failed;
+
+      switch (transition) {
+          
+          case GST_STATE_CHANGE_PLAYING_TO_PAUSED:
+              cmd = PAUSE;
+              pthread_mutex_lock(&create_mutex1);
+              pthread_cond_signal(&create_condition1);
+              pthread_mutex_unlock(&create_mutex1);
+              
+              pthread_mutex_lock(&create_mutex1);
+              pthread_cond_wait(&create_condition1, &create_mutex1);
+              pthread_mutex_unlock(&create_mutex1);
+              break;
+          default:
+              break;
+          }
+      
+      return ret;
+    
+    activate_failed:
+      {
+        GST_DEBUG_OBJECT (src,
+            "element failed to change states -- activation problem?");
+        return GST_STATE_CHANGE_FAILURE;
+      }    
+    }
+
 
 static gboolean gst_devsound_src_is_seekable(GstBaseSrc * bsrc)
     {
@@ -1137,3 +1211,40 @@ static gint gst_devsound_src_get_rate(gint rate)
 
     }
 
+static gboolean gst_devsound_src_event(GstBaseSrc *asrc, GstEvent *event)
+    {
+    int retValue = FALSE;
+    GstDevsoundSrc *src = GST_DEVSOUND_SRC(asrc);
+    switch (GST_EVENT_TYPE (event))
+        {
+        case GST_EVENT_EOS:
+            // end-of-stream, we should close down all stream leftovers here
+            //reset_devsound(sink->handle);
+            src->eosreceived = TRUE;
+            cmd = STOP;
+            pthread_mutex_lock(&create_mutex1);
+            pthread_cond_signal(&create_condition1);
+            pthread_mutex_unlock(&create_mutex1);
+            
+            pthread_mutex_lock(&create_mutex1);
+            pthread_cond_wait(&create_condition1, &create_mutex1);
+            pthread_mutex_unlock(&create_mutex1);
+            
+            if(g_queue_get_length(dataqueue))
+                {
+                pthread_mutex_lock(&create_mutex1);
+                pthread_cond_wait(&create_condition1, &create_mutex1);
+                pthread_mutex_unlock(&create_mutex1);
+                }
+            
+            gst_pad_push_event (asrc->srcpad, gst_event_new_eos ());
+            retValue = TRUE;
+            break;
+        default:
+            retValue = FALSE;
+            break;
+        }
+    
+    return retValue;
+    }
+	

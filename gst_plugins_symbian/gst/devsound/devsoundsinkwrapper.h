@@ -96,6 +96,7 @@ public:
   	int dev_count;
   	TInt iCallbackError;
   	TUint32 fourcc;
+  	TUint32 iSamplesPlayed;
   	bool eosReceived;
   	//sem_t mutex;
   	//RArray<TFourCC> supportedtypes;
@@ -142,10 +143,14 @@ extern "C" {
 	int open_devsound(DevSoundWrapper **handle);
 	int open_device(DevSoundWrapper **handle);
     int initialize_devsound(GstDevsoundSink* sink);
+    int pause_devsound(GstDevsoundSink *ds);
+    int resume_devsound(GstDevsoundSink *ds);
     int close_devsound(GstDevsoundSink *ds);
     int check_if_device_open(DevSoundWrapper *handle) ;
-
 	int get_ds_cb_error(DevSoundWrapper *handle);
+#ifdef AV_SYNC
+    gboolean is_timeplayed_supported(DevSoundWrapper *handle);
+#endif /*AV_SYNC*/
 
 	//Error Concealment custom interface
     void conceal_error_for_next_buffer(DevSoundWrapper *handle);
@@ -174,7 +179,6 @@ extern "C" {
     void initproperties(GstDevsoundSink* ds);
 	int pre_init_setconf(GstDevsoundSink *ds);
 	void getsupporteddatatypes(GstDevsoundSink *ds);
-
 
 #ifdef __cplusplus
 }//extern c

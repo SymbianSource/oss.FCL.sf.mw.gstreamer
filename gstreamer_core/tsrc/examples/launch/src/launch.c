@@ -11,16 +11,28 @@
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
-GstElement *pipeline, *source, *wavparse,*sink,*conv,*resample,*decoder;
+
+GstElement *pipeline, *source, *wavparse,*sink,*conv,*resample,*decoder,*audioconvert,*audioresample ;
 GstBus *bus;
 GMainLoop *loop;
 
+
+//audioconvert ! audioresample 
 static gboolean
 bus_call (GstBus     *bus,
           GstMessage *msg,
@@ -57,10 +69,10 @@ new_pad_cb (GstElement *wavparse, GstPad *new_pad, gpointer pipeline)
  {
    
    gst_element_set_state (pipeline, GST_STATE_PAUSED);
-   
-   if (!gst_element_link (wavparse, sink))
-      g_error ("link(wavparse, sink) failed!\n");
-    
+
+   if (!gst_element_link (wavparse, audioconvert))
+      g_error ("link(wavparse, audioconvert) failed!\n");
+
    gst_element_set_state (pipeline, GST_STATE_PLAYING);
  }
 
@@ -86,16 +98,25 @@ int main (int argc, char *argv[])
     source = gst_element_factory_make ("filesrc", "file-source");
     decoder = gst_element_factory_make ("wavparse", "wavparse-decoder");
     sink = gst_element_factory_make ("devsoundsink", "sink");
-        if (!pipeline || !source || !decoder) {
+    audioconvert = gst_element_factory_make ("audioconvert", "audioconvert");
+    audioresample = gst_element_factory_make ("audioresample", "audioresample");    
+        if (!pipeline || !source || !decoder || !audioconvert || !audioresample) {
         g_print ("One element could not be created\n");
         return -1;
         }
     /* set filename property on the file source. Also add a message  handler. */
-    g_object_set (G_OBJECT (source), "location", argv[1], NULL);
+    g_object_set (G_OBJECT (source), "location", "c:\\data\\khuda1.wav", NULL);
             /* put all elements in a bin */
-    gst_bin_add_many (GST_BIN (pipeline),source, decoder,sink, NULL);
+    gst_bin_add_many (GST_BIN (pipeline),source, decoder,audioconvert,audioresample,sink, NULL);
             /* link together - note that we cannot link the parser and  decoder yet, because the parser uses dynamic pads. For that, we set a pad-added signal handler. */
     gst_element_link (source, decoder);
+   
+    if (!gst_element_link (audioconvert,audioresample))
+       g_error ("link(audioconvert,audioresample, sink) failed!\n");   
+    if (!gst_element_link (audioresample, sink))
+       g_error ("link(audioconvert,audioresample, sink) failed!\n"); 
+    
+    
     gst_bus_add_watch (gst_pipeline_get_bus (GST_PIPELINE (pipeline)), bus_call, loop);
     g_signal_connect (decoder, "pad-added", G_CALLBACK (new_pad_cb),pipeline);
             /* Now set to playing and iterate. */

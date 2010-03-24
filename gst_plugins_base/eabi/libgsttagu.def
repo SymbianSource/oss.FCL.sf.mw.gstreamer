@@ -16,4 +16,7 @@ EXPORTS
 	gst_tag_to_vorbis_comments @ 15 NONAME
 	gst_tag_to_vorbis_tag @ 16 NONAME
 	gst_vorbis_tag_add @ 17 NONAME
+	gst_tag_demux_result_get_type @ 18 NONAME
+	gst_tag_image_data_to_image_buffer @ 19 NONAME
+	gst_tag_list_add_id3_image @ 20 NONAME
 

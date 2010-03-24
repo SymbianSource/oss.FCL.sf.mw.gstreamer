@@ -26,14 +26,24 @@
 #include <gst/gst_global.h>
 #include "std_log_result.h" 
 #define LOG_FILENAME_LINE __FILE__, __LINE__
+#include <stdlib.h> 
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 
@@ -455,43 +465,43 @@ void send_custom_events()
   g_object_set (G_OBJECT (fakesink), "silent", TRUE, "sync", TRUE, NULL);
 
   /* add pad-probes to faksrc.src and fakesink.sink */
-  fail_if ((srcpad = gst_element_get_pad (fakesrc, "src")) == NULL);
+  fail_if ((srcpad = gst_element_get_static_pad (fakesrc, "src")) == NULL);
   gst_pad_add_event_probe (srcpad, (GCallback) event_probe,
       GINT_TO_POINTER (TRUE));
 
-  fail_if ((sinkpad = gst_element_get_pad (fakesink, "sink")) == NULL);
+  fail_if ((sinkpad = gst_element_get_static_pad (fakesink, "sink")) == NULL);
   gst_pad_add_event_probe (sinkpad, (GCallback) event_probe,
       GINT_TO_POINTER (FALSE));
 
   /* Upstream events */
   test_event (pipeline, GST_EVENT_CUSTOM_UPSTREAM, sinkpad, TRUE, srcpad);
   fail_unless (timediff (&got_event_time,
-          &sent_event_time) < G_USEC_PER_SEC / 2,
+          &sent_event_time) < G_USEC_PER_SEC,
       "GST_EVENT_CUSTOM_UP took too long to reach source: %"
       G_GINT64_FORMAT " us", timediff (&got_event_time, &sent_event_time));
 
   test_event (pipeline, GST_EVENT_CUSTOM_BOTH, sinkpad, TRUE, srcpad);
   fail_unless (timediff (&got_event_time,
-          &sent_event_time) < G_USEC_PER_SEC / 2,
+          &sent_event_time) < G_USEC_PER_SEC,
       "GST_EVENT_CUSTOM_BOTH took too long to reach source: %"
       G_GINT64_FORMAT " us", timediff (&got_event_time, &sent_event_time));
 
   test_event (pipeline, GST_EVENT_CUSTOM_BOTH_OOB, sinkpad, TRUE, srcpad);
   fail_unless (timediff (&got_event_time,
-          &sent_event_time) < G_USEC_PER_SEC / 2,
+          &sent_event_time) < G_USEC_PER_SEC ,
       "GST_EVENT_CUSTOM_BOTH_OOB took too long to reach source: %"
       G_GINT64_FORMAT " us", timediff (&got_event_time, &sent_event_time));
 
   /* Out of band downstream events */
   test_event (pipeline, GST_EVENT_CUSTOM_DOWNSTREAM_OOB, srcpad, FALSE, srcpad);
   fail_unless (timediff (&got_event_time,
-          &sent_event_time) < G_USEC_PER_SEC / 2,
+          &sent_event_time) < G_USEC_PER_SEC ,
       "GST_EVENT_CUSTOM_DS_OOB took too long to reach source: %"
       G_GINT64_FORMAT " us", timediff (&got_event_time, &sent_event_time));
 
   test_event (pipeline, GST_EVENT_CUSTOM_BOTH_OOB, srcpad, FALSE, srcpad);
   fail_unless (timediff (&got_event_time,
-          &sent_event_time) < G_USEC_PER_SEC / 2,
+          &sent_event_time) < G_USEC_PER_SEC,
       "GST_EVENT_CUSTOM_BOTH_OOB took too long to reach source: %"
       G_GINT64_FORMAT " us", timediff (&got_event_time, &sent_event_time));
 

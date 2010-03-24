@@ -35,7 +35,7 @@
 #endif
 
 #include <libgstreamer_wsd_macros.h>
-
+#include <stdlib.h>
 
 
 #define LOG_FILE "c:\\logs\\filesink_log1.txt"
@@ -47,11 +47,20 @@
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+ 
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 

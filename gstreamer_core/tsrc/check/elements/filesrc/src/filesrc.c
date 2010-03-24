@@ -49,11 +49,20 @@ extern GList *buffers;
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 #include "libgstreamer_wsd_solution.h" 
@@ -485,11 +494,11 @@ void test_uri_interface()
   
 
   location = (gchar *) gst_uri_handler_get_uri (GST_URI_HANDLER (src));
-  fail_unless_equals_string (location, "file://%2Ffoo%2Fbar");
+  fail_unless_equals_string (location, "file://%5Cfoo%5Cbar");
   
 
   g_object_get (G_OBJECT (src), "location", &location, NULL);
-  fail_unless_equals_string (location, "/foo/bar");
+  fail_unless_equals_string (location, "\\foo\\bar");
   
 
   g_free (location);
@@ -500,11 +509,11 @@ void test_uri_interface()
   
 
   location = (gchar *) gst_uri_handler_get_uri (GST_URI_HANDLER (src));
-  fail_unless_equals_string (location, "file://%2Ffoo%2Fbaz");
+  fail_unless_equals_string (location, "file://%5Cfoo%5Cbaz");
   
 
   g_object_get (G_OBJECT (src), "location", &location, NULL);
-  fail_unless_equals_string (location, "/foo/baz");
+  fail_unless_equals_string (location, "\\foo\\baz");
   
 
   g_free (location);

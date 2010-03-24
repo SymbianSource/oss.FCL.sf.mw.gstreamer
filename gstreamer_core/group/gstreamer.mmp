@@ -37,7 +37,6 @@ VENDORID        VID_DEFAULT
 EpocAllowDllData
 #endif
 
-
 MACRO			HAVE_CONFIG_H
 
 //MACRO			GST_TESTCASE_COMPILATION
@@ -58,6 +57,8 @@ USERINCLUDE		../../include/gstreamer/gst/controller
 USERINCLUDE		../../include/gstreamer/gst/dataprotocol
 USERINCLUDE		../../include/gstreamer/gst/net
 
+USERINCLUDE		../gst
+
 
 USERINCLUDE			../libs/gst/check
 
@@ -65,7 +66,6 @@ USERINCLUDE			../libs/gst/check
 SYSTEMINCLUDE		../libs
 
 //#endif	/* GST_TESTCASE_COMPILATION */
-
 
 SOURCEPATH      ../gst
 SOURCE          gstbin.c
@@ -112,6 +112,10 @@ SOURCE          gsttypefindfactory.c
 SOURCE          gsturi.c
 SOURCE          gstutils.c
 SOURCE          gstvalue.c
+SOURCE          gstpreset.c
+SOURCE          gstbufferlist.c
+SOURCE          gsttaskpool.c
+SOURCE          helpfile.cpp
 
 #ifdef HAVE_LIBXML2
 SOURCE          gstxml.c
@@ -124,7 +128,6 @@ SOURCE          gstquark.c
 SOURCE          gstparamspecs.c
 SOURCE          gstdebugutils.c
 SOURCE          gstpoll.c
-SOURCE          helpfile.cpp
 
 #ifdef WINSCW
 SOURCE          libgstreamer_wsd.cpp
@@ -138,12 +141,10 @@ SOURCE          check.c
 //#endif	/* GST_TESTCASE_COMPILATION */
 
 
-SOURCEPATH ../gst/parse
-SOURCE grammar.tab.pre.c lex._gst_parse_yy.pre.c
 
-//SOURCEPATH	../gst/parse
-//SOURCE		grammar.tab.c
-//SOURCE		lex._gst_parse_yy.c
+SOURCEPATH	../gst/parse
+SOURCE		grammar.tab.c
+SOURCE		lex._gst_parse_yy.c
 
 LIBRARY			euser.lib
 LIBRARY 		libc.lib
@@ -154,7 +155,7 @@ LIBRARY			libgmodule.lib
 LIBRARY			libgobject.lib
 LIBRARY			libgthread.lib
 LIBRARY			libm.lib
-LIBRARY 		libz.lib  
+LIBRARY 		libz.lib
 LIBRARY         efsrv.lib 
 
 #ifdef WINSCW

@@ -49,10 +49,10 @@ typedef struct _GstAutoAudioSink {
 typedef struct _GstAutoAudioSinkClass {
   GstBinClass parent_class;
 } GstAutoAudioSinkClass;
+
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
-
 
 GType   gst_auto_audio_sink_get_type    (void);
 

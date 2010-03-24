@@ -9,11 +9,20 @@
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 
@@ -41,7 +50,7 @@ main (int   argc,
   else
     nano_str = "";
 
-  getchar();
+  //getchar();
   std_log(LOG_FILENAME_LINE, "Test Successful");
   create_xml(0); 
 

@@ -38,11 +38,20 @@ extern GList *buffers;
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 
@@ -78,7 +87,7 @@ void test_netbuffer_copy()
   GST_BUFFER_FLAG_SET (netbuf, GST_BUFFER_FLAG_DISCONT);
   GST_BUFFER_FLAG_SET (netbuf, GST_BUFFER_FLAG_READONLY);
 
-  copy = (GstNetBuffer *) gst_buffer_copy (netbuf);
+  copy = (GstNetBuffer *) gst_buffer_copy ( GST_BUFFER_CAST (netbuf));
   fail_unless (copy != NULL, "failed to copy net buffer");
   fail_unless (GST_IS_NETBUFFER (copy), "copied buffer is not a GstNetBuffer!");
 
@@ -102,8 +111,8 @@ void test_netbuffer_copy()
   fail_unless (port == ipv6_port,
       "Copied buffer has wrong IPv6 destination port");
 
-  gst_buffer_unref (netbuf);
-  gst_buffer_unref (copy);
+  gst_buffer_unref ( GST_BUFFER_CAST (netbuf));
+  gst_buffer_unref ( GST_BUFFER_CAST (copy));
 
     std_log(LOG_FILENAME_LINE, "Test Successful");
     create_xml(0);

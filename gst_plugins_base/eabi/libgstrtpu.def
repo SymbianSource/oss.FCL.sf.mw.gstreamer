@@ -101,4 +101,21 @@ EXPORTS
 	gst_rtp_buffer_validate_data @ 100 NONAME
 	gst_rtp_payload_info_for_name @ 101 NONAME
 	gst_rtp_payload_info_for_pt @ 102 NONAME
+	gst_rtcp_packet_fb_get_media_ssrc @ 103 NONAME
+	gst_rtcp_packet_fb_get_sender_ssrc @ 104 NONAME
+	gst_rtcp_packet_fb_get_type @ 105 NONAME
+	gst_rtcp_packet_fb_set_media_ssrc @ 106 NONAME
+	gst_rtcp_packet_fb_set_sender_ssrc @ 107 NONAME
+	gst_rtcp_packet_fb_set_type @ 108 NONAME
+	gst_basertppayload_push_list @ 109 NONAME
+	gst_rtp_buffer_list_get_payload_len @ 110 NONAME
+	gst_rtp_buffer_list_get_payload_type @ 111 NONAME
+	gst_rtp_buffer_list_get_seq @ 112 NONAME
+	gst_rtp_buffer_list_get_ssrc @ 113 NONAME
+	gst_rtp_buffer_list_get_timestamp @ 114 NONAME
+	gst_rtp_buffer_list_set_payload_type @ 115 NONAME
+	gst_rtp_buffer_list_set_seq @ 116 NONAME
+	gst_rtp_buffer_list_set_timestamp @ 117 NONAME
+	gst_rtp_buffer_list_validate @ 118 NONAME
+	gst_rtp_buffer_list_set_ssrc @ 119 NONAME
 

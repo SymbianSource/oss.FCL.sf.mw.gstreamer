@@ -120,16 +120,12 @@
 #include "gstutils.h"
 #include "gstminiobject.h"
 
-static void gst_buffer_init (GTypeInstance * instance, gpointer g_class);
-static void gst_buffer_class_init (gpointer g_class, gpointer class_data);
 static void gst_buffer_finalize (GstBuffer * buffer);
 static GstBuffer *_gst_buffer_copy (GstBuffer * buffer);
 static GType gst_subbuffer_get_type (void);
 
 static GType _gst_subbuffer_type = 0;
 static GType _gst_buffer_type = 0;
-
-static GstMiniObjectClass *parent_class = NULL;
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
@@ -144,46 +140,20 @@ _gst_buffer_initialize (void)
   g_type_class_ref (gst_buffer_get_type ());
   g_type_class_ref (gst_subbuffer_get_type ());
 }
-#ifdef __SYMBIAN32__
-EXPORT_C
-#endif
 
-
-GType
-gst_buffer_get_type (void)
-{
-  if (G_UNLIKELY (_gst_buffer_type == 0)) {
-    static const GTypeInfo buffer_info = {
-      sizeof (GstBufferClass),
-      NULL,
-      NULL,
-      gst_buffer_class_init,
-      NULL,
-      NULL,
-      sizeof (GstBuffer),
-      0,
-      gst_buffer_init,
-      NULL
-    };
-
-    _gst_buffer_type = g_type_register_static (GST_TYPE_MINI_OBJECT,
-        "GstBuffer", &buffer_info, 0);
-  }
-  return _gst_buffer_type;
+#define _do_init \
+{ \
+  _gst_buffer_type = g_define_type_id; \
 }
 
+G_DEFINE_TYPE_WITH_CODE (GstBuffer, gst_buffer, GST_TYPE_MINI_OBJECT, _do_init);
+
 static void
-gst_buffer_class_init (gpointer g_class, gpointer class_data)
+gst_buffer_class_init (GstBufferClass * klass)
 {
-  GstBufferClass *buffer_class = GST_BUFFER_CLASS (g_class);
-
-  parent_class = g_type_class_peek_parent (g_class);
-
-  buffer_class->mini_object_class.copy =
-      (GstMiniObjectCopyFunction) _gst_buffer_copy;
-  buffer_class->mini_object_class.finalize =
+  klass->mini_object_class.copy = (GstMiniObjectCopyFunction) _gst_buffer_copy;
+  klass->mini_object_class.finalize =
       (GstMiniObjectFinalizeFunction) gst_buffer_finalize;
-
 }
 
 static void
@@ -194,11 +164,13 @@ gst_buffer_finalize (GstBuffer * buffer)
   GST_CAT_LOG (GST_CAT_BUFFER, "finalize %p", buffer);
 
   /* free our data */
-  g_free (buffer->malloc_data);
+  if (G_LIKELY (buffer->malloc_data))
+    buffer->free_func (buffer->malloc_data);
 
   gst_caps_replace (&GST_BUFFER_CAPS (buffer), NULL);
 
-  GST_MINI_OBJECT_CLASS (parent_class)->finalize (GST_MINI_OBJECT (buffer));
+/*   ((GstMiniObjectClass *) */
+/*       gst_buffer_parent_class)->finalize (GST_MINI_OBJECT_CAST (buffer)); */
 }
 
 /**
@@ -229,6 +201,10 @@ gst_buffer_copy_metadata (GstBuffer * dest, const GstBuffer * src,
   g_return_if_fail (dest != NULL);
   g_return_if_fail (src != NULL);
 
+  /* nothing to copy if the buffers are the same */
+  if (G_UNLIKELY (dest == src))
+    return;
+
   GST_CAT_LOG (GST_CAT_BUFFER, "copy %p to %p", src, dest);
 
   if (flags & GST_BUFFER_COPY_FLAGS) {
@@ -237,7 +213,8 @@ gst_buffer_copy_metadata (GstBuffer * dest, const GstBuffer * src,
     /* copy relevant flags */
     mask = GST_BUFFER_FLAG_PREROLL | GST_BUFFER_FLAG_IN_CAPS |
         GST_BUFFER_FLAG_DELTA_UNIT | GST_BUFFER_FLAG_DISCONT |
-        GST_BUFFER_FLAG_GAP;
+        GST_BUFFER_FLAG_GAP | GST_BUFFER_FLAG_MEDIA1 |
+        GST_BUFFER_FLAG_MEDIA2 | GST_BUFFER_FLAG_MEDIA3;
     GST_MINI_OBJECT_FLAGS (dest) |= GST_MINI_OBJECT_FLAGS (src) & mask;
   }
 
@@ -249,10 +226,7 @@ gst_buffer_copy_metadata (GstBuffer * dest, const GstBuffer * src,
   }
 
   if (flags & GST_BUFFER_COPY_CAPS) {
-    if (GST_BUFFER_CAPS (src))
-      GST_BUFFER_CAPS (dest) = gst_caps_ref (GST_BUFFER_CAPS (src));
-    else
-      GST_BUFFER_CAPS (dest) = NULL;
+    gst_caps_replace (&GST_BUFFER_CAPS (dest), GST_BUFFER_CAPS (src));
   }
 }
 
@@ -279,18 +253,15 @@ _gst_buffer_copy (GstBuffer * buffer)
 }
 
 static void
-gst_buffer_init (GTypeInstance * instance, gpointer g_class)
+gst_buffer_init (GstBuffer * buffer)
 {
-  GstBuffer *buffer;
-
-  buffer = (GstBuffer *) instance;
-
   GST_CAT_LOG (GST_CAT_BUFFER, "init %p", buffer);
 
   GST_BUFFER_TIMESTAMP (buffer) = GST_CLOCK_TIME_NONE;
   GST_BUFFER_DURATION (buffer) = GST_CLOCK_TIME_NONE;
   GST_BUFFER_OFFSET (buffer) = GST_BUFFER_OFFSET_NONE;
   GST_BUFFER_OFFSET_END (buffer) = GST_BUFFER_OFFSET_NONE;
+  GST_BUFFER_FREE_FUNC (buffer) = g_free;
 }
 
 /**
@@ -528,43 +499,20 @@ struct _GstSubBufferClass
   GstBufferClass buffer_class;
 };
 
-static GstBufferClass *sub_parent_class;
-
-static void gst_subbuffer_init (GTypeInstance * instance, gpointer g_class);
-static void gst_subbuffer_class_init (gpointer g_class, gpointer class_data);
 static void gst_subbuffer_finalize (GstSubBuffer * buffer);
 
-static GType
-gst_subbuffer_get_type (void)
-{
-  if (G_UNLIKELY (_gst_subbuffer_type == 0)) {
-    static const GTypeInfo subbuffer_info = {
-      sizeof (GstSubBufferClass),
-      NULL,
-      NULL,
-      gst_subbuffer_class_init,
-      NULL,
-      NULL,
-      sizeof (GstSubBuffer),
-      0,
-      gst_subbuffer_init,
-      NULL
-    };
-
-    _gst_subbuffer_type = g_type_register_static (GST_TYPE_BUFFER,
-        "GstSubBuffer", &subbuffer_info, 0);
-  }
-  return _gst_subbuffer_type;
+#define _do_init_sub \
+{ \
+  _gst_subbuffer_type = g_define_type_id; \
 }
 
+G_DEFINE_TYPE_WITH_CODE (GstSubBuffer, gst_subbuffer, GST_TYPE_BUFFER,
+    _do_init_sub);
+
 static void
-gst_subbuffer_class_init (gpointer g_class, gpointer class_data)
+gst_subbuffer_class_init (GstSubBufferClass * klass)
 {
-  GstBufferClass *buffer_class = GST_BUFFER_CLASS (g_class);
-
-  sub_parent_class = g_type_class_peek_parent (g_class);
-
-  buffer_class->mini_object_class.finalize =
+  klass->buffer_class.mini_object_class.finalize =
       (GstMiniObjectFinalizeFunction) gst_subbuffer_finalize;
 }
 
@@ -573,12 +521,12 @@ gst_subbuffer_finalize (GstSubBuffer * buffer)
 {
   gst_buffer_unref (buffer->parent);
 
-  GST_MINI_OBJECT_CLASS (sub_parent_class)->
-      finalize (GST_MINI_OBJECT_CAST (buffer));
+  ((GstMiniObjectClass *) gst_subbuffer_parent_class)->finalize
+      (GST_MINI_OBJECT_CAST (buffer));
 }
 
 static void
-gst_subbuffer_init (GTypeInstance * instance, gpointer g_class)
+gst_subbuffer_init (GstSubBuffer * instance)
 {
   GST_BUFFER_FLAG_SET (GST_BUFFER_CAST (instance), GST_BUFFER_FLAG_READONLY);
 }

@@ -21,7 +21,6 @@
  */
 /**
  * SECTION:element-fakesink
- * @short_description: black hole for data
  * @see_also: #GstFakeSrc
  *
  * Dummy sink that swallows everything.
@@ -30,18 +29,9 @@
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif
-#ifdef __SYMBIAN32__
-#include <gst_global.h>
-#endif
 
 #include "gstfakesink.h"
 #include <gst/gstmarshal.h>
-#ifdef __SYMBIAN32__
-#include <glib_global.h>
-#include <gobject_global.h>
-
-#include <gstelement.h>
-#endif
 
 static GstStaticPadTemplate sinktemplate = GST_STATIC_PAD_TEMPLATE ("sink",
     GST_PAD_SINK,
@@ -123,6 +113,7 @@ static void gst_fake_sink_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
 static void gst_fake_sink_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
+static void gst_fake_sink_finalize (GObject * obj);
 
 static GstStateChangeReturn gst_fake_sink_change_state (GstElement * element,
     GstStateChange transition);
@@ -134,6 +125,34 @@ static GstFlowReturn gst_fake_sink_render (GstBaseSink * bsink,
 static gboolean gst_fake_sink_event (GstBaseSink * bsink, GstEvent * event);
 
 static guint gst_fake_sink_signals[LAST_SIGNAL] = { 0 };
+
+static void
+marshal_VOID__MINIOBJECT_OBJECT (GClosure * closure, GValue * return_value,
+    guint n_param_values, const GValue * param_values, gpointer invocation_hint,
+    gpointer marshal_data)
+{
+  typedef void (*marshalfunc_VOID__MINIOBJECT_OBJECT) (gpointer obj,
+      gpointer arg1, gpointer arg2, gpointer data2);
+  register marshalfunc_VOID__MINIOBJECT_OBJECT callback;
+  register GCClosure *cc = (GCClosure *) closure;
+  register gpointer data1, data2;
+
+  g_return_if_fail (n_param_values == 3);
+
+  if (G_CCLOSURE_SWAP_DATA (closure)) {
+    data1 = closure->data;
+    data2 = g_value_peek_pointer (param_values + 0);
+  } else {
+    data1 = g_value_peek_pointer (param_values + 0);
+    data2 = closure->data;
+  }
+  callback =
+      (marshalfunc_VOID__MINIOBJECT_OBJECT) (marshal_data ? marshal_data :
+      cc->callback);
+
+  callback (data1, gst_value_get_mini_object (param_values + 1),
+      g_value_get_object (param_values + 2), data2);
+}
 
 static void
 gst_fake_sink_base_init (gpointer g_class)
@@ -164,40 +183,41 @@ gst_fake_sink_class_init (GstFakeSinkClass * klass)
 
   gobject_class->set_property = GST_DEBUG_FUNCPTR (gst_fake_sink_set_property);
   gobject_class->get_property = GST_DEBUG_FUNCPTR (gst_fake_sink_get_property);
+  gobject_class->finalize = gst_fake_sink_finalize;
 
   g_object_class_install_property (gobject_class, PROP_STATE_ERROR,
-      g_param_spec_enum ("state_error", "State Error",
+      g_param_spec_enum ("state-error", "State Error",
           "Generate a state change error", GST_TYPE_FAKE_SINK_STATE_ERROR,
-          DEFAULT_STATE_ERROR, G_PARAM_READWRITE));
+          DEFAULT_STATE_ERROR, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_LAST_MESSAGE,
-      g_param_spec_string ("last_message", "Last Message",
+      g_param_spec_string ("last-message", "Last Message",
           "The message describing current status", DEFAULT_LAST_MESSAGE,
-          G_PARAM_READABLE));
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_SIGNAL_HANDOFFS,
       g_param_spec_boolean ("signal-handoffs", "Signal handoffs",
           "Send a signal before unreffing the buffer", DEFAULT_SIGNAL_HANDOFFS,
-          G_PARAM_READWRITE));
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_SILENT,
       g_param_spec_boolean ("silent", "Silent",
           "Don't produce last_message events", DEFAULT_SILENT,
-          G_PARAM_READWRITE));
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_DUMP,
       g_param_spec_boolean ("dump", "Dump", "Dump buffer contents to stdout",
-          DEFAULT_DUMP, G_PARAM_READWRITE));
+          DEFAULT_DUMP, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class,
       PROP_CAN_ACTIVATE_PUSH,
       g_param_spec_boolean ("can-activate-push", "Can activate push",
           "Can activate in push mode", DEFAULT_CAN_ACTIVATE_PUSH,
-          G_PARAM_READWRITE));
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class,
       PROP_CAN_ACTIVATE_PULL,
       g_param_spec_boolean ("can-activate-pull", "Can activate pull",
           "Can activate in pull mode", DEFAULT_CAN_ACTIVATE_PULL,
-          G_PARAM_READWRITE));
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_NUM_BUFFERS,
       g_param_spec_int ("num-buffers", "num-buffers",
           "Number of buffers to accept going EOS", -1, G_MAXINT,
-          DEFAULT_NUM_BUFFERS, G_PARAM_READWRITE));
+          DEFAULT_NUM_BUFFERS, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   /**
    * GstFakeSink::handoff:
@@ -210,7 +230,7 @@ gst_fake_sink_class_init (GstFakeSinkClass * klass)
   gst_fake_sink_signals[SIGNAL_HANDOFF] =
       g_signal_new ("handoff", G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST,
       G_STRUCT_OFFSET (GstFakeSinkClass, handoff), NULL, NULL,
-      gst_marshal_VOID__OBJECT_OBJECT, G_TYPE_NONE, 2,
+      marshal_VOID__MINIOBJECT_OBJECT, G_TYPE_NONE, 2,
       GST_TYPE_BUFFER, GST_TYPE_PAD);
 
   /**
@@ -226,7 +246,7 @@ gst_fake_sink_class_init (GstFakeSinkClass * klass)
   gst_fake_sink_signals[SIGNAL_PREROLL_HANDOFF] =
       g_signal_new ("preroll-handoff", G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST, G_STRUCT_OFFSET (GstFakeSinkClass, preroll_handoff),
-      NULL, NULL, gst_marshal_VOID__OBJECT_OBJECT, G_TYPE_NONE, 2,
+      NULL, NULL, marshal_VOID__MINIOBJECT_OBJECT, G_TYPE_NONE, 2,
       GST_TYPE_BUFFER, GST_TYPE_PAD);
 
   gstelement_class->change_state =
@@ -247,6 +267,17 @@ gst_fake_sink_init (GstFakeSink * fakesink, GstFakeSinkClass * g_class)
   fakesink->state_error = DEFAULT_STATE_ERROR;
   fakesink->signal_handoffs = DEFAULT_SIGNAL_HANDOFFS;
   fakesink->num_buffers = DEFAULT_NUM_BUFFERS;
+  g_static_rec_mutex_init (&fakesink->notify_lock);
+}
+
+static void
+gst_fake_sink_finalize (GObject * obj)
+{
+  GstFakeSink *sink = GST_FAKE_SINK (obj);
+
+  g_static_rec_mutex_free (&sink->notify_lock);
+
+  G_OBJECT_CLASS (parent_class)->finalize (obj);
 }
 
 static void
@@ -326,6 +357,20 @@ gst_fake_sink_get_property (GObject * object, guint prop_id, GValue * value,
   }
 }
 
+static void
+gst_fake_sink_notify_last_message (GstFakeSink * sink)
+{
+  /* FIXME: this hacks around a bug in GLib/GObject: doing concurrent
+   * g_object_notify() on the same object might lead to crashes, see
+   * http://bugzilla.gnome.org/show_bug.cgi?id=166020#c60 and follow-ups.
+   * So we really don't want to do a g_object_notify() here for out-of-band
+   * events with the streaming thread possibly also doing a g_object_notify()
+   * for an in-band buffer or event. */
+  g_static_rec_mutex_lock (&sink->notify_lock);
+  g_object_notify ((GObject *) sink, "last_message");
+  g_static_rec_mutex_unlock (&sink->notify_lock);
+}
+
 static gboolean
 gst_fake_sink_event (GstBaseSink * bsink, GstEvent * event)
 {
@@ -349,10 +394,14 @@ gst_fake_sink_event (GstBaseSink * bsink, GstEvent * event)
     g_free (sstr);
     GST_OBJECT_UNLOCK (sink);
 
-    g_object_notify (G_OBJECT (sink), "last_message");
+    gst_fake_sink_notify_last_message (sink);
   }
 
-  return TRUE;
+  if (GST_BASE_SINK_CLASS (parent_class)->event) {
+    return GST_BASE_SINK_CLASS (parent_class)->event (bsink, event);
+  } else {
+    return TRUE;
+  }
 }
 
 static GstFlowReturn
@@ -370,7 +419,7 @@ gst_fake_sink_preroll (GstBaseSink * bsink, GstBuffer * buffer)
     sink->last_message = g_strdup_printf ("preroll   ******* ");
     GST_OBJECT_UNLOCK (sink);
 
-    g_object_notify (G_OBJECT (sink), "last_message");
+    gst_fake_sink_notify_last_message (sink);
   }
   if (sink->signal_handoffs) {
     g_signal_emit (sink,
@@ -423,10 +472,10 @@ gst_fake_sink_render (GstBaseSink * bsink, GstBuffer * buf)
         ", duration: %s, offset: %" G_GINT64_FORMAT ", offset_end: %"
         G_GINT64_FORMAT ", flags: %d) %p", GST_BUFFER_SIZE (buf), ts_str,
         dur_str, GST_BUFFER_OFFSET (buf), GST_BUFFER_OFFSET_END (buf),
-        GST_MINI_OBJECT (buf)->flags, buf);
+        GST_MINI_OBJECT_CAST (buf)->flags, buf);
     GST_OBJECT_UNLOCK (sink);
 
-    g_object_notify (G_OBJECT (sink), "last_message");
+    gst_fake_sink_notify_last_message (sink);
   }
   if (sink->signal_handoffs)
     g_signal_emit (G_OBJECT (sink), gst_fake_sink_signals[SIGNAL_HANDOFF], 0,

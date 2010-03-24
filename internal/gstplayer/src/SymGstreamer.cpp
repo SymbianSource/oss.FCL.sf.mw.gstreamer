@@ -33,7 +33,7 @@
 
 #include "gstplayerappview.h"
 
-GstElement *pipeline, *source, *wavparse,*sink,*decoder,*conv,*resample,*record,*fakesink,*filesink,*encoder,*filter,*wavenc;
+GstElement *pipeline, *source, *wavparse,*sink,*decoder,*conv,*resample,*record,*fakesink,*filesink,*encoder,*filter,*wavenc, *amrmux, *aacenc, *mp4mux;
 GstBus *bus;
 GstCaps* caps;
 GstState current,pending;
@@ -316,46 +316,33 @@ int gst_play_mp3()
  return 0;  
 }
  
-
  int gst_play_wave()
  {
     /* create elements */
-     if(!pipeline)
-         {
-         pipeline = gst_pipeline_new ("pipeline");
-         bus = gst_pipeline_get_bus (GST_PIPELINE (pipeline));
-         gst_bus_add_watch (bus, bus_call, NULL);
-         gst_object_unref (bus);
-         }
-
-     if(!source)
-         {
-         source = gst_element_factory_make ("filesrc", "pavsrc");
-         g_object_set (G_OBJECT (source), "location", carray, NULL);
-         gst_bin_add (GST_BIN (pipeline), source);
-         }
-
-     if(!wavparse)
-         {
-         wavparse = gst_element_factory_make ("wavparse", "parse");
-         gst_bin_add (GST_BIN (pipeline), wavparse );
-         g_signal_connect (wavparse, "pad-added", G_CALLBACK (new_pad_cb),pipeline);
-         }
+  pipeline = gst_pipeline_new ("pipeline");
+  source = gst_element_factory_make ("filesrc", "pavsrc");
+  wavparse = gst_element_factory_make ("wavparse", "parse");
  
-      /* set filename property on the file source */
-      if (!gst_element_link (source, wavparse))
-          {
-          g_print("could not link elements!");
-          return -1;
-          }
-          
+  /* set filename property on the file source */
+  g_object_set (G_OBJECT (source), "location", carray, NULL);
+  bus = gst_pipeline_get_bus (GST_PIPELINE (pipeline));
+  gst_bus_add_watch (bus, bus_call, NULL);
+  gst_object_unref (bus);
+  gst_bin_add_many (GST_BIN (pipeline), source, wavparse, NULL);
+  if (!gst_element_link (source, wavparse))
+     g_error ("link(src, wavparse) failed!\n");
 
-      gst_element_set_state (pipeline, GST_STATE_PLAYING); 
-      return 0; 
+  
+  g_signal_connect (wavparse, "pad-added", G_CALLBACK (new_pad_cb),pipeline);
+    
+  gst_element_set_state (pipeline, GST_STATE_PLAYING); 
+  return 0; 
  }
  
  int gst_record_wav()
     {
+     
+     iGstView->DrawText(_L("Recording Wave"),KRgbBlack);
 
     /* create a new bin to hold the elements */
     pipeline = gst_pipeline_new("pipeline");
@@ -366,7 +353,7 @@ int gst_play_mp3()
         g_print("could not create \"record\" element!");
         return -1;
         }
-    
+    //g_object_set (G_OBJECT (record), "num-buffers", 5000 , NULL);
     filesink = gst_element_factory_make("filesink", "filesink");
     if (!filesink)
         {
@@ -409,16 +396,97 @@ int gst_play_mp3()
     gst_element_link_filtered (record, wavenc, caps);
     gst_element_link (wavenc, filesink);
     gst_caps_unref (caps);
-
+    iGstView->DrawText(_L("pipeline created\n"),KRgbBlack);
     /* start recording */
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
+    iGstView->DrawText(_L("set to play wave file\n"),KRgbBlack);
+    return 0;
+    }
+ 
+ 
+ int gst_record_aac()
+    {
+     GstPad *qtsinkpad,*aacencsrcpad;
+     iGstView->DrawText(_L("Recording aac"),KRgbBlack);
 
+    /* create a new bin to hold the elements */
+    pipeline = gst_pipeline_new("pipeline");
+
+    record = gst_element_factory_make("devsoundsrc", "record_audio");
+    if (!record)
+        {
+        g_print("could not create \"record\" element!");
+        return -1;
+        }
+    //g_object_set (G_OBJECT (record), "num-buffers", 5000 , NULL);
+    filesink = gst_element_factory_make("filesink", "filesink");
+    if (!filesink)
+        {
+        g_print("could not create \"filesink\" element!");
+        return -1;
+        }
+
+    aacenc = gst_element_factory_make("nokiaaacenc", "nokiaaacenc");
+    if (!aacenc)
+        {
+        g_print("could not create \"aacenc\" element!");
+        return -1;
+        }
+    
+    mp4mux = gst_element_factory_make("mp4mux", "mp4mux");
+    if (!mp4mux)
+        {
+        g_print("could not create \"mp4mux\" element!");
+        return -1;
+        }    
+    //name = gst_pad_get_name( sinkpad );    
+
+    _LIT(KFILENAME,"c:\\data\\test.mp4");
+    TFileName fn;
+    fn.Append(KFILENAME);
+    TInt ret;
+    // char carray[FILENAME];
+    ret = wcstombs(carray, (const wchar_t *)fn.PtrZ(), FILENAME);
+
+    g_object_set(G_OBJECT (filesink), "location", carray, NULL);
+    bus = gst_pipeline_get_bus(GST_PIPELINE (pipeline));
+    gst_bus_add_watch(bus, bus_call, NULL);
+    gst_object_unref(bus);
+
+    /* add objects to the main pipeline */
+    gst_bin_add_many(GST_BIN (pipeline),record,aacenc,mp4mux,filesink, NULL);
+
+    /* link the elements */
+    //gst_element_link_many(record, aacenc,filesink, NULL);
+    caps = gst_caps_new_simple ("audio/x-raw-int",
+              "width", G_TYPE_INT, 16,
+              "depth", G_TYPE_INT, 16,
+              "signed",G_TYPE_BOOLEAN, TRUE,
+              "endianness",G_TYPE_INT, G_BYTE_ORDER,
+              "rate", G_TYPE_INT, 16000,
+              "channels", G_TYPE_INT, 1, NULL);
+    
+    gst_element_link_filtered (record, aacenc, caps);
+    qtsinkpad  = gst_element_get_request_pad( mp4mux, "audio_%d");
+    aacencsrcpad  = gst_element_get_pad( aacenc, "src");  
+    if (gst_pad_link (aacencsrcpad,qtsinkpad) != GST_PAD_LINK_OK) {
+
+    g_print("gst_pad_link (aacencsrcpad,qtsinkpad) failed");
+    return -1;
+    }       
+    //gst_element_link (aacenc, filesink);
+    gst_element_link (mp4mux, filesink);
+    gst_caps_unref (caps);
+    iGstView->DrawText(_L("pipeline created\n"),KRgbBlack);
+    /* start recording */
+    gst_element_set_state(pipeline, GST_STATE_PLAYING);
+    iGstView->DrawText(_L("set to play aac file\n"),KRgbBlack);
     return 0;
     }
  
  int gst_record_amr()
  {
- iGstView->DrawText(_L("Recording AMR"),KRgbRed);
+ iGstView->DrawText(_L("Recording AMR-NB"),KRgbRed);
 
    /* create a new bin to hold the elements */
   pipeline = gst_pipeline_new ("pipeline");
@@ -432,12 +500,21 @@ int gst_play_mp3()
     return -1;
   }
 
+            
+      amrmux = gst_element_factory_make ("amrmux", "muxer"); 
+ // encoder = gst_element_factory_make ("wavenc", NULL); 
+  if (!amrmux) {
+    g_print ("could not create \"amrmuxer\" element!");
+    iGstView->DrawText(_L("amrmuxer not available"),KRgbRed);
+    return -1;
+  }
+
   filesink = gst_element_factory_make("filesink", "filesink");
       if (!filesink)
           {
           g_print("could not create \"filesink\" element!");
           return -1;
-          }
+          }        
 
   caps = gst_caps_new_simple ("audio/amr",
              "width", G_TYPE_INT, 8,
@@ -465,9 +542,12 @@ int gst_play_mp3()
   
 
   /* add objects to the main pipeline */
-  gst_bin_add_many(GST_BIN (pipeline),record,filesink , NULL);
+  gst_bin_add_many(GST_BIN (pipeline),record,amrmux,filesink , NULL);
   /* link the elements */
-  gst_element_link_filtered (record, filesink, caps);
+  gst_element_link_filtered (record, amrmux, caps);
+  
+  gst_element_link( amrmux, filesink );
+  
   gst_element_set_state (pipeline, GST_STATE_PLAYING);
   
   return 0;
@@ -536,7 +616,7 @@ int gst_play_mp3()
      g_print ("could not create \"record\" element!");
      return -1;
    }
- 
+
    filesink = gst_element_factory_make("filesink", "filesink");
        if (!filesink)
            {
@@ -642,7 +722,6 @@ int gst_play_mp3()
     return -1;
   }
   //g_print ("record created");
-
   filesink = gst_element_factory_make("filesink", "filesink");
       if (!filesink)
           {

@@ -46,8 +46,8 @@ file=ABI_DIR\BUILD_DIR\libgstpbutils.dll            SHARED_LIB_DIR\libgstpbutils
 file=ABI_DIR\BUILD_DIR\libgstreamer.dll             SHARED_LIB_DIR\libgstreamer.dll
 file=ABI_DIR\BUILD_DIR\libgstriff.dll               SHARED_LIB_DIR\libgstriff.dll
 file=ABI_DIR\BUILD_DIR\libgsttag.dll                SHARED_LIB_DIR\libgsttag.dll
-file=ABI_DIR\BUILD_DIR\libgstvideo.dll              SHARED_LIB_DIR\libgstvideo.dll
-file=ABI_DIR\BUILD_DIR\libgstvideorate.dll          SHARED_LIB_DIR\libgstvideorate.dll
+//file=ABI_DIR\BUILD_DIR\libgstvideo.dll              SHARED_LIB_DIR\libgstvideo.dll
+//file=ABI_DIR\BUILD_DIR\libgstvideorate.dll          SHARED_LIB_DIR\libgstvideorate.dll
 //file=ABI_DIR\BUILD_DIR\libgstvideoscale.dll       SHARED_LIB_DIR\libgstvideoscale.dll
 //file=ABI_DIR\BUILD_DIR\libgstvideotestsrc.dll     SHARED_LIB_DIR\libgstvideotestsrc.dll
 file=ABI_DIR\BUILD_DIR\libgstdevsoundext.dll        SHARED_LIB_DIR\libgstdevsoundext.dll
@@ -80,7 +80,7 @@ file=ABI_DIR\BUILD_DIR\libgstvolume.dll             SHARED_LIB_DIR\libgstvolume.
 //GStreamer_Stub
 data=ZSYSTEM\install\gstreamer_stub.sis             System\Install\gstreamer_stub.sis
 data=\epoc32\winscw\c\gstreamer\plugins_list\gst_dll_2001F41F.txt             gstreamer\plugins_list\gst_dll_2001F41F.txt
-data=\epoc32\winscw\c\gstreamer\.gstreamer-0.10\registry.i686.bin           gstreamer\.gstreamer-0.10\registry.i686.bin
+//data=\epoc32\winscw\c\gstreamer\.gstreamer-0.10\registry.i686.bin           gstreamer\.gstreamer-0.10\registry.i686.bin
 
 #endif // end of FF_GSTREAMER
 

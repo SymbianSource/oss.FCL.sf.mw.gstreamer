@@ -13,12 +13,22 @@
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
+
 int main (int   argc,
       char *argv[])
 {
@@ -33,7 +43,7 @@ int main (int   argc,
   if (!element) {
    // g_print ("Failed to create element of type 'fakesrc'\n");
     std_log(LOG_FILENAME_LINE, "Failed to create element of type 'fakesrc'");
-    getchar();
+    //getchar();
     return -1;
   }
 

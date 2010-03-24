@@ -247,7 +247,8 @@ void CGSTPlayerAppUi::HandleCommandL(TInt aCommand)
             break;
             
         case EGSTPlayerPause:
-                   if (pipeline!=NULL )
+                   if (pipeline!=NULL && pipeline ->current_state
+                           == GST_STATE_PLAYING)
                        {
 
                        gst_element_set_state(pipeline, GST_STATE_PAUSED);
@@ -257,7 +258,8 @@ void CGSTPlayerAppUi::HandleCommandL(TInt aCommand)
                    break;    
                    
         case EGSTPlayerResume:
-               if (pipeline!=NULL)
+               if (pipeline!=NULL && pipeline ->current_state
+                       == GST_STATE_PAUSED)
                    {
 
                    gst_element_set_state(pipeline, GST_STATE_PLAYING);
@@ -279,6 +281,19 @@ void CGSTPlayerAppUi::HandleCommandL(TInt aCommand)
             gst_record_wav();
             }
             break;
+        case EGSTPlayerRecordAac:
+            {
+            if (pipeline!=NULL && pipeline ->current_state
+                    == GST_STATE_PLAYING)
+                {
+
+                gst_element_set_state(pipeline, GST_STATE_NULL);
+                //gst_object_unref (GST_OBJECT (pipeline));                 
+
+                }
+            gst_record_aac();
+            }
+            break;            
 
         case EGSTPlayerRecordRaw:
             {

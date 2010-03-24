@@ -130,8 +130,9 @@ struct _GstBin {
  * Subclasses can override the @add_element and @remove_element to
  * update the list of children in the bin.
  *
- * The @handle_message method can be overriden to implement custom
- * message handling.
+ * The @handle_message method can be overridden to implement custom
+ * message handling.  @handle_message takes ownership of the message, just like
+ * #gst_element_post_message.
  */
 struct _GstBinClass {
   GstElementClass parent_class;
@@ -151,7 +152,11 @@ struct _GstBinClass {
   void		(*handle_message)	(GstBin *bin, GstMessage *message);
 
   /*< private >*/
-  gpointer _gst_reserved[GST_PADDING];
+  /* signal added 0.10.22 */
+  gboolean	(*do_latency)           (GstBin *bin);
+
+  /*< private >*/
+  gpointer _gst_reserved[GST_PADDING-1];
 };
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -226,6 +231,14 @@ IMPORT_C
 #endif
 
 GstIterator*	gst_bin_iterate_all_by_interface (GstBin *bin, GType iface);
+
+/* latency */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+gboolean        gst_bin_recalculate_latency      (GstBin * bin);
+
 
 G_END_DECLS
 

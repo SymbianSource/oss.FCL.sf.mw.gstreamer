@@ -91,10 +91,11 @@ struct _GstBaseSink {
   /*< private >*/
   union {
     struct {
-      /* segment used for clipping incomming buffers */
+      /* segment used for clipping incoming buffers */
       GstSegment    *clip_segment;
       /* max amount of time a buffer can be late, -1 no limit. */
       gint64	     max_lateness;
+      gboolean       running;
     } ABI;
     gpointer _gst_reserved[GST_PADDING_LARGE - 1];
   } abidata;
@@ -120,6 +121,8 @@ struct _GstBaseSink {
  * @preroll: Called to present the preroll buffer if desired
  * @render: Called when a buffer should be presented or output, at the
  *     correct moment if the #GstBaseSink has been set to sync to the clock.
+ * @render_list: Same as @render but used whith buffer lists instead of
+ *     buffers. Since: 0.10.24
  * @async_play: Subclasses should override this when they need to perform
  *     special processing when changing to the PLAYING state asynchronously.
  *     Called with the OBJECT_LOCK held.
@@ -179,10 +182,13 @@ struct _GstBaseSinkClass {
   /* Clear a previously indicated unlock request not that unlocking is 
    * complete. Sub-classes should clear any command queue or indicator they
    * set during unlock */
-  gboolean      (*unlock_stop)       (GstBaseSink *sink);
+  gboolean      (*unlock_stop)  (GstBaseSink *sink);
+
+  /* Render a BufferList */
+  GstFlowReturn (*render_list)  (GstBaseSink *sink, GstBufferList *buffer_list);
 
   /*< private >*/
-  gpointer       _gst_reserved[GST_PADDING_LARGE-4];
+  gpointer       _gst_reserved[GST_PADDING_LARGE-5];
 };
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -194,6 +200,11 @@ GType gst_base_sink_get_type(void);
 IMPORT_C
 #endif
 
+
+GstFlowReturn	gst_base_sink_do_preroll 	(GstBaseSink *sink, GstMiniObject *obj);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 
 GstFlowReturn	gst_base_sink_wait_preroll 	(GstBaseSink *sink);
 
@@ -276,10 +287,40 @@ IMPORT_C
 #endif
 
 GstClockTime	gst_base_sink_get_latency 	(GstBaseSink *sink);
+
+/* render delay */
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
 
+void		gst_base_sink_set_render_delay  (GstBaseSink *sink, GstClockTime delay);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+GstClockTime    gst_base_sink_get_render_delay 	(GstBaseSink *sink);
+
+/* blocksize */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void		gst_base_sink_set_blocksize     (GstBaseSink *sink, guint blocksize);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+guint           gst_base_sink_get_blocksize 	(GstBaseSink *sink);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+
+GstClockReturn  gst_base_sink_wait_clock        (GstBaseSink *sink, GstClockTime time,
+                                                 GstClockTimeDiff * jitter);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 
 GstFlowReturn   gst_base_sink_wait_eos          (GstBaseSink *sink, GstClockTime time,
                                                  GstClockTimeDiff *jitter);

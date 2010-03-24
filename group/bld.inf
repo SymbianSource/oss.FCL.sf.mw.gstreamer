@@ -21,9 +21,10 @@
 * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 * Boston, MA 02111-1307, USA.
 *
-* Description:
+* Description : This is a top level bld file to generate all libraries.
 *
 */
+
 
 #include <platform_paths.hrh>
 
@@ -37,6 +38,7 @@ PRJ_MMPFILES
 #include "../gst_plugins_good/group/bld.inf"
 #include "../gst_plugins_symbian/group/bld.inf"
 #include "../gstregistrygenerator/group/bld.inf"
+#include "../gst_nokia_speech/group/bld.inf"
 #endif
 
 PRJ_EXPORTS

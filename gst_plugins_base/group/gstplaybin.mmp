@@ -62,6 +62,7 @@ SOURCE	    	gstfactorylists.c
 SOURCE  	    gstscreenshot.c
 SOURCE      	gststreaminfo.c
 SOURCE  		gststreamselector.c
+SOURCE  		gstinputselector.c
 SOURCE			gstplay-enum.c
 SOURCE			gstplay-marshal.c
 

@@ -22,7 +22,10 @@
 
 #include "../check/group/bld.inf"
 #include "../examples/group/bld.inf"
-
+//#include "../gstreamertestcases/group/bld.inf"
+//#include "../gstreamertestcases_suite1/group/bld.inf"
+//#include "../gstreamertestcases_suite2/group/bld.inf"
+//#include "../gstreamertestcases_suite3/group/bld.inf"
 
 //  End of File
 										

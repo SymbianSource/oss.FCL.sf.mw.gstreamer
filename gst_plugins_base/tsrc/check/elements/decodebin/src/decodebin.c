@@ -37,11 +37,20 @@
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 #if EMULATOR
@@ -313,11 +322,26 @@ char *args[] = {
 */
 //GST_CHECK_MAIN (decodebin);
 
-int main (int argc, char **argv)
-{
-//gst_init(&argc, &argv);                
-gst_check_init (NULL, NULL); 
-test_text_plain_streams();
-test_reuse_without_decoders();
+//int main (int argc, char **argv)
+//{
+////gst_init(&argc, &argv);                
+//gst_check_init (NULL, NULL); 
+//test_text_plain_streams();
+//test_reuse_without_decoders();
+//
+//}
 
-}
+
+#if 1
+void (*fn[2]) (void) = {
+        test_text_plain_streams,
+        test_text_plain_streams
+};
+
+char *args[] = {
+        "test_text_plain_streams",
+        "test_text_plain_streams"
+};
+
+GST_CHECK_MAIN (filesrc);
+#endif

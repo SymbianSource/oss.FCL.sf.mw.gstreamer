@@ -296,13 +296,13 @@ IMPORT_C
 #endif
 
 void              gst_caps_set_simple              (GstCaps       *caps,
-                                                    char          *field, ...) G_GNUC_NULL_TERMINATED;
+                                                    const char    *field, ...) G_GNUC_NULL_TERMINATED;
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
 
 void              gst_caps_set_simple_valist       (GstCaps       *caps,
-                                                    char          *field,
+                                                    const char    *field,
                                                     va_list        varargs);
 
 /* tests */

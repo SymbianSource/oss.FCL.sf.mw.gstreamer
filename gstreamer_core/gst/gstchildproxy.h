@@ -47,7 +47,7 @@ typedef struct _GstChildProxyInterface GstChildProxyInterface;
  * @get_child_by_index: virtual method to fetch the child
  * @get_children_count: virtual method to get the children count
  *
- * #GstChildProxyInterface interface.
+ * #GstChildProxy interface.
  */
 struct _GstChildProxyInterface
 {
@@ -56,12 +56,12 @@ struct _GstChildProxyInterface
   /* methods */
   GstObject *(*get_child_by_index) (GstChildProxy * parent, guint index);
   guint (*get_children_count) (GstChildProxy * parent);
-  /*< private > */
+  /*< private >*/
   /* signals */
   void (*child_added) (GstChildProxy * parent, GstObject * child);
   void (*child_removed) (GstChildProxy * parent, GstObject * child);
 
-  /*< private > */
+  /*< private >*/
   gpointer _gst_reserved[GST_PADDING];
 };
 #ifdef __SYMBIAN32__

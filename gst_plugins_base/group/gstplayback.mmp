@@ -22,8 +22,8 @@
 
 #include <platform_paths.hrh>                    
 
-TARGET			libgstplaybin.dll
-TARGETTYPE		DLL
+TARGET			libgstplayback.dll
+TARGETTYPE		STDDLL
 UID             0x20004c45 0x2001F43E
 
 #ifdef EKA2

@@ -22,6 +22,7 @@
 #define __GST_SUBPARSE_H__
 
 #include <gst/gst.h>
+#include <gst/base/gstadapter.h>
 
 GST_DEBUG_CATEGORY_EXTERN (sub_parse_debug);
 #define GST_CAT_DEFAULT sub_parse_debug
@@ -60,6 +61,7 @@ typedef struct {
   GString *buf;
   guint64  start_time;
   guint64  duration;
+  guint64  max_duration; /* to clamp duration, 0 = no limit (used by tmplayer parser) */
   GstSegment *segment;
   gpointer user_data;
   gdouble  fps;          /* used by microdvd parser */
@@ -72,10 +74,14 @@ struct _GstSubParse {
 
   GstPad *sinkpad,*srcpad;
 
+  /* contains the input in the input encoding */
+  GstAdapter *adapter;
+  /* contains the UTF-8 decoded input */
   GString *textbuf;
 
   GstSubParseFormat parser_type;
   gboolean parser_detected;
+  const gchar *subtitle_codec;
 
   Parser parse_line;
   ParserState state;
@@ -91,7 +97,10 @@ struct _GstSubParse {
   
   gboolean flushing;
   gboolean valid_utf8;
+  gchar   *detected_encoding;
   gchar   *encoding;
+
+  gboolean first_buffer;
 };
 
 struct _GstSubParseClass {

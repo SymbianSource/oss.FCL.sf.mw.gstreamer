@@ -24,6 +24,7 @@
 #  include "config.h"
 #endif
 #include <gst/gst.h>
+#include <gst/controller/gstcontroller.h>
 
 /* library initialisation */
 
@@ -43,7 +44,6 @@ GST_DEBUG_CATEGORY (GST_CAT_DEFAULT);
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
- 
 gboolean
 gst_controller_init (int *argc, char ***argv)
 {

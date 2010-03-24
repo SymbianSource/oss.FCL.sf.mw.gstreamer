@@ -54,6 +54,9 @@ type_find_factory_rank_cmp (gconstpointer fac1, gconstpointer fac2)
 
 /* ********************** typefinding in pull mode ************************ */
 
+static void
+helper_find_suggest (gpointer data, guint probability, const GstCaps * caps);
+
 typedef struct
 {
   GSList *buffers;              /* buffer cache */
@@ -86,6 +89,9 @@ helper_find_peek (gpointer data, gint64 offset, guint size)
   GstBuffer *buffer;
   GstFlowReturn ret;
   GSList *insert_pos = NULL;
+  guint buf_size;
+  guint64 buf_offset;
+  GstCaps *caps;
 
   helper = (GstTypeFindHelper *) data;
 
@@ -111,16 +117,14 @@ helper_find_peek (gpointer data, gint64 offset, guint size)
       guint64 buf_offset = GST_BUFFER_OFFSET (buf);
       guint buf_size = GST_BUFFER_SIZE (buf);
 
+      /* buffers are kept sorted by end offset (highest first) in the list, so
+       * at this point we save the current position and stop searching if 
+       * we're after the searched end offset */
       if (buf_offset <= offset) {
         if ((offset + size) < (buf_offset + buf_size)) {
           return GST_BUFFER_DATA (buf) + (offset - buf_offset);
         }
-        /* buffers are kept sorted by offset (highest first) in the list, so
-         * at this point we know we don't need to check the remaining buffers
-         * (is that correct or just a guess that we're unlikely to find a
-         * match further down and it's most of the time not worth going through
-         * the entire list? How do we know the next buffer isn't offset-N with
-         * a big enough size to cover the requested offset+size?) */
+      } else if (offset + size >= buf_offset + buf_size) {
         insert_pos = walk;
         break;
       }
@@ -134,18 +138,33 @@ helper_find_peek (gpointer data, gint64 offset, guint size)
    * of the file is also not a problem here, we'll just get a truncated buffer
    * in that case (and we'll have to double-check the size we actually get
    * anyway, see below) */
-  ret = helper->func (helper->obj, offset, MAX (size, 512), &buffer);
+  ret = helper->func (helper->obj, offset, MAX (size, 4096), &buffer);
 
   if (ret != GST_FLOW_OK)
     goto error;
 
+  caps = GST_BUFFER_CAPS (buffer);
+
+  if (caps && !gst_caps_is_empty (caps) && !gst_caps_is_any (caps)) {
+    GST_DEBUG ("buffer has caps %" GST_PTR_FORMAT ", suggest max probability",
+        caps);
+
+    gst_caps_replace (&helper->caps, caps);
+    helper->best_probability = GST_TYPE_FIND_MAXIMUM;
+
+    gst_buffer_unref (buffer);
+    return NULL;
+  }
+
   /* getrange might silently return shortened buffers at the end of a file,
    * we must, however, always return either the full requested data or NULL */
-  if (GST_BUFFER_OFFSET (buffer) != offset || GST_BUFFER_SIZE (buffer) < size) {
+  buf_offset = GST_BUFFER_OFFSET (buffer);
+  buf_size = GST_BUFFER_SIZE (buffer);
+
+  if ((buf_offset != -1 && buf_offset != offset) || buf_size < size) {
     GST_DEBUG ("droping short buffer: %" G_GUINT64_FORMAT "-%" G_GUINT64_FORMAT
         " instead of %" G_GUINT64_FORMAT "-%" G_GUINT64_FORMAT,
-        GST_BUFFER_OFFSET (buffer), GST_BUFFER_OFFSET (buffer) +
-        GST_BUFFER_SIZE (buffer) - 1, offset, offset + size - 1);
+        buf_offset, buf_offset + buf_size - 1, offset, offset + size - 1);
     gst_buffer_unref (buffer);
     return NULL;
   }
@@ -157,8 +176,7 @@ helper_find_peek (gpointer data, gint64 offset, guint size)
     /* if insert_pos is not set, our offset is bigger than the largest offset
      * we have so far; since we keep the list sorted with highest offsets
      * first, we need to prepend the buffer to the list */
-    /* FIXME: why not last_offset = buffer_offset + buffer_size here? */
-    helper->last_offset = GST_BUFFER_OFFSET (buffer);
+    helper->last_offset = GST_BUFFER_OFFSET (buffer) + GST_BUFFER_SIZE (buffer);
     helper->buffers = g_slist_prepend (helper->buffers, buffer);
   }
   return GST_BUFFER_DATA (buffer);
@@ -467,6 +485,75 @@ gst_type_find_helper_for_buffer (GstObject * obj, GstBuffer * buf,
 
   GST_LOG_OBJECT (obj, "Returning %" GST_PTR_FORMAT " (probability = %u)",
       result, (guint) helper.best_probability);
+
+  return result;
+}
+
+/**
+ * gst_type_find_helper_for_extension:
+ * @obj: object doing the typefinding, or NULL (used for logging)
+ * @extension: an extension
+ *
+ * Tries to find the best #GstCaps associated with @extension.
+ *
+ * All available typefinders will be checked against the extension in order
+ * of rank. The caps of the first typefinder that can handle @extension will be
+ * returned.
+ *
+ * Returns: The #GstCaps corresponding to @extension, or #NULL if no type could
+ * be found. The caller should free the caps returned with gst_caps_unref().
+ * 
+ * Since: 0.10.23
+ */
+#ifdef __SYMBIAN32__
+EXPORT_C
+#endif
+
+GstCaps *
+gst_type_find_helper_for_extension (GstObject * obj, const gchar * extension)
+{
+  GList *l, *type_list;
+  GstCaps *result = NULL;
+
+  g_return_val_if_fail (extension != NULL, NULL);
+
+  GST_LOG_OBJECT (obj, "finding caps for extension %s", extension);
+
+  type_list = gst_type_find_factory_get_list ();
+  type_list = g_list_sort (type_list, type_find_factory_rank_cmp);
+
+  for (l = type_list; l; l = g_list_next (l)) {
+    GstTypeFindFactory *factory;
+    gchar **ext;
+    gint i;
+
+    factory = GST_TYPE_FIND_FACTORY (l->data);
+
+    /* get the extension that this typefind factory can handle */
+    ext = gst_type_find_factory_get_extensions (factory);
+    if (ext == NULL)
+      continue;
+
+    /* we only want to check those factories without a function */
+    if (factory->function != NULL)
+      continue;
+
+    /* there are extension, see if one of them matches the requested
+     * extension */
+    for (i = 0; ext[i]; i++) {
+      if (strcmp (ext[i], extension) == 0) {
+        /* we found a matching extension, take the caps */
+        if ((result = gst_type_find_factory_get_caps (factory))) {
+          gst_caps_ref (result);
+          goto done;
+        }
+      }
+    }
+  }
+done:
+  gst_plugin_feature_list_free (type_list);
+
+  GST_LOG_OBJECT (obj, "Returning %" GST_PTR_FORMAT, result);
 
   return result;
 }

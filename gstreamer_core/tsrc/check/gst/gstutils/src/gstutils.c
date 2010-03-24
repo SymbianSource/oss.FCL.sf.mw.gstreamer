@@ -35,11 +35,20 @@
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 #define SPECIAL_POINTER(x) ((void*)(19283847+(x)))
@@ -132,16 +141,16 @@ void test_buffer_probe_n_times()
   gst_object_unref (bus);
 
   g_assert (n_buffer_probes == 10);     /* one for every buffer */
-  g_assert (n_event_probes == 2);       /* new segment and eos */
-  g_assert (n_data_probes == 12);       /* duh */
+  g_assert (n_event_probes == 3);       /* new segment, latency and eos */
+  g_assert (n_data_probes == 13);       /* duh */
 
   gst_element_set_state (pipeline, GST_STATE_NULL);
   gst_object_unref (pipeline);
 
   /* make sure nothing was sent in addition to the above when shutting down */
   g_assert (n_buffer_probes == 10);     /* one for every buffer */
-  g_assert (n_event_probes == 2);       /* new segment and eos */
-  g_assert (n_data_probes == 12);       /* duh */
+  g_assert (n_event_probes == 3);       /* new segment, latency and eos */
+  g_assert (n_data_probes == 13);       /* duh */
   
   std_log(LOG_FILENAME_LINE, "Test Successful");
   create_xml(0);

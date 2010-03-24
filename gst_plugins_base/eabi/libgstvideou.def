@@ -21,4 +21,7 @@ EXPORTS
 	gst_video_parse_caps_pixel_aspect_ratio @ 20 NONAME
 	gst_video_sink_center_rect @ 21 NONAME
 	gst_video_sink_get_type @ 22 NONAME
+	gst_video_format_get_type @ 23 NONAME
+	gst_video_format_new_caps_interlaced @ 24 NONAME
+	gst_video_format_parse_caps_interlaced @ 25 NONAME
 

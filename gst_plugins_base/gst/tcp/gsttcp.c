@@ -37,11 +37,7 @@
 #endif
 
 #include "gsttcp.h"
-#ifdef __SYMBIAN32__
-#include "gst/gst-i18n-plugin.h"
-#else
 #include <gst/gst-i18n-plugin.h>
-#endif
 
 GST_DEBUG_CATEGORY_EXTERN (tcp_debug);
 #define GST_CAT_DEFAULT tcp_debug
@@ -126,15 +122,13 @@ gst_tcp_socket_write (int socket, const void *buf, size_t count)
         count - bytes_written, MSG_NOSIGNAL);
 
     if (wrote <= 0) {
+      GST_WARNING ("error while writing");
       return bytes_written;
     }
     bytes_written += wrote;
   }
 
-  if (bytes_written < 0)
-    GST_WARNING ("error while writing");
-  else
-    GST_LOG ("wrote %" G_GSIZE_FORMAT " bytes succesfully", bytes_written);
+  GST_LOG ("wrote %" G_GSIZE_FORMAT " bytes succesfully", bytes_written);
   return bytes_written;
 }
 

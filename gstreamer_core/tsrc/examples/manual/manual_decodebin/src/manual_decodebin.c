@@ -9,11 +9,20 @@
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 #include <gst/gst.h>
@@ -130,7 +139,7 @@ main (gint   argc,
   audio = gst_bin_new ("audiobin");
   conv = gst_element_factory_make ("audioconvert", "aconv");
   audiopad = gst_element_get_pad (conv, "sink");
-  sink = gst_element_factory_make ("alsasink", "sink");
+  sink = gst_element_factory_make ("devsoundsink", "sink");
   gst_bin_add_many (GST_BIN (audio), conv, sink, NULL);
   gst_element_link (conv, sink);
   gst_element_add_pad (audio,

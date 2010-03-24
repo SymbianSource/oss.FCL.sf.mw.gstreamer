@@ -34,6 +34,14 @@ GType gst_buffer_flag_get_type (void);
 GType gst_buffer_copy_flags_get_type (void);
 #define GST_TYPE_BUFFER_COPY_FLAGS (gst_buffer_copy_flags_get_type())
 
+/* enumerations from "gstbufferlist.h" */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+GType gst_buffer_list_item_get_type (void);
+#define GST_TYPE_BUFFER_LIST_ITEM (gst_buffer_list_item_get_type())
+
 /* enumerations from "gstbus.h" */
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -167,6 +175,10 @@ IMPORT_C
 
 GType gst_message_type_get_type (void);
 #define GST_TYPE_MESSAGE_TYPE (gst_message_type_get_type())
+GType gst_structure_change_type_get_type (void);
+#define GST_TYPE_STRUCTURE_CHANGE_TYPE (gst_structure_change_type_get_type())
+GType gst_stream_status_type_get_type (void);
+#define GST_TYPE_STREAM_STATUS_TYPE (gst_stream_status_type_get_type())
 
 /* enumerations from "gstminiobject.h" */
 #ifdef __SYMBIAN32__
@@ -219,6 +231,8 @@ GType gst_plugin_error_get_type (void);
 #define GST_TYPE_PLUGIN_ERROR (gst_plugin_error_get_type())
 GType gst_plugin_flags_get_type (void);
 #define GST_TYPE_PLUGIN_FLAGS (gst_plugin_flags_get_type())
+GType gst_plugin_dependency_flags_get_type (void);
+#define GST_TYPE_PLUGIN_DEPENDENCY_FLAGS (gst_plugin_dependency_flags_get_type())
 
 /* enumerations from "gstpluginfeature.h" */
 #ifdef __SYMBIAN32__
@@ -235,6 +249,16 @@ IMPORT_C
 
 GType gst_query_type_get_type (void);
 #define GST_TYPE_QUERY_TYPE (gst_query_type_get_type())
+GType gst_buffering_mode_get_type (void);
+#define GST_TYPE_BUFFERING_MODE (gst_buffering_mode_get_type())
+
+/* enumerations from "gstsystemclock.h" */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+GType gst_clock_type_get_type (void);
+#define GST_TYPE_CLOCK_TYPE (gst_clock_type_get_type())
 
 /* enumerations from "gsttaglist.h" */
 #ifdef __SYMBIAN32__
@@ -278,6 +302,14 @@ IMPORT_C
 GType gst_uri_type_get_type (void);
 #define GST_TYPE_URI_TYPE (gst_uri_type_get_type())
 
+/* enumerations from "gstutils.h" */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+GType gst_search_mode_get_type (void);
+#define GST_TYPE_SEARCH_MODE (gst_search_mode_get_type())
+
 /* enumerations from "gstparse.h" */
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -285,6 +317,8 @@ IMPORT_C
 
 GType gst_parse_error_get_type (void);
 #define GST_TYPE_PARSE_ERROR (gst_parse_error_get_type())
+GType gst_parse_flags_get_type (void);
+#define GST_TYPE_PARSE_FLAGS (gst_parse_flags_get_type())
 G_END_DECLS
 
 #endif /* __GST_ENUM_TYPES_H__ */

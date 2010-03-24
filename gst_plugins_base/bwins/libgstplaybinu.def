@@ -10,32 +10,36 @@ EXPORTS
 	gst_play_bin_plugin_init @ 9 NONAME
 	gst_play_flags_get_type @ 10 NONAME
 	gst_play_frame_conv_convert @ 11 NONAME
-	gst_play_marshal_BOOLEAN__OBJECT_OBJECT @ 12 NONAME
+	gst_play_marshal_BOOLEAN__OBJECT_BOXED @ 12 NONAME
 	gst_play_marshal_BOOLEAN__OBJECT_OBJECT_OBJECT @ 13 NONAME
 	gst_play_marshal_BOXED__INT @ 14 NONAME
-	gst_play_marshal_BOXED__OBJECT_OBJECT @ 15 NONAME
-	gst_play_marshal_BOXED__OBJECT_OBJECT_BOXED @ 16 NONAME
-	gst_play_marshal_ENUM__OBJECT_OBJECT_BOXED @ 17 NONAME
-	gst_play_marshal_ENUM__OBJECT_OBJECT_OBJECT @ 18 NONAME
+	gst_play_marshal_BOXED__OBJECT_BOXED @ 15 NONAME
+	gst_play_marshal_BOXED__OBJECT_BOXED_BOXED @ 16 NONAME
+	gst_play_marshal_ENUM__OBJECT_BOXED_OBJECT @ 17 NONAME
+	gst_play_marshal_ENUM__OBJECT_OBJECT_BOXED @ 18 NONAME
 	gst_play_marshal_OBJECT__BOXED @ 19 NONAME
-	gst_play_marshal_VOID__OBJECT_BOOLEAN @ 20 NONAME
-	gst_play_sink_get_flags @ 21 NONAME
-	gst_play_sink_get_last_frame @ 22 NONAME
-	gst_play_sink_get_mute @ 23 NONAME
-	gst_play_sink_get_type @ 24 NONAME
-	gst_play_sink_get_volume @ 25 NONAME
-	gst_play_sink_reconfigure @ 26 NONAME
-	gst_play_sink_release_pad @ 27 NONAME
-	gst_play_sink_request_pad @ 28 NONAME
-	gst_play_sink_set_audio_sink @ 29 NONAME
-	gst_play_sink_set_flags @ 30 NONAME
-	gst_play_sink_set_mute @ 31 NONAME
-	gst_play_sink_set_video_sink @ 32 NONAME
-	gst_play_sink_set_vis_plugin @ 33 NONAME
-	gst_play_sink_set_volume @ 34 NONAME
-	gst_stream_info_get_type @ 35 NONAME
-	gst_stream_info_is_mute @ 36 NONAME
-	gst_stream_info_new @ 37 NONAME
-	gst_stream_info_set_mute @ 38 NONAME
-	gst_stream_selector_get_type @ 39 NONAME
+	gst_play_marshal_OBJECT__INT @ 20 NONAME
+	gst_play_marshal_VOID__OBJECT_BOOLEAN @ 21 NONAME
+	gst_play_sink_get_flags @ 22 NONAME
+	gst_play_sink_get_font_desc @ 23 NONAME
+	gst_play_sink_get_last_frame @ 24 NONAME
+	gst_play_sink_get_mute @ 25 NONAME
+	gst_play_sink_get_sink @ 26 NONAME
+	gst_play_sink_get_type @ 27 NONAME
+	gst_play_sink_get_vis_plugin @ 28 NONAME
+	gst_play_sink_get_volume @ 29 NONAME
+	gst_play_sink_reconfigure @ 30 NONAME
+	gst_play_sink_release_pad @ 31 NONAME
+	gst_play_sink_request_pad @ 32 NONAME
+	gst_play_sink_set_flags @ 33 NONAME
+	gst_play_sink_set_font_desc @ 34 NONAME
+	gst_play_sink_set_mute @ 35 NONAME
+	gst_play_sink_set_sink @ 36 NONAME
+	gst_play_sink_set_vis_plugin @ 37 NONAME
+	gst_play_sink_set_volume @ 38 NONAME
+	gst_stream_info_get_type @ 39 NONAME
+	gst_stream_info_is_mute @ 40 NONAME
+	gst_stream_info_new @ 41 NONAME
+	gst_stream_info_set_mute @ 42 NONAME
+	gst_stream_selector_get_type @ 43 NONAME
 

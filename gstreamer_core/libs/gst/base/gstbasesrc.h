@@ -85,7 +85,7 @@ struct _GstBaseSrc {
   gint		 blocksize;	/* size of buffers when operating push based */
   gboolean	 can_activate_push;	/* some scheduling properties */
   GstActivateMode pad_mode;
-  gboolean       seekable;
+  gboolean       seekable; /* not used anymore */
   gboolean       random_access;
 
   GstClockID     clock_id;	/* for syncing */
@@ -150,7 +150,7 @@ struct _GstBaseSrc {
  *   cycles. The default implementation will open and close the resource 
  *   to find out whether get_range is supported, and that is usually 
  *   undesirable. 
- * @fixate: Called during negotation if caps need fixating. Implement instead of
+ * @fixate: Called during negotiation if caps need fixating. Implement instead of
  *   setting a fixate function on the source pad.
  *
  * Subclasses can override any of the available virtual methods or not, as
@@ -213,7 +213,7 @@ struct _GstBaseSrcClass {
    * undesirable. */
   gboolean      (*check_get_range) (GstBaseSrc *src);
 
-  /* called if, in negotation, caps need fixating */
+  /* called if, in negotiation, caps need fixating */
   void		(*fixate)	(GstBaseSrc *src, GstCaps *caps);
 
   /* Clear any pending unlock request, as we succeeded in unlocking */
@@ -269,7 +269,18 @@ IMPORT_C
 #endif
 
 
-void		gst_base_src_set_do_timestamp (GstBaseSrc *src, gboolean live);
+void		gst_base_src_set_blocksize    (GstBaseSrc *src, gulong blocksize);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+gulong          gst_base_src_get_blocksize    (GstBaseSrc *src);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+
+void		gst_base_src_set_do_timestamp (GstBaseSrc *src, gboolean timestamp);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif

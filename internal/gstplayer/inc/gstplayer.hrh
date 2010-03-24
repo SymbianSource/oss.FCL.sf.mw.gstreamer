@@ -75,7 +75,8 @@ enum TGSTPlayerIds
     EGSTPlayerSrcPadCaps,
     
     EGSTPlayerNegotiatedSinkCaps,
-    EGSTPlayerNegotiatedSrcCaps
+    EGSTPlayerNegotiatedSrcCaps,
+    EGSTPlayerRecordAac
     
     
     };

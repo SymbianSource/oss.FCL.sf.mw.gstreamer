@@ -85,6 +85,7 @@ _LIT( KTagRightBalanceProperty,"rightbalance");
 _LIT( KTagVolumeRampProperty,"volumeramp");
 _LIT( KTagPriorityProperty,"priority");
 _LIT( KTagPereferenceProperty,"preference");
+_LIT( KTagNumBuffersProperty,"num-buffers");
 _LIT( KTagFourCCProperty,"fourcc");
 _LIT( KTagMimeTypeProperty,"mimetype");
 
@@ -101,7 +102,7 @@ _LIT( KTagSamplesRecordedProperty,"samplesrecorded");
 #ifdef __WINSCW__
 _LIT( KGStreamerTestClassLogPath, "\\logs\\testframework\\" ); 
 #else
-_LIT( KGStreamerTestClassLogPath, "e:\\testing\\Log\\" );
+_LIT( KGStreamerTestClassLogPath, "c:\\logs\\" );
 #endif
 
 // Log file
@@ -154,6 +155,9 @@ public :
     GstElement *iFakesink;
     GstElement *iFilesink;
     GstElement *iEncoder;
+    GstElement *iAACEncoder;
+    GstElement *iQtMux;
+    GstElement *iAmrMux;
     GstElement *iFilter;
     GstElement *iWavenc;
     GstBus* iBus;
@@ -213,7 +217,10 @@ NONSHARABLE_CLASS(CGStreamerTestClass) : public CScriptBase,
 		    ERESAMPLER,
 		    ECONVERTER,
 		    EDEVSOUNDSRC,
-		    EDEVSOUNDSINK
+		    EDEVSOUNDSINK,
+		    ENOKIAAACENCODER,
+		    ENOKIAQTMUX,
+		    ENOKIAAMRMUX,
 		    };
 		
       enum TElementCustomInterfaces
@@ -453,7 +460,11 @@ NONSHARABLE_CLASS(CGStreamerTestClass) : public CScriptBase,
 		TInt CustomIntfcProp( CStifItemParser& aItem );
 		
 		TInt SetCapsInPipeLine( CStifItemParser& aItem );
-		
+		TInt StopRecording( CStifItemParser& aItem );
+		TInt GstReliabilitytestRecording( CStifItemParser& aItem );
+		TInt GstReliabilitytestPlaypause( CStifItemParser& aItem );
+		TInt SeekElement( CStifItemParser& aItem );
+		TInt CheckProperties ( CStifItemParser& aItem );
 		TInt SetMainLoopRun( CStifItemParser& aItem );
 		TInt GetConfigureData();
 		TInt SetConfigureData();

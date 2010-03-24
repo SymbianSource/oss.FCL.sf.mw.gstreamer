@@ -54,8 +54,6 @@ USERINCLUDE		../../include/gstreamer/gst/net
 
 SOURCEPATH      ../gst-libs/gst/cdda
 SOURCE          gstcddabasesrc.c
-SOURCE          base64.c
-SOURCE          sha1.c
 
 LIBRARY         euser.lib
 LIBRARY         libgobject.lib

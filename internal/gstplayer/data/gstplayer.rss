@@ -126,6 +126,7 @@ RESOURCE MENU_PANE r_record_cmd
     items=
         {
         MENU_ITEM{command = EGSTPlayerRecordWav;txt = "Record WAV";},        
+        MENU_ITEM{command = EGSTPlayerRecordAac;txt = "Record AAC";}, 
         MENU_ITEM{command = EGSTPlayerRecordRaw;txt = "Record RAW";},
         MENU_ITEM{command = EGSTPlayerRecordAmr;txt = "Record AMR";},        
         MENU_ITEM{command = EGSTPlayerRecordG711;txt = "Record G711";},

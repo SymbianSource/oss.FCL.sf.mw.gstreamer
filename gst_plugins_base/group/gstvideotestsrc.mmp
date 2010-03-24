@@ -23,7 +23,7 @@
 #include <platform_paths.hrh>                    
 
 TARGET          libgstvideotestsrc.dll
-TARGETTYPE      dll
+TARGETTYPE      DLL
 UID             0x1000008d 0x2001F442
 
 #ifdef EKA2

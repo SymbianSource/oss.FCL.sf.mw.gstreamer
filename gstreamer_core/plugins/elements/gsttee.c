@@ -23,7 +23,6 @@
 
 /**
  * SECTION:element-tee
- * @short_description: 1-to-N pipe fitting
  * @see_also: #GstIdentity
  *
  * Split data to multiple pads.
@@ -33,18 +32,10 @@
 #  include "config.h"
 #endif
 
-#ifdef __SYMBIAN32__
-#include <gst_global.h>
-#endif
 #include "gsttee.h"
 
 #include <string.h>
 
-#ifdef __SYMBIAN32__
-#include <glib_global.h>
-#include <gobject_global.h>
-
-#endif
 static GstStaticPadTemplate sinktemplate = GST_STATIC_PAD_TEMPLATE ("sink",
     GST_PAD_SINK,
     GST_PAD_ALWAYS,
@@ -71,6 +62,10 @@ gst_tee_pull_mode_get_type (void)
   return type;
 }
 
+/* lock to protect request pads from being removed while downstream */
+#define GST_TEE_DYN_LOCK(tee) g_mutex_lock ((tee)->dyn_lock)
+#define GST_TEE_DYN_UNLOCK(tee) g_mutex_unlock ((tee)->dyn_lock)
+
 #define DEFAULT_PROP_NUM_SRC_PADS	0
 #define DEFAULT_PROP_HAS_SINK_LOOP	FALSE
 #define DEFAULT_PROP_HAS_CHAIN		TRUE
@@ -87,6 +82,7 @@ enum
   PROP_SILENT,
   PROP_LAST_MESSAGE,
   PROP_PULL_MODE,
+  PROP_ALLOC_PAD,
 };
 
 static GstStaticPadTemplate tee_src_template = GST_STATIC_PAD_TEMPLATE ("src%d",
@@ -106,6 +102,7 @@ typedef struct
 {
   gboolean pushed;
   GstFlowReturn result;
+  gboolean removed;
 } PushData;
 
 static GstPad *gst_tee_request_new_pad (GstElement * element,
@@ -119,6 +116,7 @@ static void gst_tee_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
 
 static GstFlowReturn gst_tee_chain (GstPad * pad, GstBuffer * buffer);
+static GstFlowReturn gst_tee_chain_list (GstPad * pad, GstBufferList * list);
 static GstFlowReturn gst_tee_buffer_alloc (GstPad * pad, guint64 offset,
     guint size, GstCaps * caps, GstBuffer ** buf);
 static gboolean gst_tee_sink_activate_push (GstPad * pad, gboolean active);
@@ -155,6 +153,8 @@ gst_tee_finalize (GObject * object)
 
   g_free (tee->last_message);
 
+  g_mutex_free (tee->dyn_lock);
+
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
 
@@ -174,27 +174,33 @@ gst_tee_class_init (GstTeeClass * klass)
   g_object_class_install_property (gobject_class, PROP_NUM_SRC_PADS,
       g_param_spec_int ("num-src-pads", "Num Src Pads",
           "The number of source pads", 0, G_MAXINT, DEFAULT_PROP_NUM_SRC_PADS,
-          G_PARAM_READABLE));
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_HAS_SINK_LOOP,
       g_param_spec_boolean ("has-sink-loop", "Has Sink Loop",
           "If the element should spawn a thread (unimplemented and deprecated)",
-          DEFAULT_PROP_HAS_SINK_LOOP, G_PARAM_CONSTRUCT | G_PARAM_READWRITE));
+          DEFAULT_PROP_HAS_SINK_LOOP,
+          G_PARAM_CONSTRUCT | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_HAS_CHAIN,
       g_param_spec_boolean ("has-chain", "Has Chain",
-          "If the element can operate in push mode",
-          DEFAULT_PROP_HAS_CHAIN, G_PARAM_CONSTRUCT | G_PARAM_READWRITE));
+          "If the element can operate in push mode", DEFAULT_PROP_HAS_CHAIN,
+          G_PARAM_CONSTRUCT | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_SILENT,
       g_param_spec_boolean ("silent", "Silent",
           "Don't produce last_message events", DEFAULT_PROP_SILENT,
-          G_PARAM_CONSTRUCT | G_PARAM_READWRITE));
+          G_PARAM_CONSTRUCT | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_LAST_MESSAGE,
-      g_param_spec_string ("last_message", "Last Message",
+      g_param_spec_string ("last-message", "Last Message",
           "The message describing current status", DEFAULT_PROP_LAST_MESSAGE,
-          G_PARAM_READABLE));
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_PULL_MODE,
       g_param_spec_enum ("pull-mode", "Pull mode",
           "Behavior of tee in pull mode", GST_TYPE_TEE_PULL_MODE,
-          DEFAULT_PULL_MODE, G_PARAM_CONSTRUCT | G_PARAM_READWRITE));
+          DEFAULT_PULL_MODE,
+          G_PARAM_CONSTRUCT | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+  g_object_class_install_property (gobject_class, PROP_ALLOC_PAD,
+      g_param_spec_object ("alloc-pad", "Allocation Src Pad",
+          "The pad used for gst_pad_alloc_buffer", GST_TYPE_PAD,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   gstelement_class->request_new_pad =
       GST_DEBUG_FUNCPTR (gst_tee_request_new_pad);
@@ -204,6 +210,8 @@ gst_tee_class_init (GstTeeClass * klass)
 static void
 gst_tee_init (GstTee * tee, GstTeeClass * g_class)
 {
+  tee->dyn_lock = g_mutex_new ();
+
   tee->sinkpad = gst_pad_new_from_static_template (&sinktemplate, "sink");
   tee->sink_mode = GST_ACTIVATE_NONE;
 
@@ -216,6 +224,8 @@ gst_tee_init (GstTee * tee, GstTeeClass * g_class)
   gst_pad_set_activatepush_function (tee->sinkpad,
       GST_DEBUG_FUNCPTR (gst_tee_sink_activate_push));
   gst_pad_set_chain_function (tee->sinkpad, GST_DEBUG_FUNCPTR (gst_tee_chain));
+  gst_pad_set_chain_list_function (tee->sinkpad,
+      GST_DEBUG_FUNCPTR (gst_tee_chain_list));
   gst_element_add_pad (GST_ELEMENT (tee), tee->sinkpad);
 
   tee->last_message = NULL;
@@ -249,6 +259,7 @@ gst_tee_request_new_pad (GstElement * element, GstPadTemplate * templ,
   data = g_new0 (PushData, 1);
   data->pushed = FALSE;
   data->result = GST_FLOW_NOT_LINKED;
+  data->removed = FALSE;
   g_object_set_qdata_full (G_OBJECT (srcpad), push_data, data, g_free);
 
   GST_OBJECT_UNLOCK (tee);
@@ -290,7 +301,8 @@ activate_failed:
     if (tee->allocpad == srcpad)
       tee->allocpad = NULL;
     gst_object_unref (srcpad);
-    GST_OBJECT_LOCK (tee);
+    GST_OBJECT_UNLOCK (tee);
+    g_object_notify (G_OBJECT (tee), "alloc-pad");
     return NULL;
   }
 }
@@ -299,6 +311,7 @@ static void
 gst_tee_release_pad (GstElement * element, GstPad * pad)
 {
   GstTee *tee;
+  PushData *data;
 
   tee = GST_TEE (element);
 
@@ -308,10 +321,18 @@ gst_tee_release_pad (GstElement * element, GstPad * pad)
   if (tee->allocpad == pad)
     tee->allocpad = NULL;
   GST_OBJECT_UNLOCK (tee);
+  g_object_notify (G_OBJECT (tee), "alloc-pad");
+
+  /* wait for pending pad_alloc to finish */
+  GST_TEE_DYN_LOCK (tee);
+  /* mark the pad as removed so that future pad_alloc fails with NOT_LINKED. */
+  data = g_object_get_qdata (G_OBJECT (pad), push_data);
+  data->removed = TRUE;
 
   gst_pad_set_active (pad, FALSE);
 
   gst_element_remove_pad (GST_ELEMENT_CAST (tee), pad);
+  GST_TEE_DYN_UNLOCK (tee);
 }
 
 static void
@@ -337,6 +358,18 @@ gst_tee_set_property (GObject * object, guint prop_id, const GValue * value,
     case PROP_PULL_MODE:
       tee->pull_mode = g_value_get_enum (value);
       break;
+    case PROP_ALLOC_PAD:
+    {
+      GstPad *pad = g_value_get_object (value);
+      GST_OBJECT_LOCK (pad);
+      if (GST_OBJECT_PARENT (pad) == GST_OBJECT_CAST (object))
+        tee->allocpad = pad;
+      else
+        GST_WARNING_OBJECT (object, "Tried to set alloc pad %s which"
+            " is not my pad", GST_OBJECT_NAME (pad));
+      GST_OBJECT_UNLOCK (pad);
+      break;
+    }
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -370,6 +403,9 @@ gst_tee_get_property (GObject * object, guint prop_id, GValue * value,
     case PROP_PULL_MODE:
       g_value_set_enum (value, tee->pull_mode);
       break;
+    case PROP_ALLOC_PAD:
+      g_value_set_object (value, tee->allocpad);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -380,7 +416,7 @@ gst_tee_get_property (GObject * object, guint prop_id, GValue * value,
 /* we have no previous source pad we can use to proxy the pad alloc. Loop over
  * the source pads, try to alloc a buffer on each one of them. Keep a reference
  * to the first pad that succeeds, we will be using it to alloc more buffers
- * later. */
+ * later.  must be called with the OBJECT_LOCK on tee. */
 static GstFlowReturn
 gst_tee_find_buffer_alloc (GstTee * tee, guint64 offset, guint size,
     GstCaps * caps, GstBuffer ** buf)
@@ -397,13 +433,20 @@ retry:
 
   while (pads) {
     GstPad *pad;
+    PushData *data;
 
     pad = GST_PAD_CAST (pads->data);
     gst_object_ref (pad);
     GST_DEBUG_OBJECT (tee, "try alloc on pad %s:%s", GST_DEBUG_PAD_NAME (pad));
     GST_OBJECT_UNLOCK (tee);
 
-    res = gst_pad_alloc_buffer (pad, offset, size, caps, buf);
+    GST_TEE_DYN_LOCK (tee);
+    data = g_object_get_qdata (G_OBJECT (pad), push_data);
+    if (!data->removed)
+      res = gst_pad_alloc_buffer (pad, offset, size, caps, buf);
+    else
+      res = GST_FLOW_NOT_LINKED;
+    GST_TEE_DYN_UNLOCK (tee);
 
     GST_DEBUG_OBJECT (tee, "got return value %d", res);
 
@@ -416,6 +459,7 @@ retry:
        * need to unref the buffer */
       if (res == GST_FLOW_OK)
         gst_buffer_unref (*buf);
+      *buf = NULL;
       goto retry;
     }
     if (res == GST_FLOW_OK) {
@@ -423,6 +467,9 @@ retry:
           GST_DEBUG_PAD_NAME (pad));
       /* we have a buffer, keep the pad for later and exit the loop. */
       tee->allocpad = pad;
+      GST_OBJECT_UNLOCK (tee);
+      g_object_notify (G_OBJECT (tee), "alloc-pad");
+      GST_OBJECT_LOCK (tee);
       break;
     }
     /* no valid buffer, try another pad */
@@ -446,6 +493,8 @@ gst_tee_buffer_alloc (GstPad * pad, guint64 offset, guint size,
 
   GST_OBJECT_LOCK (tee);
   if ((allocpad = tee->allocpad)) {
+    PushData *data;
+
     /* if we had a previous pad we used for allocating a buffer, continue using
      * it. */
     GST_DEBUG_OBJECT (tee, "using pad %s:%s for alloc",
@@ -453,7 +502,14 @@ gst_tee_buffer_alloc (GstPad * pad, guint64 offset, guint size,
     gst_object_ref (allocpad);
     GST_OBJECT_UNLOCK (tee);
 
-    res = gst_pad_alloc_buffer (allocpad, offset, size, caps, buf);
+    GST_TEE_DYN_LOCK (tee);
+    data = g_object_get_qdata (G_OBJECT (allocpad), push_data);
+    if (!data->removed)
+      res = gst_pad_alloc_buffer (allocpad, offset, size, caps, buf);
+    else
+      res = GST_FLOW_NOT_LINKED;
+    GST_TEE_DYN_UNLOCK (tee);
+
     gst_object_unref (allocpad);
 
     GST_OBJECT_LOCK (tee);
@@ -471,17 +527,23 @@ gst_tee_buffer_alloc (GstPad * pad, guint64 offset, guint size,
 }
 
 static GstFlowReturn
-gst_tee_do_push (GstTee * tee, GstPad * pad, GstBuffer * buffer)
+gst_tee_do_push (GstTee * tee, GstPad * pad, gpointer data, gboolean is_list)
 {
   GstFlowReturn res;
 
   if (G_UNLIKELY (!tee->silent)) {
     GST_OBJECT_LOCK (tee);
     g_free (tee->last_message);
-    tee->last_message =
-        g_strdup_printf ("chain        ******* (%s:%s)t (%d bytes, %"
-        G_GUINT64_FORMAT ") %p", GST_DEBUG_PAD_NAME (pad),
-        GST_BUFFER_SIZE (buffer), GST_BUFFER_TIMESTAMP (buffer), buffer);
+    if (is_list) {
+      tee->last_message =
+          g_strdup_printf ("chain-list   ******* (%s:%s)t %p",
+          GST_DEBUG_PAD_NAME (pad), data);
+    } else {
+      tee->last_message =
+          g_strdup_printf ("chain        ******* (%s:%s)t (%d bytes, %"
+          G_GUINT64_FORMAT ") %p", GST_DEBUG_PAD_NAME (pad),
+          GST_BUFFER_SIZE (data), GST_BUFFER_TIMESTAMP (data), data);
+    }
     GST_OBJECT_UNLOCK (tee);
     g_object_notify (G_OBJECT (tee), "last_message");
   }
@@ -490,8 +552,12 @@ gst_tee_do_push (GstTee * tee, GstPad * pad, GstBuffer * buffer)
   if (pad == tee->pull_pad) {
     /* don't push on the pad we're pulling from */
     res = GST_FLOW_OK;
+  } else if (is_list) {
+    res =
+        gst_pad_push_list (pad,
+        gst_buffer_list_ref (GST_BUFFER_LIST_CAST (data)));
   } else {
-    res = gst_pad_push (pad, gst_buffer_ref (buffer));
+    res = gst_pad_push (pad, gst_buffer_ref (GST_BUFFER_CAST (data)));
   }
   return res;
 }
@@ -511,13 +577,15 @@ clear_pads (GstPad * pad, GstTee * tee)
 }
 
 static GstFlowReturn
-gst_tee_handle_buffer (GstTee * tee, GstBuffer * buffer)
+gst_tee_handle_data (GstTee * tee, gpointer data, gboolean is_list)
 {
   GList *pads;
   guint32 cookie;
   GstFlowReturn ret, cret;
 
-  tee->offset += GST_BUFFER_SIZE (buffer);
+  if (!is_list) {
+    tee->offset += GST_BUFFER_SIZE (data);
+  }
 
   GST_OBJECT_LOCK (tee);
   /* mark all pads as 'not pushed on yet' */
@@ -530,50 +598,45 @@ restart:
 
   while (pads) {
     GstPad *pad;
-    PushData *data;
+    PushData *pdata;
 
     pad = GST_PAD_CAST (pads->data);
 
     /* get the private data, something is really wrong with the internal state
      * when it is not there */
-    data = g_object_get_qdata (G_OBJECT (pad), push_data);
+    pdata = g_object_get_qdata (G_OBJECT (pad), push_data);
+    g_assert (pdata != NULL);
 
-    g_assert (data != NULL);
-
-    if (!data->pushed) {
+    if (!pdata->pushed) {
       /* not yet pushed, release lock and start pushing */
       gst_object_ref (pad);
       GST_OBJECT_UNLOCK (tee);
 
-      GST_LOG_OBJECT (tee, "Starting to push buffer %p", buffer);
+      GST_LOG_OBJECT (tee, "Starting to push %s %p",
+          is_list ? "list" : "buffer", data);
 
-      ret = gst_tee_do_push (tee, pad, buffer);
+      ret = gst_tee_do_push (tee, pad, data, is_list);
 
-      GST_LOG_OBJECT (tee, "Pushing buffer %p yielded result %s", buffer,
+      GST_LOG_OBJECT (tee, "Pushing item %p yielded result %s", data,
           gst_flow_get_name (ret));
 
       GST_OBJECT_LOCK (tee);
       /* keep track of which pad we pushed and the result value. We need to do
        * this before we release the refcount on the pad, the PushData is
        * destroyed when the last ref of the pad goes away. */
-      data->pushed = TRUE;
-      data->result = ret;
+      pdata->pushed = TRUE;
+      pdata->result = ret;
       gst_object_unref (pad);
     } else {
       /* already pushed, use previous return value */
-      ret = data->result;
+      ret = pdata->result;
       GST_LOG_OBJECT (tee, "pad already pushed with %s",
           gst_flow_get_name (ret));
     }
-    /* stop pushing more buffers when we have a fatal error */
-    if (GST_FLOW_IS_FATAL (ret))
-      goto error;
 
-    /* keep all other return values, overwriting the previous one */
-    GST_LOG_OBJECT (tee, "Replacing ret val %d with %d", cret, ret);
-    if (cret == GST_FLOW_NOT_LINKED)
-      cret = ret;
-
+    /* before we go combining the return value, check if the pad list is still
+     * the same. It could be possible that the pad we just pushed was removed
+     * and the return value it not valid anymore */
     if (GST_ELEMENT_CAST (tee)->pads_cookie != cookie) {
       GST_LOG_OBJECT (tee, "pad list changed");
       /* the list of pads changed, restart iteration. Pads that we already
@@ -581,11 +644,21 @@ restart:
        * again. */
       goto restart;
     }
+
+    /* stop pushing more buffers when we have a fatal error */
+    if (ret != GST_FLOW_OK && ret != GST_FLOW_NOT_LINKED)
+      goto error;
+
+    /* keep all other return values, overwriting the previous one. */
+    if (ret != GST_FLOW_NOT_LINKED) {
+      GST_LOG_OBJECT (tee, "Replacing ret val %d with %d", cret, ret);
+      cret = ret;
+    }
     pads = g_list_next (pads);
   }
   GST_OBJECT_UNLOCK (tee);
 
-  gst_buffer_unref (buffer);
+  gst_mini_object_unref (GST_MINI_OBJECT_CAST (data));
 
   /* no need to unset gvalue */
   return cret;
@@ -594,7 +667,7 @@ restart:
 error:
   {
     GST_DEBUG_OBJECT (tee, "received error %s", gst_flow_get_name (ret));
-    gst_buffer_unref (buffer);
+    gst_mini_object_unref (GST_MINI_OBJECT_CAST (data));
     GST_OBJECT_UNLOCK (tee);
     return ret;
   }
@@ -610,9 +683,28 @@ gst_tee_chain (GstPad * pad, GstBuffer * buffer)
 
   GST_DEBUG_OBJECT (tee, "received buffer %p", buffer);
 
-  res = gst_tee_handle_buffer (tee, buffer);
+  res = gst_tee_handle_data (tee, buffer, FALSE);
 
   GST_DEBUG_OBJECT (tee, "handled buffer %s", gst_flow_get_name (res));
+
+  gst_object_unref (tee);
+
+  return res;
+}
+
+static GstFlowReturn
+gst_tee_chain_list (GstPad * pad, GstBufferList * list)
+{
+  GstFlowReturn res;
+  GstTee *tee;
+
+  tee = GST_TEE (gst_pad_get_parent (pad));
+
+  GST_DEBUG_OBJECT (tee, "received list %p", list);
+
+  res = gst_tee_handle_data (tee, list, TRUE);
+
+  GST_DEBUG_OBJECT (tee, "handled list %s", gst_flow_get_name (res));
 
   gst_object_unref (tee);
 
@@ -790,7 +882,7 @@ gst_tee_src_get_range (GstPad * pad, guint64 offset, guint length,
   ret = gst_pad_pull_range (tee->sinkpad, offset, length, buf);
 
   if (ret == GST_FLOW_OK)
-    ret = gst_tee_handle_buffer (tee, gst_buffer_ref (*buf));
+    ret = gst_tee_handle_data (tee, gst_buffer_ref (*buf), FALSE);
   else if (ret == GST_FLOW_UNEXPECTED)
     gst_tee_pull_eos (tee);
 

@@ -28,10 +28,6 @@
 
 #include "gststreamselector.h"
 
-#ifdef __SYMBIAN32__
-#include <glib_global.h>
-#endif
-
 GST_DEBUG_CATEGORY_STATIC (stream_selector_debug);
 #define GST_CAT_DEFAULT stream_selector_debug
 
@@ -147,7 +143,7 @@ gst_selector_pad_get_type (void)
     };
 
     selector_pad_type =
-        g_type_register_static (GST_TYPE_PAD, "GstSelectorPad",
+        g_type_register_static (GST_TYPE_PAD, "GstPlaybinSelectorPad",
         &selector_pad_info, 0);
   }
   return selector_pad_type;
@@ -169,11 +165,12 @@ gst_selector_pad_class_init (GstSelectorPadClass * klass)
   g_object_class_install_property (gobject_class, PROP_PAD_TAGS,
       g_param_spec_boxed ("tags", "Tags",
           "The currently active tags on the pad", GST_TYPE_TAG_LIST,
-          G_PARAM_READABLE));
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_property (gobject_class, PROP_PAD_ACTIVE,
       g_param_spec_boolean ("active", "Active",
-          "If the pad is currently active", FALSE, G_PARAM_READABLE));
+          "If the pad is currently active", FALSE,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 }
 
 static void
@@ -257,12 +254,14 @@ gst_selector_pad_event (GstPad * pad, GstEvent * event)
   gboolean forward = TRUE;
   GstStreamSelector *sel;
   GstSelectorPad *selpad;
+  GstPad *active_sinkpad;
 
   sel = GST_STREAM_SELECTOR (gst_pad_get_parent (pad));
   selpad = GST_SELECTOR_PAD_CAST (pad);
 
   /* only forward if we are dealing with the active sinkpad */
-  forward = gst_stream_selector_is_active_sinkpad (sel, pad);
+  active_sinkpad = gst_stream_selector_activate_sinkpad (sel, pad);
+  forward = (active_sinkpad == pad);
 
   switch (GST_EVENT_TYPE (event)) {
     case GST_EVENT_FLUSH_STOP:
@@ -519,10 +518,12 @@ gst_stream_selector_class_init (GstStreamSelectorClass * klass)
 
   g_object_class_install_property (gobject_class, PROP_N_PADS,
       g_param_spec_uint ("n-pads", "Number of Pads",
-          "The number of sink pads", 0, G_MAXUINT, 0, G_PARAM_READABLE));
+          "The number of sink pads", 0, G_MAXUINT, 0,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_ACTIVE_PAD,
       g_param_spec_object ("active-pad", "Active Pad",
-          "The currently active sink pad", GST_TYPE_PAD, G_PARAM_READWRITE));
+          "The currently active sink pad", GST_TYPE_PAD,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   gstelement_class->request_new_pad = gst_stream_selector_request_new_pad;
   gstelement_class->release_pad = gst_stream_selector_release_pad;

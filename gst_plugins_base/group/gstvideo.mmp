@@ -56,6 +56,7 @@ SOURCEPATH          ../gst-libs/gst/video
 SOURCE              gstvideofilter.c
 SOURCE              gstvideosink.c
 SOURCE              video.c
+SOURCE				video-enumtypes.c
 
 //LIBRARY         euser.lib
 LIBRARY         libc.lib

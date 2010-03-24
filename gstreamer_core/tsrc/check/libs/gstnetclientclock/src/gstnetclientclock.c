@@ -103,11 +103,20 @@ extern GCond *sync_cond;
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 void test_instantiation()
@@ -209,12 +218,12 @@ void test_functioning()
 
 
 
-void
-gst_net_client_clock_suite (void)
-{
-test_instantiation();
-test_functioning();
-}
+//void
+//gst_net_client_clock_suite (void)
+//{
+//test_instantiation();
+//test_functioning();
+//}
 
 void (*fn[]) (void) = {
 test_instantiation,

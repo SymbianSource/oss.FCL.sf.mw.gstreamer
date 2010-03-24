@@ -1,0 +1,20 @@
+EXPORTS
+	_GST_PLUGIN_DESC @ 1 NONAME
+	asinh @ 2 NONAME
+	cosh @ 3 NONAME
+	gst_audio_amplify_get_type @ 4 NONAME
+	gst_audio_cheb_band_get_type @ 5 NONAME
+	gst_audio_cheb_limit_get_type @ 6 NONAME
+	gst_audio_dynamic_get_type @ 7 NONAME
+	gst_audio_echo_get_type @ 8 NONAME
+	gst_audio_fir_filter_get_type @ 9 NONAME
+	gst_audio_fx_base_fir_filter_get_type @ 10 NONAME
+	gst_audio_fx_base_iir_filter_get_type @ 11 NONAME
+	gst_audio_iir_filter_get_type @ 12 NONAME
+	gst_audio_invert_get_type @ 13 NONAME
+	gst_audio_karaoke_get_type @ 14 NONAME
+	gst_audio_panorama_get_type @ 15 NONAME
+	gst_audio_wsincband_get_type @ 16 NONAME
+	gst_audio_wsinclimit_get_type @ 17 NONAME
+	sinh @ 18 NONAME
+

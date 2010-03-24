@@ -342,6 +342,11 @@ void		gst_object_unref		(gpointer object);
 IMPORT_C
 #endif
 
+void 		gst_object_ref_sink		(gpointer object);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void 		gst_object_sink			(gpointer object);
 
 /* replace object pointer */

@@ -11,11 +11,20 @@
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 static void
@@ -76,44 +85,44 @@ main (int argc, char *argv[])
   g_assert (bin);
 
   /* create a disk reader */
-  filesrc = gst_element_factory_make ("filesrc", "disk_source");
+  filesrc = gst_element_factory_make (/*"filesrc"*/"audiotestsrc", "disk_source");
   g_assert (filesrc);
   g_object_set (G_OBJECT (filesrc), "location", argv[1], NULL);
 
   /* now it's time to get the decoder */
-  decoder = gst_element_factory_make ("mad", "decode");
-  if (!decoder) {
-    std_log(LOG_FILENAME_LINE, "could not find plugin mad");
-    g_print ("could not find plugin \"mad\"");
-    return -1;
-  }
+  //decoder = gst_element_factory_make ("mad", "decode");
+//  if (!decoder) {
+//    std_log(LOG_FILENAME_LINE, "could not find plugin mad");
+//    g_print ("could not find plugin \"mad\"");
+//    return -1;
+//  }
 
   /* also, we need to add some converters to make sure the audio stream
    * from the decoder is converted into a format the audio sink can
    * understand (if necessary) */
-  conv = gst_element_factory_make ("audioconvert", "audioconvert");
-  if (!conv) {
-    std_log(LOG_FILENAME_LINE, "could not create \"audioconvert\" element!");
-    g_print ("could not create \"audioconvert\" element!");
-    return -1;
-  }
-  resample = gst_element_factory_make ("audioresample", "audioresample");
-  if (!conv) {
-    std_log(LOG_FILENAME_LINE, "could not create \"audioresample\" element!");
-    g_print ("could not create \"audioresample\" element!");
-    return -1;
-  }
+//  conv = gst_element_factory_make ("audioconvert", "audioconvert");
+//  if (!conv) {
+//    std_log(LOG_FILENAME_LINE, "could not create \"audioconvert\" element!");
+//    g_print ("could not create \"audioconvert\" element!");
+//    return -1;
+//  }
+//  resample = gst_element_factory_make ("audioresample", "audioresample");
+//  if (!conv) {
+//    std_log(LOG_FILENAME_LINE, "could not create \"audioresample\" element!");
+//    g_print ("could not create \"audioresample\" element!");
+//    return -1;
+//  }
 
   /* and an audio sink */
   audiosink = gst_element_factory_make ("devsoundsink", "play_audio");
   g_assert (audiosink);
 
   /* add objects to the main pipeline */
-  gst_bin_add_many (GST_BIN (bin), filesrc, decoder, conv,
-      resample, audiosink, NULL);
+  gst_bin_add_many (GST_BIN (bin), filesrc/*, decoder, conv,
+      resample*/, audiosink, NULL);
 
   /* link the elements */
-  gst_element_link_many (filesrc, decoder, conv, resample, audiosink, NULL);
+  gst_element_link_many (filesrc, /*decoder, conv, resample,*/ audiosink, NULL);
 
   /* start playing */
   std_log(LOG_FILENAME_LINE, "START PLAYING");

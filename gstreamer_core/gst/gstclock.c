@@ -28,7 +28,7 @@
  *
  * GStreamer uses a global clock to synchronize the plugins in a pipeline.
  * Different clock implementations are possible by implementing this abstract
- * base class.
+ * base class or, more conveniently, by subclassing #GstSystemClock.
  *
  * The #GstClock returns a monotonically increasing time with the method
  * gst_clock_get_time(). Its accuracy and base time depend on the specific
@@ -37,7 +37,7 @@
  * meaningful in itself, what matters are the deltas between two clock times.
  * The time returned by a clock is called the absolute time.
  *
- * The pipeline uses the clock to calculate the stream time. Usually all
+ * The pipeline uses the clock to calculate the running time. Usually all
  * renderers synchronize to the global clock using the buffer timestamps, the
  * newsegment events and the element's base time, see #GstPipeline.
  *
@@ -52,18 +52,18 @@
  * gst_clock_id_wait(). To receive a callback when the specific time is reached
  * in the clock use gst_clock_id_wait_async(). Both these calls can be
  * interrupted with the gst_clock_id_unschedule() call. If the blocking wait is
- * unscheduled a return value of GST_CLOCK_UNSCHEDULED is returned.
+ * unscheduled a return value of #GST_CLOCK_UNSCHEDULED is returned.
  *
- * Periodic callbacks scheduled async will be repeadedly called automatically
+ * Periodic callbacks scheduled async will be repeatedly called automatically
  * until it is unscheduled. To schedule a sync periodic callback,
- * gst_clock_id_wait() should be called repeadedly.
+ * gst_clock_id_wait() should be called repeatedly.
  *
  * The async callbacks can happen from any thread, either provided by the core
  * or from a streaming thread. The application should be prepared for this.
  *
  * A #GstClockID that has been unscheduled cannot be used again for any wait
  * operation, a new #GstClockID should be created and the old unscheduled one
- * should be destroyed wirth gst_clock_id_unref().
+ * should be destroyed with gst_clock_id_unref().
  *
  * It is possible to perform a blocking wait on the same #GstClockID from
  * multiple threads. However, registering the same #GstClockID for multiple
@@ -77,14 +77,14 @@
  * state changes and if the entry would be unreffed automatically, the handle 
  * might become invalid without any notification.
  *
- * These clock operations do not operate on the stream time, so the callbacks
+ * These clock operations do not operate on the running time, so the callbacks
  * will also occur when not in PLAYING state as if the clock just keeps on
  * running. Some clocks however do not progress when the element that provided
  * the clock is not PLAYING.
  *
- * When a clock has the GST_CLOCK_FLAG_CAN_SET_MASTER flag set, it can be
+ * When a clock has the #GST_CLOCK_FLAG_CAN_SET_MASTER flag set, it can be
  * slaved to another #GstClock with the gst_clock_set_master(). The clock will
- * then automatically be synchronized to this master clock by repeadedly
+ * then automatically be synchronized to this master clock by repeatedly
  * sampling the master clock and the slave clock and recalibrating the slave
  * clock with gst_clock_set_calibration(). This feature is mostly useful for
  * plugins that have an internal clock but must operate with another clock
@@ -92,14 +92,14 @@
  * of their internal clock relative to the master clock by using the
  * gst_clock_get_calibration() function. 
  *
- * The master/slave synchronisation can be tuned with the "timeout", "window-size"
- * and "window-threshold" properties. The "timeout" property defines the interval
- * to sample the master clock and run the calibration functions. 
- * "window-size" defines the number of samples to use when calibrating and
- * "window-threshold" defines the minimum number of samples before the 
- * calibration is performed.
+ * The master/slave synchronisation can be tuned with the #GstClock:timeout,
+ * #GstClock:window-size and #GstClock:window-threshold properties.
+ * The #GstClock:timeout property defines the interval to sample the master
+ * clock and run the calibration functions. #GstClock:window-size defines the
+ * number of samples to use when calibrating and #GstClock:window-threshold
+ * defines the minimum number of samples before the calibration is performed.
  *
- * Last reviewed on 2006-08-11 (0.10.10)
+ * Last reviewed on 2009-05-21 (0.10.24)
  */
 
 
@@ -119,15 +119,6 @@ static GstAllocTrace *_gst_clock_entry_trace;
 #ifdef __SYMBIAN32__
 #include <glib_global.h>
 #endif
-
-#if GLIB_CHECK_VERSION (2, 10, 0)
-#define ALLOC_ENTRY()     g_slice_new (GstClockEntry)
-#define FREE_ENTRY(entry) g_slice_free (GstClockEntry, entry)
-#else
-#define ALLOC_ENTRY()     g_new (GstClockEntry, 1)
-#define FREE_ENTRY(entry) g_free (entry)
-#endif
-
 /* #define DEBUGGING_ENABLED */
 
 #define DEFAULT_STATS                   FALSE
@@ -143,6 +134,41 @@ enum
   PROP_WINDOW_THRESHOLD,
   PROP_TIMEOUT
 };
+
+struct _GstClockPrivate
+{
+  gint pre_count;
+  gint post_count;
+};
+
+/* seqlocks */
+#define read_seqbegin(clock)                                   \
+  g_atomic_int_get (&clock->ABI.priv->post_count);
+
+static inline gboolean
+read_seqretry (GstClock * clock, gint seq)
+{
+  /* no retry if the seqnum did not change */
+  if (G_LIKELY (seq == g_atomic_int_get (&clock->ABI.priv->pre_count)))
+    return FALSE;
+
+  /* wait for the writer to finish and retry */
+  GST_OBJECT_LOCK (clock);
+  GST_OBJECT_UNLOCK (clock);
+  return TRUE;
+}
+
+#define write_seqlock(clock)                      \
+G_STMT_START {                                    \
+  GST_OBJECT_LOCK (clock);                        \
+  g_atomic_int_inc (&clock->ABI.priv->pre_count);     \
+} G_STMT_END;
+
+#define write_sequnlock(clock)                    \
+G_STMT_START {                                    \
+  g_atomic_int_inc (&clock->ABI.priv->post_count);    \
+  GST_OBJECT_UNLOCK (clock);                      \
+} G_STMT_END;
 
 static void gst_clock_class_init (GstClockClass * klass);
 static void gst_clock_init (GstClock * clock);
@@ -166,19 +192,19 @@ gst_clock_entry_new (GstClock * clock, GstClockTime time,
 {
   GstClockEntry *entry;
 
-  entry = ALLOC_ENTRY ();
+  entry = g_slice_new (GstClockEntry);
 #ifndef GST_DISABLE_TRACE
   gst_alloc_trace_new (_gst_clock_entry_trace, entry);
 #endif
   GST_CAT_DEBUG_OBJECT (GST_CAT_CLOCK, clock,
       "created entry %p, time %" GST_TIME_FORMAT, entry, GST_TIME_ARGS (time));
 
-  gst_atomic_int_set (&entry->refcount, 1);
+  entry->refcount = 1;
   entry->clock = clock;
   entry->type = type;
   entry->time = time;
   entry->interval = interval;
-  entry->status = GST_CLOCK_BUSY;
+  entry->status = GST_CLOCK_OK;
   entry->func = NULL;
   entry->user_data = NULL;
 
@@ -219,7 +245,7 @@ _gst_clock_id_free (GstClockID id)
 #ifndef GST_DISABLE_TRACE
   gst_alloc_trace_free (_gst_clock_entry_trace, id);
 #endif
-  FREE_ENTRY (id);
+  g_slice_free (GstClockEntry, id);
 }
 
 /**
@@ -282,8 +308,8 @@ gst_clock_new_single_shot_id (GstClock * clock, GstClockTime time)
  * @interval: the requested interval
  *
  * Get an ID from @clock to trigger a periodic notification.
- * The periodeic notifications will be start at time start_time and
- * will then be fired with the given interval. @id should be unreffed
+ * The periodic notifications will start at time @start_time and
+ * will then be fired with the given @interval. @id should be unreffed
  * after usage.
  *
  * Returns: A #GstClockID that can be used to request the time notification.
@@ -365,14 +391,14 @@ gst_clock_id_get_time (GstClockID id)
 /**
  * gst_clock_id_wait
  * @id: The #GstClockID to wait on
- * @jitter: A pointer that will contain the jitter, can be NULL.
+ * @jitter: A pointer that will contain the jitter, can be %NULL.
  *
  * Perform a blocking wait on @id. 
  * @id should have been created with gst_clock_new_single_shot_id()
  * or gst_clock_new_periodic_id() and should not have been unscheduled
  * with a call to gst_clock_id_unschedule(). 
  *
- * If the @jitter argument is not NULL and this function returns #GST_CLOCK_OK
+ * If the @jitter argument is not %NULL and this function returns #GST_CLOCK_OK
  * or #GST_CLOCK_EARLY, it will contain the difference
  * against the clock and the time of @id when this method was
  * called. 
@@ -412,10 +438,6 @@ gst_clock_id_wait (GstClockID id, GstClockTimeDiff * jitter)
   if (G_UNLIKELY (!GST_CLOCK_TIME_IS_VALID (requested)))
     goto invalid_time;
 
-  /* a previously unscheduled entry cannot be scheduled again */
-  if (G_UNLIKELY (entry->status == GST_CLOCK_UNSCHEDULED))
-    goto unscheduled;
-
   cclass = GST_CLOCK_GET_CLASS (clock);
 
   GST_CAT_DEBUG_OBJECT (GST_CAT_CLOCK, clock, "waiting on clock entry %p", id);
@@ -448,7 +470,7 @@ gst_clock_id_wait (GstClockID id, GstClockTimeDiff * jitter)
   if (entry->type == GST_CLOCK_ENTRY_PERIODIC)
     entry->time = requested + entry->interval;
 
-  if (clock->stats)
+  if (G_UNLIKELY (clock->stats))
     gst_clock_update_stats (clock);
 
   return res;
@@ -459,12 +481,6 @@ invalid_time:
     GST_CAT_DEBUG_OBJECT (GST_CAT_CLOCK, clock,
         "invalid time requested, returning _BADTIME");
     return GST_CLOCK_BADTIME;
-  }
-unscheduled:
-  {
-    GST_CAT_DEBUG_OBJECT (GST_CAT_CLOCK, clock,
-        "entry was unscheduled return _UNSCHEDULED");
-    return GST_CLOCK_UNSCHEDULED;
   }
 not_supported:
   {
@@ -477,13 +493,16 @@ not_supported:
  * gst_clock_id_wait_async:
  * @id: a #GstClockID to wait on
  * @func: The callback function
- * @user_data: User data passed in the calback
+ * @user_data: User data passed in the callback
  *
  * Register a callback on the given #GstClockID @id with the given
  * function and user_data. When passing a #GstClockID with an invalid
- * time to this function, the callback will be called immediatly
+ * time to this function, the callback will be called immediately
  * with  a time set to GST_CLOCK_TIME_NONE. The callback will
  * be called when the time of @id has been reached.
+ *
+ * The callback @func can be invoked from any thread, either provided by the
+ * core or from a streaming thread. The application should be prepared for this.
  *
  * Returns: the result of the non blocking wait.
  *
@@ -514,10 +533,6 @@ gst_clock_id_wait_async (GstClockID id,
   if (G_UNLIKELY (!GST_CLOCK_TIME_IS_VALID (requested)))
     goto invalid_time;
 
-  /* a previously unscheduled entry cannot be scheduled again */
-  if (G_UNLIKELY (entry->status == GST_CLOCK_UNSCHEDULED))
-    goto unscheduled;
-
   cclass = GST_CLOCK_GET_CLASS (clock);
 
   if (G_UNLIKELY (cclass->wait_async == NULL))
@@ -537,12 +552,6 @@ invalid_time:
     GST_CAT_DEBUG_OBJECT (GST_CAT_CLOCK, clock,
         "invalid time requested, returning _BADTIME");
     return GST_CLOCK_BADTIME;
-  }
-unscheduled:
-  {
-    GST_CAT_DEBUG_OBJECT (GST_CAT_CLOCK, clock,
-        "entry was unscheduled return _UNSCHEDULED");
-    return GST_CLOCK_UNSCHEDULED;
   }
 not_supported:
   {
@@ -585,51 +594,17 @@ gst_clock_id_unschedule (GstClockID id)
 }
 
 
-/**
+/*
  * GstClock abstract base class implementation
  */
-#ifdef __SYMBIAN32__
-EXPORT_C
-#endif
-
-GType
-gst_clock_get_type (void)
-{
-  static GType clock_type = 0;
-
-  if (G_UNLIKELY (clock_type == 0)) {
-    static const GTypeInfo clock_info = {
-      sizeof (GstClockClass),
-      NULL,
-      NULL,
-      (GClassInitFunc) gst_clock_class_init,
-      NULL,
-      NULL,
-      sizeof (GstClock),
-      0,
-      (GInstanceInitFunc) gst_clock_init,
-      NULL
-    };
-
-    clock_type = g_type_register_static (GST_TYPE_OBJECT, "GstClock",
-        &clock_info, G_TYPE_FLAG_ABSTRACT);
-  }
-  return clock_type;
-}
+G_DEFINE_TYPE (GstClock, gst_clock, GST_TYPE_OBJECT);
 
 static void
 gst_clock_class_init (GstClockClass * klass)
 {
-  GObjectClass *gobject_class;
-  GstObjectClass *gstobject_class;
-
-  gobject_class = G_OBJECT_CLASS (klass);
-  gstobject_class = GST_OBJECT_CLASS (klass);
+  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
   parent_class = g_type_class_peek_parent (klass);
-
-  if (!g_thread_supported ())
-    g_thread_init (NULL);
 
 #ifndef GST_DISABLE_TRACE
   _gst_clock_entry_trace =
@@ -644,19 +619,23 @@ gst_clock_class_init (GstClockClass * klass)
   g_object_class_install_property (gobject_class, PROP_STATS,
       g_param_spec_boolean ("stats", "Stats",
           "Enable clock stats (unimplemented)", DEFAULT_STATS,
-          G_PARAM_READWRITE));
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_WINDOW_SIZE,
       g_param_spec_int ("window-size", "Window size",
           "The size of the window used to calculate rate and offset", 2, 1024,
-          DEFAULT_WINDOW_SIZE, G_PARAM_READWRITE));
+          DEFAULT_WINDOW_SIZE, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_WINDOW_THRESHOLD,
       g_param_spec_int ("window-threshold", "Window threshold",
           "The threshold to start calculating rate and offset", 2, 1024,
-          DEFAULT_WINDOW_THRESHOLD, G_PARAM_READWRITE));
+          DEFAULT_WINDOW_THRESHOLD,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_TIMEOUT,
       g_param_spec_uint64 ("timeout", "Timeout",
           "The amount of time, in nanoseconds, to sample master and slave clocks",
-          0, G_MAXUINT64, DEFAULT_TIMEOUT, G_PARAM_READWRITE));
+          0, G_MAXUINT64, DEFAULT_TIMEOUT,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_type_class_add_private (klass, sizeof (GstClockPrivate));
 }
 
 static void
@@ -666,6 +645,9 @@ gst_clock_init (GstClock * clock)
   clock->entries = NULL;
   clock->entries_changed = g_cond_new ();
   clock->stats = FALSE;
+
+  clock->ABI.priv =
+      G_TYPE_INSTANCE_GET_PRIVATE (clock, GST_TYPE_CLOCK, GstClockPrivate);
 
   clock->internal_calibration = 0;
   clock->external_calibration = 0;
@@ -790,7 +772,7 @@ gst_clock_get_resolution (GstClock * clock)
  * that the returned time is increasing. This function should be called with the
  * clock's OBJECT_LOCK held and is mainly used by clock subclasses.
  *
- * This function is te reverse of gst_clock_unadjust_unlocked().
+ * This function is the reverse of gst_clock_unadjust_unlocked().
  *
  * Returns: the converted time of the clock.
  */
@@ -810,22 +792,24 @@ gst_clock_adjust_unlocked (GstClock * clock, GstClockTime internal)
   cdenom = clock->rate_denominator;
 
   /* avoid divide by 0 */
-  if (cdenom == 0)
+  if (G_UNLIKELY (cdenom == 0))
     cnum = cdenom = 1;
 
   /* The formula is (internal - cinternal) * cnum / cdenom + cexternal
    *
    * Since we do math on unsigned 64-bit ints we have to special case for
-   * interal < cinternal to get the sign right. this case is not very common,
+   * internal < cinternal to get the sign right. this case is not very common,
    * though.
    */
   if (G_LIKELY (internal >= cinternal)) {
-    ret = gst_util_uint64_scale (internal - cinternal, cnum, cdenom);
+    ret = internal - cinternal;
+    ret = gst_util_uint64_scale (ret, cnum, cdenom);
     ret += cexternal;
   } else {
-    ret = gst_util_uint64_scale (cinternal - internal, cnum, cdenom);
+    ret = cinternal - internal;
+    ret = gst_util_uint64_scale (ret, cnum, cdenom);
     /* clamp to 0 */
-    if (cexternal > ret)
+    if (G_LIKELY (cexternal > ret))
       ret = cexternal - ret;
     else
       ret = 0;
@@ -847,7 +831,7 @@ gst_clock_adjust_unlocked (GstClock * clock, GstClockTime internal)
  * This function should be called with the clock's OBJECT_LOCK held and
  * is mainly used by clock subclasses.
  *
- * This function is te reverse of gst_clock_adjust_unlocked().
+ * This function is the reverse of gst_clock_adjust_unlocked().
  *
  * Returns: the internal time of the clock corresponding to @external.
  *
@@ -869,16 +853,18 @@ gst_clock_unadjust_unlocked (GstClock * clock, GstClockTime external)
   cdenom = clock->rate_denominator;
 
   /* avoid divide by 0 */
-  if (cnum == 0)
+  if (G_UNLIKELY (cnum == 0))
     cnum = cdenom = 1;
 
   /* The formula is (external - cexternal) * cdenom / cnum + cinternal */
-  if (external >= cexternal) {
-    ret = gst_util_uint64_scale (external - cexternal, cdenom, cnum);
+  if (G_LIKELY (external >= cexternal)) {
+    ret = external - cexternal;
+    ret = gst_util_uint64_scale (ret, cdenom, cnum);
     ret += cinternal;
   } else {
-    ret = gst_util_uint64_scale (cexternal - external, cdenom, cnum);
-    if (cinternal > ret)
+    ret = cexternal - external;
+    ret = gst_util_uint64_scale (ret, cdenom, cnum);
+    if (G_LIKELY (cinternal > ret))
       ret = cinternal - ret;
     else
       ret = 0;
@@ -894,7 +880,7 @@ gst_clock_unadjust_unlocked (GstClock * clock, GstClockTime external)
  * unadjusted for the offset and the rate.
  *
  * Returns: the internal time of the clock. Or GST_CLOCK_TIME_NONE when
- * giving wrong input.
+ * given invalid input.
  *
  * MT safe.
  */
@@ -940,7 +926,7 @@ not_supported:
  * offset and rate.
  *
  * Returns: the time of the clock. Or GST_CLOCK_TIME_NONE when
- * giving wrong input.
+ * given invalid input.
  *
  * MT safe.
  */
@@ -952,15 +938,19 @@ GstClockTime
 gst_clock_get_time (GstClock * clock)
 {
   GstClockTime ret;
+  gint seq;
 
   g_return_val_if_fail (GST_IS_CLOCK (clock), GST_CLOCK_TIME_NONE);
 
-  ret = gst_clock_get_internal_time (clock);
+  do {
+    /* reget the internal time when we retry to get the most current
+     * timevalue */
+    ret = gst_clock_get_internal_time (clock);
 
-  GST_OBJECT_LOCK (clock);
-  /* this will scale for rate and offset */
-  ret = gst_clock_adjust_unlocked (clock, ret);
-  GST_OBJECT_UNLOCK (clock);
+    seq = read_seqbegin (clock);
+    /* this will scale for rate and offset */
+    ret = gst_clock_adjust_unlocked (clock, ret);
+  } while (read_seqretry (clock, seq));
 
   GST_CAT_DEBUG_OBJECT (GST_CAT_CLOCK, clock, "adjusted time %" GST_TIME_FORMAT,
       GST_TIME_ARGS (ret));
@@ -989,7 +979,7 @@ gst_clock_get_time (GstClock * clock)
  * follows:
  *
  * <programlisting>
- *   time = (internal_time - @internal) * @rate_num / @rate_denom + @external
+ *   time = (internal_time - internal) * rate_num / rate_denom + external
  * </programlisting>
  *
  * This formula is implemented in gst_clock_adjust_unlocked(). Of course, it
@@ -1010,22 +1000,21 @@ gst_clock_set_calibration (GstClock * clock, GstClockTime internal, GstClockTime
     external, GstClockTime rate_num, GstClockTime rate_denom)
 {
   g_return_if_fail (GST_IS_CLOCK (clock));
-  g_return_if_fail (rate_num >= 0);
-  g_return_if_fail (rate_denom > 0);
-  g_return_if_fail (internal <= gst_clock_get_internal_time (clock));
+  g_return_if_fail (rate_num != GST_CLOCK_TIME_NONE);
+  g_return_if_fail (rate_denom > 0 && rate_denom != GST_CLOCK_TIME_NONE);
 
-  GST_OBJECT_LOCK (clock);
+  write_seqlock (clock);
   GST_CAT_DEBUG_OBJECT (GST_CAT_CLOCK, clock,
       "internal %" GST_TIME_FORMAT " external %" GST_TIME_FORMAT " %"
       G_GUINT64_FORMAT "/%" G_GUINT64_FORMAT " = %f", GST_TIME_ARGS (internal),
       GST_TIME_ARGS (external), rate_num, rate_denom,
-      gst_guint64_to_gdouble (rate_num / rate_denom));
+      gst_guint64_to_gdouble (rate_num) / gst_guint64_to_gdouble (rate_denom));
 
   clock->internal_calibration = internal;
   clock->external_calibration = external;
   clock->rate_numerator = rate_num;
   clock->rate_denominator = rate_denom;
-  GST_OBJECT_UNLOCK (clock);
+  write_sequnlock (clock);
 }
 
 /**
@@ -1039,7 +1028,7 @@ gst_clock_set_calibration (GstClock * clock, GstClockTime internal, GstClockTime
  * Gets the internal rate and reference time of @clock. See
  * gst_clock_set_calibration() for more information.
  *
- * @internal, @external, @rate_num, and @rate_denom can be left NULL if the
+ * @internal, @external, @rate_num, and @rate_denom can be left %NULL if the
  * caller is not interested in the values.
  *
  * MT safe.
@@ -1052,21 +1041,24 @@ void
 gst_clock_get_calibration (GstClock * clock, GstClockTime * internal,
     GstClockTime * external, GstClockTime * rate_num, GstClockTime * rate_denom)
 {
+  gint seq;
+
   g_return_if_fail (GST_IS_CLOCK (clock));
 
-  GST_OBJECT_LOCK (clock);
-  if (rate_num)
-    *rate_num = clock->rate_numerator;
-  if (rate_denom)
-    *rate_denom = clock->rate_denominator;
-  if (external)
-    *external = clock->external_calibration;
-  if (internal)
-    *internal = clock->internal_calibration;
-  GST_OBJECT_UNLOCK (clock);
+  do {
+    seq = read_seqbegin (clock);
+    if (rate_num)
+      *rate_num = clock->rate_numerator;
+    if (rate_denom)
+      *rate_denom = clock->rate_denominator;
+    if (external)
+      *external = clock->external_calibration;
+    if (internal)
+      *internal = clock->internal_calibration;
+  } while (read_seqretry (clock, seq));
 }
 
-/* will be called repeadedly to sample the master and slave clock
+/* will be called repeatedly to sample the master and slave clock
  * to recalibrate the clock  */
 static gboolean
 gst_clock_slave_callback (GstClock * master, GstClockTime time,
@@ -1102,13 +1094,13 @@ gst_clock_slave_callback (GstClock * master, GstClockTime time,
  * A clock provider that slaves its clock to a master can get the current
  * calibration values with gst_clock_get_calibration().
  *
- * @master can be NULL in which case @clock will not be slaved anymore. It will
+ * @master can be %NULL in which case @clock will not be slaved anymore. It will
  * however keep reporting its time adjusted with the last configured rate 
  * and time offsets.
  *
- * Returns: TRUE if the clock is capable of being slaved to a master clock. 
+ * Returns: %TRUE if the clock is capable of being slaved to a master clock. 
  * Trying to set a master on a clock without the 
- * GST_CLOCK_FLAG_CAN_SET_MASTER flag will make this function return FALSE.
+ * #GST_CLOCK_FLAG_CAN_SET_MASTER flag will make this function return %FALSE.
  *
  * MT safe.
  */
@@ -1169,11 +1161,11 @@ not_supported:
  * gst_clock_get_master
  * @clock: a #GstClock 
  *
- * Get the master clock that @clock is slaved to or NULL when the clock is
+ * Get the master clock that @clock is slaved to or %NULL when the clock is
  * not slaved to any master clock.
  *
- * Returns: a master #GstClock or NULL when this clock is not slaved to a master
- * clock. Unref after usage.
+ * Returns: a master #GstClock or %NULL when this clock is not slaved to a
+ * master clock. Unref after usage.
  *
  * MT safe.
  */
@@ -1332,12 +1324,12 @@ invalid:
  * observations and @clock is recalibrated.
  *
  * If this functions returns %TRUE, @r_squared will contain the 
- * correlation coefficient of the interpollation. A value of 1.0
+ * correlation coefficient of the interpolation. A value of 1.0
  * means a perfect regression was performed. This value can
  * be used to control the sampling frequency of the master and slave
  * clocks.
  *
- * Returns: TRUE if enough observations were added to run the 
+ * Returns: %TRUE if enough observations were added to run the 
  * regression algorithm.
  *
  * MT safe.
@@ -1356,6 +1348,10 @@ gst_clock_add_observation (GstClock * clock, GstClockTime slave,
   g_return_val_if_fail (r_squared != NULL, FALSE);
 
   GST_CLOCK_SLAVE_LOCK (clock);
+
+  GST_CAT_LOG_OBJECT (GST_CAT_CLOCK, clock,
+      "adding observation slave %" GST_TIME_FORMAT ", master %" GST_TIME_FORMAT,
+      GST_TIME_ARGS (slave), GST_TIME_ARGS (master));
 
   clock->times[(4 * clock->time_index)] = slave;
   clock->times[(4 * clock->time_index) + 2] = master;

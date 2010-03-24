@@ -37,13 +37,13 @@ G_BEGIN_DECLS
 /**
  * GST_BASE_TRANSFORM_SINK_NAME:
  *
- * the name of the templates for the sink pad
+ * The name of the templates for the sink pad.
  */
 #define GST_BASE_TRANSFORM_SINK_NAME	"sink"
 /**
  * GST_BASE_TRANSFORM_SRC_NAME:
  *
- * the name of the templates for the source pad
+ * The name of the templates for the source pad.
  */
 #define GST_BASE_TRANSFORM_SRC_NAME	"src"
 
@@ -144,12 +144,12 @@ struct _GstBaseTransform {
 
 /**
  * GstBaseTransformClass:
- * @transform_caps: Optional.  given the pad in this direction and the given
+ * @transform_caps: Optional.  Given the pad in this direction and the given
  *                  caps, what caps are allowed on the other pad in this
  *                  element ?
  * @fixate_caps:    Optional. Given the pad in this direction and the given
  *                  caps, fixate the caps on the other pad.
- * @transform_size: Optional. given the size of a buffer in the given direction
+ * @transform_size: Optional. Given the size of a buffer in the given direction
  *                  with the given caps, calculate the size in bytes of a buffer
  *                  on the other pad with the given other caps.
  *                  The default implementation uses get_unit_size and keeps
@@ -182,6 +182,10 @@ struct _GstBaseTransform {
  *                         analysis can return a subbuffer or even just
  *                         increment the reference to the input buffer (if in
  *                         passthrough mode)
+ * @before_transform: Optional. Since 0.10.22
+ *                    This method is called right before the base class will
+ *                    start processing. Dynamic properties or other delayed
+ *                    configuration could be performed in this method.
  *
  * Subclasses can override any of the available virtual methods or not, as
  * needed. At minimum either @transform or @transform_ip need to be overridden.
@@ -231,8 +235,10 @@ struct _GstBaseTransformClass {
   /* src event */
   gboolean      (*src_event)      (GstBaseTransform *trans, GstEvent *event);
 
+  void          (*before_transform)  (GstBaseTransform *trans, GstBuffer *buffer);
+
   /*< private >*/
-  gpointer       _gst_reserved[GST_PADDING_LARGE - 1];
+  gpointer       _gst_reserved[GST_PADDING_LARGE - 2];
 };
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -291,7 +297,18 @@ IMPORT_C
 
 void            gst_base_transform_set_gap_aware    (GstBaseTransform *trans,
                                                      gboolean gap_aware);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 
+
+void		gst_base_transform_suggest          (GstBaseTransform *trans,
+	                                             GstCaps *caps, guint size);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void		gst_base_transform_reconfigure      (GstBaseTransform *trans);
 G_END_DECLS
 
 #endif /* __GST_BASE_TRANSFORM_H__ */

@@ -3,7 +3,7 @@
 ;  Part of     : Gstreamer project
 ;  Description : Package file for all gstreamer test binaries
 ;
-;  Version     : %version: 2 %
+;  Version     : %version: bh1mmcf#3 %
 ;
 ;  Copyright Â© 2002-2006 Nokia.  All rights reserved.
 ;  This material, including documentation and any related computer
@@ -209,7 +209,7 @@
 "\epoc32\winscw\c\data\gstreamer\Crnival.mp3"-"c:\data\gstreamer\Crnival.mp3"
 "\epoc32\winscw\c\data\gstreamer\khuda.wav"-"c:\data\gstreamer\gsttestfiles\khuda.wav"
 "\epoc32\winscw\c\data\gstreamer\khuda.wav"-"c:\data\khuda.wav"
-;"\epoc32\winscw\c\data\gstreamer\warning.wav"-"c:\data\warning.wav"
+"\epoc32\winscw\c\data\gstreamer\warning.wav"-"c:\data\warning.wav"
 ;"\epoc32\winscw\c\data\gstreamer\Crnival.mp3"-"c:\data\Crnival.mp3"
 
 ;Testframework.ini and conf files

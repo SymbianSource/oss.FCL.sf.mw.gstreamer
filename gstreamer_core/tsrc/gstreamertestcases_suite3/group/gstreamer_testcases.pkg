@@ -3,7 +3,7 @@
 ;  Part of     : Gstreamer project
 ;  Description : Package file for all gstreamer test binaries
 ;
-;  Version     : %version: 2 %
+;  Version     : %version: bh1mmcf#3 %
 ;
 ;  Copyright Â© 2002-2006 Nokia.  All rights reserved.
 ;  This material, including documentation and any related computer
@@ -203,7 +203,7 @@
 
 
 ;dependecy files
-
+"\epoc32\winscw\c\data\gstreamer\warning.wav"-"c:\data\gstreamer\warning.wav"
 
 ;Testframework.ini and conf files
 

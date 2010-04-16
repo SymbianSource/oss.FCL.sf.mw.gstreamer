@@ -11,7 +11,6 @@ gstwavenc.mmp
 gstautodetect.mmp
 gstavi.mmp
 gstqtmux.mmp
-gstamrmux.mmp
-//gstphotography.mmp
-//gstcamerabin.mmp
+gstphotography.mmp
+gstcamerabin.mmp
 

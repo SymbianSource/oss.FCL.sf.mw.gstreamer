@@ -23,8 +23,8 @@
 #include <platform_paths.hrh>                    
 
 TARGET             gsttypefindhelper.exe
-TARGETTYPE		stdexe
-UID           	0x20004c45 0x0AB230C8
+TARGETTYPE		EXE
+UID 0 0x0AB230C8
 
 #ifdef EKA2
 LANG            SC
@@ -58,7 +58,8 @@ SOURCEPATH	../src
 SOURCE             typefindhelper.c
 
 
-LIBRARY 		libc.lib
+STATICLIBRARY	libcrt0.lib
+LIBRARY		 euser.lib libc.lib 
 LIBRARY 		libpthread.lib
 LIBRARY			libdl.lib
 LIBRARY			libglib.lib

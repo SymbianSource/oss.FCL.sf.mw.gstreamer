@@ -23,7 +23,7 @@
 #include <platform_paths.hrh>                    
 
 TARGET			manual_gstelementlink.exe
-TARGETTYPE		STDEXE
+TARGETTYPE		EXE
 UID           	0x1000008d 0x0AB229CE 
 
 #ifdef EKA2
@@ -76,7 +76,7 @@ LIBRARY 		libz.lib
 LIBRARY		ewsd.lib //wsd solution
 #endif
 
-
+STATICLIBRARY  libcrt0.lib
 
 
 

@@ -33,16 +33,15 @@ PRJ_TESTEXPORTS
 
 ../conf/GstreamerTestCases.cfg   /epoc32/winscw/c/TestFramework/GstreamerTestCases.cfg
 ../init/GstreamerTestCases.ini   /epoc32/winscw/c/TestFramework/GstreamerTestCases.ini
+../init/testframework.ini               /epoc32/winscw/c/TestFramework/testframework.ini
 
 PRJ_EXPORTS
 // Specify the source file followed by its destination here
 // copy will be used to copy the source file to its destination
 // If there's no destination then the source file will be copied
-// to the same name in \epoc32\include
+// to the same name in /epoc32/include
 // Example: 
-/*
-\agnmodel\inc\AGMCOMON.H
-*/
+
 
 PRJ_TESTMMPFILES
 
@@ -59,11 +58,6 @@ PRJ_MMPFILES
 // released. Specify "ignore" if the MMP file exists but should be
 // ignored.
 // Example:
-/*
-\agnmodel\group\agnmodel.mmp
-#if defined(MARM)
-\agnmodel\group\agsvexe.mmp
-#endif
-*/
+
 
 //  End of File

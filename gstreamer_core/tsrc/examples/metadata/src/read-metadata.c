@@ -28,11 +28,12 @@
 #endif
 
 
-#include <gst/gst_global.h>
+
 #include <string.h>
 #include <stdlib.h>
 #include <locale.h>
 #include <gst/gst.h>
+#include <gst/gst_global.h>
 
 static char *filename = NULL;
 static GstElement *pipeline = NULL;

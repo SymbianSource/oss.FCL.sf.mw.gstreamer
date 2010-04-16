@@ -26,7 +26,8 @@
 
 #include <gst/gst_global.h>
 #include <stdio.h>
-
+#include <stdlib.h>
+#include <unistd.h> 
 #include <glib.h>
 #include <glib/gstdio.h>
 
@@ -35,7 +36,7 @@
 #endif
 
 #include <libgstreamer_wsd_macros.h>
-#include <stdlib.h>
+
 
 
 #define LOG_FILE "c:\\logs\\filesink_log1.txt"

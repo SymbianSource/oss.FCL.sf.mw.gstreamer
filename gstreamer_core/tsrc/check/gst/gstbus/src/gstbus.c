@@ -31,40 +31,40 @@
 static GET_GLOBAL_VAR_FROM_TLS(threads_running,gstcheck,gboolean)
 #define _gst_check_threads_running (*GET_GSTREAMER_WSD_VAR_NAME(threads_running,gstcheck,g)())
 #else 
-extern gboolean _gst_check_threads_running = FALSE;
+IMPORT_C extern gboolean _gst_check_threads_running;
 #endif
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(raised_critical,gstcheck,gboolean)
 #define _gst_check_raised_critical (*GET_GSTREAMER_WSD_VAR_NAME(raised_critical,gstcheck,g)())
 #else 
-extern gboolean _gst_check_raised_critical = FALSE;
+IMPORT_C extern gboolean _gst_check_raised_critical;
 #endif
 //gboolean _gst_check_raised_warning = FALSE;
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(raised_warning,gstcheck,gboolean)
 #define _gst_check_raised_warning (*GET_GSTREAMER_WSD_VAR_NAME(raised_warning,gstcheck,g)())
 #else 
-extern gboolean _gst_check_raised_warning = FALSE;
+IMPORT_C extern gboolean _gst_check_raised_warning ;
 #endif
 //gboolean _gst_check_expecting_log = FALSE;
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(expecting_log,gstcheck,gboolean)
 #define _gst_check_expecting_log (*GET_GSTREAMER_WSD_VAR_NAME(expecting_log,gstcheck,g)())
 #else 
-extern gboolean _gst_check_expecting_log = FALSE;
+IMPORT_C extern gboolean _gst_check_expecting_log;
 #endif
 #if EMULATOR
 GET_GLOBAL_VAR_FROM_TLS(buffers,gstcheck,GList*)
 #define buffers (*GET_GSTREAMER_WSD_VAR_NAME(buffers,gstcheck,g)())
 #else 
-extern GList *buffers = NULL;
+IMPORT_C extern GList *buffers;
 #endif
 
 #if EMULATOR
 GET_GLOBAL_VAR_FROM_TLS(thread_list,gstcheck,GList*)
 #define thread_list (*GET_GSTREAMER_WSD_VAR_NAME(thread_list,gstcheck,g)())
 #else 
-extern GList *thread_list;
+IMPORT_C extern GList *thread_list;
 #endif
 
 //GMutex *mutex;
@@ -72,7 +72,7 @@ extern GList *thread_list;
 GET_GLOBAL_VAR_FROM_TLS(mutex,gstcheck,GMutex*)
 #define mutex (*GET_GSTREAMER_WSD_VAR_NAME(mutex,gstcheck,g)())
 #else 
-extern GMutex *mutex;
+IMPORT_C extern GMutex *mutex;
 #endif
 
 //GCond *start_cond;              /* used to notify main thread of thread startups */
@@ -80,7 +80,7 @@ extern GMutex *mutex;
 static GET_GLOBAL_VAR_FROM_TLS(start_cond,gstcheck,GCond*)
 #define start_cond (*GET_GSTREAMER_WSD_VAR_NAME(start_cond,gstcheck,g)())
 #else 
-extern GCond *start_cond;
+IMPORT_C extern GCond *start_cond;
 #endif
 
 //GCond *sync_cond;               /* used to synchronize all threads and main thread */
@@ -88,7 +88,7 @@ extern GCond *start_cond;
 static GET_GLOBAL_VAR_FROM_TLS(sync_cond,gstcheck,GCond*)
 #define sync_cond (*GET_GSTREAMER_WSD_VAR_NAME(sync_cond,gstcheck,g)())
 #else 
-extern GCond *sync_cond;
+IMPORT_C extern GCond *sync_cond;
 #endif
 
 #define LOG_FILE "c:\\logs\\gstbus_logs.txt" 

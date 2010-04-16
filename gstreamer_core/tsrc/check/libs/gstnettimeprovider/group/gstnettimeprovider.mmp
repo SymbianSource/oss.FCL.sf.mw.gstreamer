@@ -23,8 +23,8 @@
 #include <platform_paths.hrh>                    
 
 TARGET             gstgstnettimeprovider.exe
-TARGETTYPE		stdexe
-UID           	0x20004c45 0x0AB230C6
+TARGETTYPE		EXE
+UID 0 0x0AB230C6
 
 #ifdef EKA2
 LANG            SC
@@ -57,8 +57,9 @@ SOURCEPATH	../src
 
 SOURCE             gstnettimeprovider.c
 
+STATICLIBRARY	libcrt0.lib
+LIBRARY		 euser.lib libc.lib 
 LIBRARY			libgstreamer.lib
-LIBRARY 		libc.lib
 LIBRARY 		libpthread.lib
 LIBRARY			libdl.lib
 LIBRARY			libglib.lib

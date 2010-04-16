@@ -53,8 +53,9 @@ void create_xml(int result)
 
 }
 
+IMPORT_C GType gst_parse_test_element_get_type (void);
 #define GST_TYPE_PARSE_TEST_ELEMENT (gst_parse_test_element_get_type())
-static GType gst_parse_test_element_get_type (void);
+
 
 static GstElement *
 setup_pipeline (const gchar * pipe_descr)

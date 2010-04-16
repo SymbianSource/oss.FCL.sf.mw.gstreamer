@@ -61,21 +61,21 @@ void create_xml(int result)
 static GET_GLOBAL_VAR_FROM_TLS(raised_critical,gstcheck,gboolean)
 #define _gst_check_raised_critical (*GET_GSTREAMER_WSD_VAR_NAME(raised_critical,gstcheck,g)())
 #else 
-extern gboolean _gst_check_raised_critical;
+IMPORT_C extern gboolean _gst_check_raised_critical;
 #endif
 
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(raised_warning,gstcheck,gboolean)
 #define _gst_check_raised_warning (*GET_GSTREAMER_WSD_VAR_NAME(raised_warning,gstcheck,g)())
 #else 
-extern gboolean _gst_check_raised_warning;
+IMPORT_C extern gboolean _gst_check_raised_warning;
 #endif
 
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(expecting_log,gstcheck,gboolean)
 #define _gst_check_expecting_log (*GET_GSTREAMER_WSD_VAR_NAME(expecting_log,gstcheck,g)())
 #else 
-extern gboolean _gst_check_expecting_log;
+IMPORT_C extern gboolean _gst_check_expecting_log;
 #endif
 
 

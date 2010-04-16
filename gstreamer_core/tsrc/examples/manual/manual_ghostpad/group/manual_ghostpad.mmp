@@ -10,7 +10,7 @@
 #include <platform_paths.hrh>                    
 
 TARGET		  manual_ghostpad.exe
-TARGETTYPE	  STDEXE
+TARGETTYPE	  EXE
 UID			 0 0xE5AA0D9D
 
 #if !defined(__WINSCW__) && !defined(__WINS__)
@@ -42,7 +42,8 @@ SOURCE		  manual_ghostpad.c
 
 
 
-LIBRARY		 euser.lib libgstreamer.lib libgstbase.lib libgstcontroller.lib libgstcoreelements.lib
+STATICLIBRARY	libcrt0.lib
+LIBRARY		 euser.lib libc.lib libgstreamer.lib libgstbase.lib libgstcontroller.lib libgstcoreelements.lib
 LIBRARY		 libglib.lib libgmodule.lib libgobject.lib
 #ifdef ENABLE_ABIV2_MODE
 DEBUGGABLE

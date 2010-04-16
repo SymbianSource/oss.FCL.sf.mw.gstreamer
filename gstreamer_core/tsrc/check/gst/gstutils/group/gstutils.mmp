@@ -10,7 +10,7 @@
 #include <platform_paths.hrh>
 
 TARGET		  gstutils.exe
-TARGETTYPE	  stdexe
+TARGETTYPE	  EXE
 UID			 0 0xE6A17809
 
 EPOCSTACKSIZE 0x10000
@@ -39,8 +39,8 @@ SOURCEPATH	  ../src
 SOURCE		  gstutils.c
 
 
-
-LIBRARY		 euser.lib libgstreamer.lib libgstbase.lib libgstcontroller.lib libgstcoreelements.lib
+STATICLIBRARY	libcrt0.lib
+LIBRARY		 euser.lib libc.lib libgstreamer.lib libgstbase.lib libgstcontroller.lib libgstcoreelements.lib
 LIBRARY		 libglib.lib libgmodule.lib libgobject.lib
 
 #ifdef ENABLE_ABIV2_MODE

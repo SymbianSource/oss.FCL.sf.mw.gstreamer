@@ -9,6 +9,9 @@ PRJ_MMPFILES
 gstwavparse.mmp
 gstwavenc.mmp
 gstautodetect.mmp
-gstphotography.mmp
-gstcamerabin.mmp
+gstavi.mmp
+gstqtmux.mmp
+gstamrmux.mmp
+//gstphotography.mmp
+//gstcamerabin.mmp
 

@@ -52,6 +52,7 @@ G_BEGIN_DECLS
 #define GST_RIFF_TAG_bext GST_MAKE_FOURCC ('b','e','x','t')
 #define GST_RIFF_TAG_BEXT GST_MAKE_FOURCC ('B','E','X','T')
 #define GST_RIFF_TAG_fact GST_MAKE_FOURCC ('f','a','c','t')
+#define GST_RIFF_TAG_acid GST_MAKE_FOURCC ('a','c','i','d')
 
 /* LIST types */
 #define GST_RIFF_LIST_movi GST_MAKE_FOURCC ('m','o','v','i')
@@ -134,6 +135,8 @@ G_BEGIN_DECLS
 #define GST_RIFF_WHAM GST_MAKE_FOURCC ('W', 'H', 'A', 'M')
 #define GST_RIFF_rgb  GST_MAKE_FOURCC (0x00,0x00,0x00,0x00)
 #define GST_RIFF_RGB  GST_MAKE_FOURCC ('R', 'G', 'B', ' ')
+#define GST_RIFF_RAW  GST_MAKE_FOURCC ('R', 'A', 'W', ' ')
+#define GST_RIFF_DIB  GST_MAKE_FOURCC ('D', 'I', 'B', ' ')
 #define GST_RIFF_rle8 GST_MAKE_FOURCC (0x01,0x00,0x00,0x00)
 #define GST_RIFF_RLE8 GST_MAKE_FOURCC ('R', 'L', 'E', '8')
 #define GST_RIFF_rle4 GST_MAKE_FOURCC (0x02,0x00,0x00,0x00)
@@ -323,15 +326,26 @@ typedef struct _gst_riff_strf_auds {       /* == WaveHeader (?) */
 #define GST_RIFF_WAVE_FORMAT_RT24           (0x0052)
 #define GST_RIFF_WAVE_FORMAT_PAC            (0x0053)
 #define GST_RIFF_WAVE_FORMAT_MPEGL3         (0x0055)
+#define GST_RIFF_WAVE_FORMAT_AMR_NB         (0x0057)
+#define GST_RIFF_WAVE_FORMAT_AMR_WB         (0x0058)
 #define GST_RIFF_WAVE_FORMAT_LUCENT_G723    (0x0059)
 #define GST_RIFF_WAVE_FORMAT_CIRRUS         (0x0060)
+#define GST_RIFF_WAVE_FORMAT_ADPCM_IMA_DK4  (0x0061)  /* not official */
+#define GST_RIFF_WAVE_FORMAT_ADPCM_IMA_DK3  (0x0062)  /* not official */
+/* FIXME: where are these from? are they used at all? */
+#if 0
 #define GST_RIFF_WAVE_FORMAT_ESPCM          (0x0061)
 #define GST_RIFF_WAVE_FORMAT_VOXWARE        (0x0062)
+#endif
 #define GST_RIFF_WAVE_FORMAT_CANOPUS_ATRAC  (0x0063)
 #define GST_RIFF_WAVE_FORMAT_G726_ADPCM     (0x0064)
 #define GST_RIFF_WAVE_FORMAT_G722_ADPCM     (0x0065)
 #define GST_RIFF_WAVE_FORMAT_DSAT_DISPLAY   (0x0067)
+#define GST_RIFF_WAVE_FORMAT_ADPCM_IMA_WAV (0x0069)
+/* FIXME: where are these from? are they used at all? */
+#if 0
 #define GST_RIFF_WAVE_FORMAT_VOXWARE_BYTE_ALIGNED (0x0069)
+#endif
 #define GST_RIFF_WAVE_FORMAT_VOXWARE_AC8    (0x0070)
 #define GST_RIFF_WAVE_FORMAT_VOXWARE_AC10   (0x0071)
 #define GST_RIFF_WAVE_FORMAT_VOXWARE_AC16   (0x0072)
@@ -393,8 +407,10 @@ typedef struct _gst_riff_strf_auds {       /* == WaveHeader (?) */
 #define GST_RIFF_WAVE_FORMAT_IPI_RPELP      (0x0251)
 #define GST_RIFF_WAVE_FORMAT_CS2            (0x0260)
 #define GST_RIFF_WAVE_FORMAT_SONY_ATRAC3    (0x0270)
+#define GST_RIFF_WAVE_FORMAT_SIREN          (0x028E)
 #define GST_RIFF_WAVE_FORMAT_FM_TOWNS_SND   (0x0300)
 #define GST_RIFF_WAVE_FORMAT_BTV_DIGITAL    (0x0400)
+#define GST_RIFF_WAVE_FORMAT_IMC            (0x0401)
 #define GST_RIFF_WAVE_FORMAT_QDESIGN_MUSIC  (0x0450)
 #define GST_RIFF_WAVE_FORMAT_VME_VMPCM      (0x0680)
 #define GST_RIFF_WAVE_FORMAT_TPC            (0x0681)
@@ -408,14 +424,19 @@ typedef struct _gst_riff_strf_auds {       /* == WaveHeader (?) */
 #define GST_RIFF_WAVE_FORMAT_SOUNDSPACE_MUSICOMPRESS (0x1500)
 #define GST_RIFF_WAVE_FORMAT_A52            (0x2000)
 #define GST_RIFF_WAVE_FORMAT_DTS            (0x2001)
+#define GST_RIFF_WAVE_FORMAT_SONIC          (0x2048)
+#define GST_RIFF_WAVE_FORMAT_SONIC_LS       (0x2048)
+#define GST_RIFF_WAVE_FORMAT_AAC_AC         (0x4143)
 #define GST_RIFF_WAVE_FORMAT_VORBIS1        (0x674f)
 #define GST_RIFF_WAVE_FORMAT_VORBIS2        (0x6750)
 #define GST_RIFF_WAVE_FORMAT_VORBIS3        (0x6751)
 #define GST_RIFF_WAVE_FORMAT_VORBIS1PLUS    (0x676f)
 #define GST_RIFF_WAVE_FORMAT_VORBIS2PLUS    (0x6770)
 #define GST_RIFF_WAVE_FORMAT_VORBIS3PLUS    (0x6771)
+#define GST_RIFF_WAVE_FORMAT_AAC_pm         (0x706d)
 #define GST_RIFF_WAVE_FORMAT_GSM_AMR_CBR    (0x7A21)
 #define GST_RIFF_WAVE_FORMAT_GSM_AMR_VBR    (0x7A22)
+#define GST_RIFF_WAVE_FORMAT_FLAC           (0xF1AC)
 #define GST_RIFF_WAVE_FORMAT_EXTENSIBLE     (0xFFFE)
   guint16 channels;
   guint32 rate;
@@ -449,6 +470,41 @@ typedef struct _gst_riff_index_entry {
 typedef struct _gst_riff_dmlh {
   guint32 totalframes;
 } gst_riff_dmlh;
+
+/* taken from libsndfile/wav.c (LGPL) */
+typedef struct _gst_riff_acid {
+  /* 4 bytes (int)     type of file:
+   *  this appears to be a bit mask,however some combinations
+   *  are probably impossible and/or qualified as "errors"
+   *
+   *  0x01 On: One Shot         Off: Loop
+   *  0x02 On: Root note is Set Off: No root
+   *  0x04 On: Stretch is On,   Off: Strech is OFF
+   *  0x08 On: Disk Based       Off: Ram based
+   *  0x10 On: ??????????       Off: ????????? (Acidizer puts that ON)
+   */
+  guint32 loop_type;
+  /* 2 bytes (short)      root note
+   *  if type 0x10 is OFF : [C,C#,(...),B] -> [0x30 to 0x3B]
+   *  if type 0x10 is ON  : [C,C#,(...),B] -> [0x3C to 0x47]
+   *  (both types fit on same MIDI pitch albeit different octaves, so who cares)
+   */
+  guint16 root_note;
+  /* 2 bytes (short)      ??? always set to 0x8000
+   * 4 bytes (float)      ??? seems to be always 0
+   */
+  guint16 unknown1;
+  gfloat unknown2;
+  /* 4 bytes (int)        number of beats
+   * 2 bytes (short)      meter denominator   //always 4 in SF/ACID
+   * 2 bytes (short)      meter numerator     //always 4 in SF/ACID
+   *                      //are we sure about the order?? usually its num/denom
+   * 4 bytes (float)      tempo
+   */
+  guint32 number_of_beats;
+  guint16 meter_d, meter_n;
+  gfloat tempo;
+} gst_riff_acid;
 
 G_END_DECLS
 

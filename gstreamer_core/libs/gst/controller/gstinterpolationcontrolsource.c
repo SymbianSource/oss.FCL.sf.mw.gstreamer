@@ -1,6 +1,6 @@
 /* GStreamer
  *
- * Copyright (C) 2007 Sebastian Dröge <slomo@circular-chaos.org>
+ * Copyright (C) 2007,2009 Sebastian Dröge <sebastian.droege@collabora.co.uk>
  *
  * gstinterpolationcontrolsource.c: Control source that provides several
  *                                  interpolation methods
@@ -43,13 +43,12 @@
 #include "gstcontrolsource.h"
 #include "gstinterpolationcontrolsource.h"
 #include "gstinterpolationcontrolsourceprivate.h"
-
 #ifdef __SYMBIAN32__
 #include <glib_global.h>
 #include <gobject_global.h>
 #endif
-extern GstInterpolateMethod *interpolation_methods[];
-extern guint num_interpolation_methods;
+#define GST_CAT_DEFAULT controller_debug
+GST_DEBUG_CATEGORY_EXTERN (GST_CAT_DEFAULT);
 
 static void gst_interpolation_control_source_init (GstInterpolationControlSource
     * self);
@@ -75,7 +74,7 @@ gst_control_point_free (GstControlPoint * cp)
   g_return_if_fail (cp);
 
   g_value_unset (&cp->value);
-  g_free (cp);
+  g_slice_free (GstControlPoint, cp);
 }
 
 static void
@@ -96,13 +95,11 @@ gst_interpolation_control_source_reset (GstInterpolationControlSource * self)
     g_value_unset (&self->priv->maximum_value);
 
   if (self->priv->values) {
-    g_list_foreach (self->priv->values, (GFunc) gst_control_point_free, NULL);
-    g_list_free (self->priv->values);
+    g_sequence_free (self->priv->values);
     self->priv->values = NULL;
   }
 
   self->priv->nvalues = 0;
-  self->priv->last_requested_value = NULL;
   self->priv->valid_cache = FALSE;
 }
 
@@ -135,17 +132,21 @@ gst_interpolation_control_source_new (void)
  *
  * Returns: %TRUE if the interpolation mode could be set, %FALSE otherwise
  */
+/* *INDENT-OFF* */
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
 
 gboolean
-    gst_interpolation_control_source_set_interpolation_mode
-    (GstInterpolationControlSource * self, GstInterpolateMode mode) {
+gst_interpolation_control_source_set_interpolation_mode (
+    GstInterpolationControlSource * self, GstInterpolateMode mode)
+/* *INDENT-ON* */
+{
   gboolean ret = TRUE;
   GstControlSource *csource = GST_CONTROL_SOURCE (self);
 
-  if (mode >= num_interpolation_methods || interpolation_methods[mode] == NULL) {
+  if (mode >= priv_gst_num_interpolation_methods
+      || priv_gst_interpolation_methods[mode] == NULL) {
     GST_WARNING ("interpolation mode %d invalid or not implemented yet", mode);
     return FALSE;
   }
@@ -163,68 +164,68 @@ gboolean
   g_mutex_lock (self->lock);
   switch (self->priv->base) {
     case G_TYPE_INT:
-      csource->get_value = interpolation_methods[mode]->get_int;
+      csource->get_value = priv_gst_interpolation_methods[mode]->get_int;
       csource->get_value_array =
-          interpolation_methods[mode]->get_int_value_array;
+          priv_gst_interpolation_methods[mode]->get_int_value_array;
       break;
     case G_TYPE_UINT:{
-      csource->get_value = interpolation_methods[mode]->get_uint;
+      csource->get_value = priv_gst_interpolation_methods[mode]->get_uint;
       csource->get_value_array =
-          interpolation_methods[mode]->get_uint_value_array;
+          priv_gst_interpolation_methods[mode]->get_uint_value_array;
       break;
     }
     case G_TYPE_LONG:{
-      csource->get_value = interpolation_methods[mode]->get_long;
+      csource->get_value = priv_gst_interpolation_methods[mode]->get_long;
       csource->get_value_array =
-          interpolation_methods[mode]->get_long_value_array;
+          priv_gst_interpolation_methods[mode]->get_long_value_array;
       break;
     }
     case G_TYPE_ULONG:{
-      csource->get_value = interpolation_methods[mode]->get_ulong;
+      csource->get_value = priv_gst_interpolation_methods[mode]->get_ulong;
       csource->get_value_array =
-          interpolation_methods[mode]->get_ulong_value_array;
+          priv_gst_interpolation_methods[mode]->get_ulong_value_array;
       break;
     }
     case G_TYPE_INT64:{
-      csource->get_value = interpolation_methods[mode]->get_int64;
+      csource->get_value = priv_gst_interpolation_methods[mode]->get_int64;
       csource->get_value_array =
-          interpolation_methods[mode]->get_int64_value_array;
+          priv_gst_interpolation_methods[mode]->get_int64_value_array;
       break;
     }
     case G_TYPE_UINT64:{
-      csource->get_value = interpolation_methods[mode]->get_uint64;
+      csource->get_value = priv_gst_interpolation_methods[mode]->get_uint64;
       csource->get_value_array =
-          interpolation_methods[mode]->get_uint64_value_array;
+          priv_gst_interpolation_methods[mode]->get_uint64_value_array;
       break;
     }
     case G_TYPE_FLOAT:{
-      csource->get_value = interpolation_methods[mode]->get_float;
+      csource->get_value = priv_gst_interpolation_methods[mode]->get_float;
       csource->get_value_array =
-          interpolation_methods[mode]->get_float_value_array;
+          priv_gst_interpolation_methods[mode]->get_float_value_array;
       break;
     }
     case G_TYPE_DOUBLE:{
-      csource->get_value = interpolation_methods[mode]->get_double;
+      csource->get_value = priv_gst_interpolation_methods[mode]->get_double;
       csource->get_value_array =
-          interpolation_methods[mode]->get_double_value_array;
+          priv_gst_interpolation_methods[mode]->get_double_value_array;
       break;
     }
     case G_TYPE_BOOLEAN:{
-      csource->get_value = interpolation_methods[mode]->get_boolean;
+      csource->get_value = priv_gst_interpolation_methods[mode]->get_boolean;
       csource->get_value_array =
-          interpolation_methods[mode]->get_boolean_value_array;
+          priv_gst_interpolation_methods[mode]->get_boolean_value_array;
       break;
     }
     case G_TYPE_ENUM:{
-      csource->get_value = interpolation_methods[mode]->get_enum;
+      csource->get_value = priv_gst_interpolation_methods[mode]->get_enum;
       csource->get_value_array =
-          interpolation_methods[mode]->get_enum_value_array;
+          priv_gst_interpolation_methods[mode]->get_enum_value_array;
       break;
     }
     case G_TYPE_STRING:{
-      csource->get_value = interpolation_methods[mode]->get_string;
+      csource->get_value = priv_gst_interpolation_methods[mode]->get_string;
       csource->get_value_array =
-          interpolation_methods[mode]->get_string_value_array;
+          priv_gst_interpolation_methods[mode]->get_string_value_array;
       break;
     }
     default:
@@ -429,33 +430,60 @@ gst_control_point_find (gconstpointer p1, gconstpointer p2)
   return ((ct1 < ct2) ? -1 : ((ct1 == ct2) ? 0 : 1));
 }
 
+static GstControlPoint *
+_make_new_cp (GstInterpolationControlSource * self, GstClockTime timestamp,
+    GValue * value)
+{
+  GstControlPoint *cp;
+
+  /* create a new GstControlPoint */
+  cp = g_slice_new0 (GstControlPoint);
+  cp->timestamp = timestamp;
+  g_value_init (&cp->value, self->priv->type);
+  g_value_copy (value, &cp->value);
+
+  return cp;
+}
+
 static void
 gst_interpolation_control_source_set_internal (GstInterpolationControlSource *
     self, GstClockTime timestamp, GValue * value)
 {
-  GstControlPoint *cp;
-  GList *node;
+  GSequenceIter *iter;
 
   /* check if a control point for the timestamp already exists */
-  if ((node = g_list_find_custom (self->priv->values, &timestamp,
-              gst_control_point_find))) {
-    cp = node->data;
-    g_value_reset (&cp->value);
-    g_value_copy (value, &cp->value);
+
+  /* iter contains the iter right *after* timestamp */
+  if (G_LIKELY (self->priv->values)) {
+    iter =
+        g_sequence_search (self->priv->values, &timestamp,
+        (GCompareDataFunc) gst_control_point_find, NULL);
+    if (iter) {
+      GSequenceIter *prev = g_sequence_iter_prev (iter);
+      GstControlPoint *cp = g_sequence_get (prev);
+
+      /* If the timestamp is the same just update the control point value */
+      if (cp->timestamp == timestamp) {
+        /* update control point */
+        g_value_reset (&cp->value);
+        g_value_copy (value, &cp->value);
+        goto done;
+      }
+    }
   } else {
-    /* create a new GstControlPoint */
-    cp = g_new0 (GstControlPoint, 1);
-    cp->timestamp = timestamp;
-    g_value_init (&cp->value, self->priv->type);
-    g_value_copy (value, &cp->value);
-    /* and sort it into the prop->values list */
     self->priv->values =
-        g_list_insert_sorted (self->priv->values, cp,
-        gst_control_point_compare);
-    self->priv->nvalues++;
+        g_sequence_new ((GDestroyNotify) gst_control_point_free);
   }
+
+  /* sort new cp into the prop->values list */
+  g_sequence_insert_sorted (self->priv->values, _make_new_cp (self, timestamp,
+          value), (GCompareDataFunc) gst_control_point_compare, NULL);
+  self->priv->nvalues++;
+
+done:
   self->priv->valid_cache = FALSE;
 }
+
 
 /**
  * gst_interpolation_control_source_set:
@@ -549,7 +577,7 @@ gboolean
 gst_interpolation_control_source_unset (GstInterpolationControlSource * self,
     GstClockTime timestamp)
 {
-  GList *node;
+  GSequenceIter *iter;
   gboolean res = FALSE;
 
   g_return_val_if_fail (GST_IS_INTERPOLATION_CONTROL_SOURCE (self), FALSE);
@@ -557,23 +585,22 @@ gst_interpolation_control_source_unset (GstInterpolationControlSource * self,
 
   g_mutex_lock (self->lock);
   /* check if a control point for the timestamp exists */
-  if ((node = g_list_find_custom (self->priv->values, &timestamp,
-              gst_control_point_find))) {
-    GstControlPoint *cp = node->data;
+  if ((iter =
+          g_sequence_search (self->priv->values, &timestamp,
+              (GCompareDataFunc) gst_control_point_find, NULL))) {
+    GstControlPoint *cp;
 
-    if (cp->timestamp == 0) {
-      /* Restore the default node */
-      g_value_reset (&cp->value);
-      g_value_copy (&self->priv->default_value, &cp->value);
-    } else {
-      if (node == self->priv->last_requested_value)
-        self->priv->last_requested_value = NULL;
-      gst_control_point_free (node->data);      /* free GstControlPoint */
-      self->priv->values = g_list_delete_link (self->priv->values, node);
+    /* Iter contains the iter right after timestamp, i.e.
+     * we need to get the previous one and check the timestamp
+     */
+    iter = g_sequence_iter_prev (iter);
+    cp = g_sequence_get (iter);
+    if (cp->timestamp == timestamp) {
+      g_sequence_remove (iter);
       self->priv->nvalues--;
+      self->priv->valid_cache = FALSE;
+      res = TRUE;
     }
-    self->priv->valid_cache = FALSE;
-    res = TRUE;
   }
   g_mutex_unlock (self->lock);
 
@@ -599,14 +626,20 @@ gst_interpolation_control_source_unset_all (GstInterpolationControlSource *
 
   g_mutex_lock (self->lock);
   /* free GstControlPoint structures */
-  g_list_foreach (self->priv->values, (GFunc) gst_control_point_free, NULL);
-  g_list_free (self->priv->values);
-  self->priv->last_requested_value = NULL;
-  self->priv->values = NULL;
+  if (self->priv->values) {
+    g_sequence_free (self->priv->values);
+    self->priv->values = NULL;
+  }
   self->priv->nvalues = 0;
   self->priv->valid_cache = FALSE;
 
   g_mutex_unlock (self->lock);
+}
+
+static void
+_append_control_point (GstControlPoint * cp, GList ** l)
+{
+  *l = g_list_prepend (*l, cp);
 }
 
 /**
@@ -630,11 +663,12 @@ gst_interpolation_control_source_get_all (GstInterpolationControlSource * self)
   g_return_val_if_fail (GST_IS_INTERPOLATION_CONTROL_SOURCE (self), NULL);
 
   g_mutex_lock (self->lock);
-  if (self->priv->values)
-    res = g_list_copy (self->priv->values);
+  if (G_LIKELY (self->priv->values))
+    g_sequence_foreach (self->priv->values, (GFunc) _append_control_point,
+        &res);
   g_mutex_unlock (self->lock);
 
-  return res;
+  return g_list_reverse (res);
 }
 
 /**

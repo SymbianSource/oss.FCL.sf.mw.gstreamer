@@ -33,11 +33,20 @@
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 #include "libgstreamer_wsd_solution.h" 
@@ -315,12 +324,13 @@ void test_leaky_upstream()
   /* pushing gives away my reference ... */
   gst_pad_push (mysrcpad, gst_buffer_ref (buffer3));
 
-  g_mutex_lock (check_mutex);
+  //g_mutex_lock (check_mutex);
   /* start the src-task briefly leak buffer3 */
   gst_pad_set_active (mysinkpad, TRUE);
-  g_cond_wait (check_cond, check_mutex);
-  g_mutex_unlock (check_mutex);
-
+  //g_cond_wait (check_cond, check_mutex);
+  //g_mutex_unlock (check_mutex);
+  /// wait for second thread to read buffer.
+  sleep(2);
   gst_pad_set_active (mysinkpad, FALSE);
 
   GST_DEBUG ("stopping");
@@ -406,12 +416,12 @@ void test_leaky_downstream()
   /* pushing gives away my reference ... */
   gst_pad_push (mysrcpad, buffer3);
 
-  g_mutex_lock (check_mutex);
+  //g_mutex_lock (check_mutex);
   /* start the src-task briefly and leak buffer1 */
   gst_pad_set_active (mysinkpad, TRUE);
-  g_cond_wait (check_cond, check_mutex);
-  g_mutex_unlock (check_mutex);
-
+  //g_cond_wait (check_cond, check_mutex);
+  //g_mutex_unlock (check_mutex);
+  sleep(2);
   gst_pad_set_active (mysinkpad, FALSE);
 
   GST_DEBUG ("stopping");

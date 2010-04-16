@@ -30,6 +30,7 @@
 #include "debug.h"
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 
 _LIT8(defaultMedia,"audio/x-raw-int");
@@ -113,6 +114,9 @@ CGstObjects::CGstObjects(void* aParent): iParent(aParent)
     iFakesink = NULL;
     iFilesink = NULL;
     iEncoder = NULL;
+    iAACEncoder = NULL;
+    iQtMux = NULL;
+    iAmrMux = NULL;
     iFilter = NULL;
     iWavenc = NULL;
     iBus = NULL;
@@ -184,6 +188,14 @@ bus_call (GstBus     *bus,
       g_error_free (err);
       break;
     }
+    case GST_MESSAGE_STATE_CHANGED:
+        {
+        GstState*  state = NULL;
+        GstState * pending = NULL;
+        gst_element_get_state(GST_ELEMENT (objects->iPipeline),state,pending,-1 );
+        //int x = 10;
+        }
+        break;
     default:
       break;
   }
@@ -264,7 +276,11 @@ TInt CGStreamerTestClass::RunMethodL(
         ENTRY( "SetExpectedEvents", CGStreamerTestClass::SetExpectedEvents ),
         ENTRY( "SetMainLoopRun", CGStreamerTestClass::SetMainLoopRun ),
         ENTRY( "SetCapsInPipeLine", CGStreamerTestClass::SetCapsInPipeLine ),
-		
+        ENTRY( "StopRecording", CGStreamerTestClass::StopRecording ),
+        ENTRY( "SeekElement", CGStreamerTestClass::SeekElement ),
+        ENTRY( "CheckProperties", CGStreamerTestClass::CheckProperties ),
+        ENTRY( "GstReliabilitytestPlaypause", CGStreamerTestClass::GstReliabilitytestPlaypause ),
+        ENTRY( "GstReliabilitytestRecording", CGStreamerTestClass::GstReliabilitytestRecording ),
         };
 
     const TInt count = sizeof( KFunctions ) / 
@@ -594,6 +610,8 @@ TInt CGStreamerTestClass::InitPipeLine( CStifItemParser& /*aItem*/ )
     iLog->Log(_L("<<CGStreamerTestClass::InitPipeLine"));   
     return KErrNone;
     }
+	
+
 
 TInt CGStreamerTestClass::SetMainLoopRun( CStifItemParser& /*aItem*/ )
     {
@@ -740,6 +758,48 @@ TInt CGStreamerTestClass::CreateElement( CStifItemParser& aItem )
                 }
             break;
             }
+        case   ENOKIAAACENCODER:	        
+            {
+            if(iObjects->iAACEncoder)
+                {
+                error = KErrAlreadyExists;
+                }
+            else
+                {
+                iObjects->iAACEncoder = gst_element_factory_make("nokiaaacenc", "nokiaaacenc");     
+                if( iObjects->iAACEncoder == NULL )
+                    iLog->Log(_L(" iObjects->iAACEncoder == NULL"));
+                }
+            break;
+            }
+        case   ENOKIAQTMUX:            
+            {
+            if(iObjects->iQtMux)
+                {
+                error = KErrAlreadyExists;
+                }
+            else
+                {
+                iObjects->iQtMux = gst_element_factory_make("mp4mux", "mp4mux");     
+                if( iObjects->iQtMux == NULL )
+                    iLog->Log(_L(" iObjects->iQtMux == NULL"));
+                }
+            break;
+            }       
+        case   ENOKIAAMRMUX:            
+            {
+            if(iObjects->iAmrMux)
+                {
+                error = KErrAlreadyExists;
+                }
+            else
+                {
+                iObjects->iAmrMux = gst_element_factory_make("amrmux", "amrmux");     
+                if( iObjects->iAmrMux == NULL )
+                    iLog->Log(_L(" iObjects->iAmrMux == NULL"));
+                }
+            break;
+            }            
 	    case   ERESAMPLER:
             {
             if(iObjects->iResampler)
@@ -890,6 +950,42 @@ TInt CGStreamerTestClass::GetElementProperties( CStifItemParser& aItem )
                 }
             break;
             }
+        case   ENOKIAAACENCODER:
+            {
+            if(!iObjects->iAACEncoder)
+                {
+                error = KErrNotFound;
+                }
+            else
+                {
+                }
+            break;
+            }            
+        case   ENOKIAQTMUX:
+            {
+            if(!iObjects->iQtMux)
+                {
+                error = KErrNotFound;
+                }
+            else
+                {
+                }
+            break;
+            }              
+        case   ENOKIAAMRMUX:
+            {
+            if(!iObjects->iAmrMux)
+                {
+                error = KErrNotFound;
+                }
+            else
+                {
+                    gboolean header;
+                    g_object_get (G_OBJECT (iObjects->iAmrMux), "header", &header, NULL); 
+
+                }
+            break;
+            }             
         case   ERESAMPLER:
             {
             if(!iObjects->iResampler)
@@ -956,6 +1052,17 @@ TInt CGStreamerTestClass::GetElementProperties( CStifItemParser& aItem )
                     FTRACE(FPrint(_L("CGStreamerTestClass::GetElementProperties SamplesRecorded[%d]"),value));
                     iLog->Log(_L("CGStreamerTestClass::GetElementProperties SamplesRecorded[%d]"),value);
                     }
+				else if(!property.Compare(KTagLeftBalanceProperty()))
+                    {                  
+                        g_object_get (G_OBJECT (iObjects->iSource),(const char *)(des.PtrZ()), &value, NULL); 
+                     }             
+          
+                else if(!property.Compare(KTagRightBalanceProperty()))
+                    {
+                    
+                        g_object_get (G_OBJECT (iObjects->iSource),(const char *)(des.PtrZ()), &value, NULL); 
+
+                        }	
                 delete prop;
                 }
             break;
@@ -1119,6 +1226,42 @@ TInt CGStreamerTestClass::SetElementProperties( CStifItemParser& aItem )
                 }
             break;
             }
+        case   ENOKIAAACENCODER:
+            {
+            if(!iObjects->iAACEncoder)
+                {
+                error = KErrNotFound;
+                }
+            else
+                {
+                }
+            break;
+            }            
+        case   ENOKIAQTMUX:
+            {
+            if(!iObjects->iQtMux)
+                {
+                error = KErrNotFound;
+                }
+            else
+                {
+                }
+            break;
+            }               
+        case   ENOKIAAMRMUX:
+            {
+            if(!iObjects->iAmrMux)
+                {
+                error = KErrNotFound;
+                }
+            else
+                {
+                    TInt value;
+                    aItem.GetNextInt(value);
+                    g_object_set (G_OBJECT (iObjects->iAmrMux), "header", (gboolean)value, NULL);                     
+                }
+            break;
+            }              
         case   ERESAMPLER:
             {
             if(!iObjects->iResampler)
@@ -1228,6 +1371,18 @@ TInt CGStreamerTestClass::SetElementProperties( CStifItemParser& aItem )
                         }
                     }
                 else if(!property.Compare(KTagPereferenceProperty()))
+                    {
+                    TInt value;
+                    if(!aItem.GetNextInt(value))
+                        {
+                        g_object_set (G_OBJECT (iObjects->iSource),(const char *)(des.PtrZ()), value, NULL); 
+                        }
+                    else
+                        {
+                        error = KErrNotFound;
+                        }
+                    }
+                else if(!property.Compare(KTagNumBuffersProperty()))
                     {
                     TInt value;
                     if(!aItem.GetNextInt(value))
@@ -1492,6 +1647,45 @@ TInt CGStreamerTestClass::AddElementToPipeline( CStifItemParser& aItem )
                 }
             break;
             }
+        case   ENOKIAAACENCODER:
+            {
+            iLog->Log(_L("<<CGStreamerTestClass::AddElementToPipeline ENOKIAAACENCODER"));
+            if(!iObjects->iAACEncoder)
+                {
+                error = KErrNotFound;
+                }
+            else
+                {
+                gst_bin_add_many(GST_BIN (iObjects->iPipeline),iObjects->iAACEncoder, NULL);
+                }
+            break;
+            }            
+        case   ENOKIAQTMUX:
+            {
+            
+            if(!iObjects->iQtMux)
+                {
+                error = KErrNotFound;
+                }
+            else
+                {
+                gst_bin_add_many(GST_BIN (iObjects->iPipeline),iObjects->iQtMux, NULL);
+                }
+            break;
+            }     
+        case   ENOKIAAMRMUX:
+            {
+            
+            if(!iObjects->iAmrMux)
+                {
+                error = KErrNotFound;
+                }
+            else
+                {
+                gst_bin_add_many(GST_BIN (iObjects->iPipeline),iObjects->iAmrMux, NULL);
+                }
+            break;
+            }             
         case   ERESAMPLER:
             {
             if(!iObjects->iResampler)
@@ -1565,6 +1759,8 @@ TInt CGStreamerTestClass::SetPipelineState( CStifItemParser& aItem )
     iLog->Log(_L("<<CGStreamerTestClass::SetPipelineState Error[%d] ret[%d]"),error,ret);
     return error;
     }
+
+
 
 TInt CGStreamerTestClass::SetCapsInPipeLine( CStifItemParser& aItem )
     {
@@ -2249,6 +2445,42 @@ TInt CGStreamerTestClass::LinkElementsInPipeline( CStifItemParser& aItem )
                     }
                 break;
                 }
+            case   ENOKIAAACENCODER:
+                {
+                if(!iObjects->iAACEncoder)
+                    {
+                    error = KErrNotFound;
+                    }
+                else
+                    {
+                    array.Append(iObjects->iAACEncoder);
+                    }
+                break;
+                }                
+            case   ENOKIAQTMUX:
+                {
+                if(!iObjects->iQtMux)
+                    {
+                    error = KErrNotFound;
+                    }
+                else
+                    {
+                    array.Append(iObjects->iQtMux);
+                    }
+                break;
+                }                  
+            case   ENOKIAAMRMUX:
+                {
+                if(!iObjects->iAmrMux)
+                    {
+                    error = KErrNotFound;
+                    }
+                else
+                    {
+                    array.Append(iObjects->iAmrMux);
+                    }
+                break;
+                }                 
             case   ERESAMPLER:
                 {
                 if(!iObjects->iResampler)
@@ -2326,7 +2558,31 @@ TInt CGStreamerTestClass::LinkElementsInPipeline( CStifItemParser& aItem )
                 }
             else
                 {
-                linkOK = gst_element_link(array[i-1],array[i]);
+                    if( array[i] == iObjects->iQtMux)
+                    {
+                        iLog->Log(_L("array[i] == iObjects->iQtMux"));
+                        GstPad* qtsinkpad  = gst_element_get_request_pad( array[i], "audio_%d");
+                        if( !qtsinkpad )
+                            {
+                                iLog->Log(_L("qtsinkpad failed"));
+                            }
+                        GstPad* aacencsrcpad  = gst_element_get_pad( array[i-1], "src");
+                        if( !aacencsrcpad )
+                            {
+                                iLog->Log(_L("aacencsrcpad failed"));
+                            }
+                        
+                        //linkOK = gst_pad_link (aacencsrcpad,qtsinkpad);
+                        if( gst_pad_link (aacencsrcpad,qtsinkpad) != GST_PAD_LINK_OK )
+                            {
+                        iLog->Log(_L("gst_pad_link (aacencsrcpad,qtsinkpad) failed"));
+                        linkOK = 0;
+                            }
+                    }
+                    else
+                    {    
+                        linkOK = gst_element_link(array[i-1],array[i]);
+                    }
                 }
             }        
         }
@@ -2335,6 +2591,422 @@ TInt CGStreamerTestClass::LinkElementsInPipeline( CStifItemParser& aItem )
     iLog->Log(_L("<<CGStreamerTestClass::LinkElementsInPipeline Error[%d]"),linkOK);
     return error;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+TInt CGStreamerTestClass::StopRecording( CStifItemParser& /*aItem*/ )
+    {   
+    FTRACE(FPrint(_L("CGStreamerTestClass::StopRecording")));
+    iLog->Log(_L(">>CGStreamerTestClass::StopRecording"));   
+    gst_element_send_event (iObjects->iPipeline, gst_event_new_eos ());
+    iLog->Log(_L("<<CGStreamerTestClass::StopRecording"));   
+    return KErrNone;
+    }
+
+TInt CGStreamerTestClass::GstReliabilitytestRecording( CStifItemParser& aItem )
+    {   
+    FTRACE(FPrint(_L("CGStreamerTestClass::GstReliabilitytestRecording")));
+    iLog->Log(_L(">>CGStreamerTestClass::GstReliabilitytestRecording"));   
+    TInt i=0;
+    aItem.GetNextInt(i);
+    while(--i)
+        {
+         gst_element_set_state (iObjects->iPipeline, GST_STATE_PLAYING );
+         sleep (60);
+        }
+    iLog->Log(_L("<<CGStreamerTestClass::GstReliabilitytestRecording"));   
+    return KErrNone;
+    }
+
+
+TInt CGStreamerTestClass::GstReliabilitytestPlaypause( CStifItemParser& aItem )
+    {   
+    FTRACE(FPrint(_L("CGStreamerTestClass::GstReliabilitytestPlaypause")));
+    iLog->Log(_L(">>CGStreamerTestClass::GstReliabilitytestPlaypause"));   
+    TInt i=0;
+    aItem.GetNextInt(i);
+    //aItem.GetNextInt(element);
+    while( --i )
+        {
+        gst_element_set_state (iObjects->iPipeline, GST_STATE_PLAYING );
+        sleep(10);
+        gst_element_set_state (iObjects->iPipeline, GST_STATE_PAUSED );
+        sleep(2);
+        }
+    iLog->Log(_L("<<CGStreamerTestClass::GstReliabilitytestPlaypause"));   
+    return KErrNone;
+    }
+
+static gint convert_devsound_rate(gint devsound_rate)
+    {
+    gint result;
+
+    switch (devsound_rate)
+        {
+        case 1:
+            result=8000;
+            break;
+        case 2:
+            result=11025;
+            break;
+        case 4:
+            result=16000;
+            break;
+        case 8:
+            result=22050;
+            break;
+        case 16:
+            result=32000;
+            break;
+        case 32:
+            result=44100;
+            break;
+        case 64:
+            result=48000;
+            break;
+        case 128:
+            result=88200;
+            break;
+        case 256:
+            result=96000;
+            break;
+        case 512:
+            result=12000;
+            break;
+        case 1024:
+            result=24000;
+            break;
+        case 2048:
+            result=64000;
+            break;
+        default:
+            result=8000;
+            break;
+
+        }
+    return result;
+
+    }
+
+TInt CGStreamerTestClass::CheckProperties( CStifItemParser& aItem )
+    {   
+    FTRACE(FPrint(_L("CGStreamerTestClass::CheckProperties")));
+    iLog->Log(_L(">>CGStreamerTestClass::CheckProperties"));   
+    TInt error = KErrNone;
+    TInt element;
+    TInt ValueExpected(0);
+    aItem.GetNextInt(element);
+        switch(element)
+            {
+            case   EFILESOURCE:
+                {
+                if(!iObjects->iSource)
+                    {
+                    error = KErrNotFound;
+                    }
+                else
+                    {
+                    }
+                break;
+                }
+            case   EFILESINK:
+                {
+                if(!iObjects->iSink)
+                    {
+                    error = KErrNotFound;
+                    }
+                else
+                    {
+                    }
+                break;
+                }
+            case   EFAKESOURCE:
+                {
+                if(!iObjects->iSource)
+                    {
+                    error = KErrNotFound;
+                    }
+                else
+                    {
+                    }
+                break;
+                }
+            case   EFAKESINK:
+                {
+                if(!iObjects->iSink)
+                    {
+                    error = KErrNotFound;
+                    }
+                else
+                    {
+                    }
+                break;
+                }
+            case   EWAVPARSE:
+                {
+                if(!iObjects->iWavparse)
+                    {
+                    error = KErrNotFound;
+                    }
+                else
+                    {
+                    }
+                break;
+                }
+            case   EMP3DECODER:
+                {
+                if(!iObjects->iDecoder)
+                    {
+                    error = KErrNotFound;
+                    }
+                else
+                    {
+                    }
+                break;
+                }
+            case   EWAVEENCODER:
+                {
+                if(!iObjects->iEncoder)
+                    {
+                    error = KErrNotFound;
+                    }
+                else
+                    {
+                    }
+                break;
+                }
+            case   ENOKIAAACENCODER:
+                {
+                if(!iObjects->iAACEncoder)
+                    {
+                    error = KErrNotFound;
+                    }
+                else
+                    {
+                    }
+                break;
+                }
+            case   ENOKIAQTMUX:
+                {
+                if(!iObjects->iQtMux)
+                    {
+                    error = KErrNotFound;
+                    }
+                else
+                    {
+                    }
+                break;
+                }
+            case   ENOKIAAMRMUX:
+                {
+                if(!iObjects->iAmrMux)
+                    {
+                    error = KErrNotFound;
+                    }
+                else
+                    {
+                    }
+                break;
+                }                
+            case   ERESAMPLER:
+                {
+                if(!iObjects->iResampler)
+                    {
+                    error = KErrNotFound;
+                    }
+                else
+                    {
+                    }
+                break;
+                }
+            case   ECONVERTER:
+                {
+                if(!iObjects->iConverter)
+                    {
+                    error = KErrNotFound;
+                    }
+                else
+                    {
+                    }
+                break;
+                }
+            case   EDEVSOUNDSRC:
+                {
+                if(!iObjects->iSource)
+                    {
+                    error = KErrNotFound;
+                    }
+                else
+                    {
+                    TPtrC property;
+                    TInt value(0);
+                    aItem.GetNextString(property);
+                    aItem.GetNextInt(ValueExpected);
+                    HBufC8* prop = HBufC8::NewL(property.Length()+ 1);
+                    TPtr8 des = prop->Des();
+                    des.Copy(property);
+                    if(!property.Compare(KTagGainProperty()))
+                        {
+                        g_object_get (G_OBJECT (iObjects->iSource),(const char *)(des.PtrZ()), &value, NULL); 
+                        FTRACE(FPrint(_L("CGStreamerTestClass::CheckProperties GetGain[%d]"),value));
+                        iLog->Log(_L("CGStreamerTestClass::CheckProperties GetGain[%d]"),value);
+                        }
+                    else if(!property.Compare(KTagRateProperty()))
+                        {
+                        g_object_get (G_OBJECT (iObjects->iSource),(const char *)(des.PtrZ()), &value, NULL);
+                        value = convert_devsound_rate(value);
+                        FTRACE(FPrint(_L("CGStreamerTestClass::CheckProperties GetRate[%d]"),value));
+                        iLog->Log(_L("CGStreamerTestClass::CheckProperties GetRate[%d]"),value);
+                        }
+                    else if(!property.Compare(KTagChannelsProperty()))
+                        {
+                        g_object_get (G_OBJECT (iObjects->iSource),(const char *)(des.PtrZ()), &value, NULL); 
+                        FTRACE(FPrint(_L("CGStreamerTestClass::CheckProperties Channels[%d]"),value));
+                        iLog->Log(_L("CGStreamerTestClass::CheckProperties channels[%d]"),value);
+                        }
+                    else if(!property.Compare(KTagMaxGainProperty()))
+                        {
+                        g_object_get (G_OBJECT (iObjects->iSource),(const char *)(des.PtrZ()), &value, NULL); 
+                        FTRACE(FPrint(_L("CGStreamerTestClass::CheckProperties MaxGain[%d]"),value));
+                        iLog->Log(_L("CGStreamerTestClass::CheckProperties Max Gain[%d]"),value);
+                        }
+                    else if(!property.Compare(KTagSamplesRecordedProperty()))
+                        {
+                        g_object_get (G_OBJECT (iObjects->iSource),(const char *)(des.PtrZ()), &value, NULL); 
+                        FTRACE(FPrint(_L("CGStreamerTestClass::CheckProperties SamplesRecorded[%d]"),value));
+                        iLog->Log(_L("CGStreamerTestClass::CheckProperties SamplesRecorded[%d]"),value);
+                        }
+
+                    else if(!property.Compare(KTagLeftBalanceProperty()))
+                        {                  
+                            g_object_get (G_OBJECT (iObjects->iSource),(const char *)(des.PtrZ()), &value, NULL); 
+                         }             
+              
+                    else if(!property.Compare(KTagRightBalanceProperty()))
+                        {
+                        
+                            g_object_get (G_OBJECT (iObjects->iSource),(const char *)(des.PtrZ()), &value, NULL); 
+
+                            }
+                   
+                    if(value == ValueExpected)
+                        {
+                    FTRACE(FPrint(_L("CGStreamerTestClass::CheckProperties EDEVSOUNDSRC OK")));
+                    iLog->Log(_L("CGStreamerTestClass::CheckProperties EDEVSOUNDSRC OK " ));
+                        }
+                    else
+                        {
+                    FTRACE(FPrint(_L("CGStreamerTestClass::CheckProperties EDEVSOUNDSRC Error ValueExpected [%d]"),ValueExpected));
+                    iLog->Log(_L("CGStreamerTestClass::CheckProperties EDEVSOUNDSRC ValueExpected [%d]"),ValueExpected);
+                        error = KErrGeneral;
+                        gst_element_set_state (iObjects->iPipeline,GST_STATE_NULL);
+                        }
+                    delete prop;
+                    }
+                break;
+                }            
+            case   EDEVSOUNDSINK:
+                {
+                if(!iObjects->iSink)
+                    {
+                    error = KErrNotFound;
+                    }
+                else
+                    {
+                    TPtrC property;
+                    TInt value(0);
+                    aItem.GetNextString(property);
+                    HBufC8* prop = HBufC8::NewL(property.Length()+ 1);
+                    TPtr8 des = prop->Des();
+                    des.Copy(property);
+                    if(!property.Compare(KTagVolumeProperty()))
+                        {
+                        g_object_get (G_OBJECT (iObjects->iSink),(const char *)(des.PtrZ()), &value, NULL); 
+                        FTRACE(FPrint(_L("CGStreamerTestClass::CheckProperties Volume[%d]"),value));
+                        iLog->Log(_L("CGStreamerTestClass::CheckProperties Volume[%d]"),value);
+                        }
+                    else if(!property.Compare(KTagRateProperty()))
+                        {
+                        g_object_get (G_OBJECT (iObjects->iSink),(const char *)(des.PtrZ()), &value, NULL); 
+                        FTRACE(FPrint(_L("CGStreamerTestClass::CheckProperties rate [%d]"),value));
+                        iLog->Log(_L("CGStreamerTestClass::CheckProperties rate[%d]"),value);
+                        }
+                    else if(!property.Compare(KTagChannelsProperty()))
+                        {
+                        g_object_get (G_OBJECT (iObjects->iSink),(const char *)(des.PtrZ()), &value, NULL); 
+                        FTRACE(FPrint(_L("CGStreamerTestClass::CheckProperties channels [%d]"),value));
+                        iLog->Log(_L("CGStreamerTestClass::CheckProperties channels[%d]"),value);
+                        }
+                    else if(!property.Compare(KTagMaxVolumeProperty()))
+                        {
+                        g_object_get (G_OBJECT (iObjects->iSink),(const char *)(des.PtrZ()), &value, NULL); 
+                        FTRACE(FPrint(_L("CGStreamerTestClass::CheckProperties max vol[%d] "),value));
+                        iLog->Log(_L("CGStreamerTestClass::CheckProperties max vol[%d]"),value);
+                        }
+                    else if(!property.Compare(KTagSamplesPlayedProperty()))
+                        {
+                        g_object_get (G_OBJECT (iObjects->iSink),(const char *)(des.PtrZ()), &value, NULL); 
+                        FTRACE(FPrint(_L("CGStreamerTestClass::CheckProperties samples played[%d] "),value));
+                        iLog->Log(_L("CGStreamerTestClass::CheckProperties samples played[%d]"),value);
+                        }
+                    delete prop;
+                    }
+                break;
+                }
+            default:
+                error = KErrNotFound;
+                break;
+            }
+        iLog->Log(_L(">>CGStreamerTestClass::CheckProperties Error[%d]"),error);
+        return error;
+    iLog->Log(_L("<<CGStreamerTestClass::CheckProperties"));   
+    return KErrNone;
+    }
+
+TInt CGStreamerTestClass::SeekElement( CStifItemParser& aItem )
+    {   
+    FTRACE(FPrint(_L("CGStreamerTestClass::SeekElement")));
+    iLog->Log(_L(">>CGStreamerTestClass::SeekElement"));   
+    //
+    TInt time;
+    GstFormat fmt = GST_FORMAT_TIME;
+    gint64 pos1, len1 , pos2 , len2;
+
+    aItem.GetNextInt(time);
+    if (gst_element_query_position (iObjects->iPipeline, &fmt, &pos1)
+      && gst_element_query_duration (iObjects->iPipeline, &fmt, &len1)) {
+    iLog->Log(_L("CGStreamerTestClass:: before seek query position and duration error"));
+    }
+    pos1 = (pos1 / GST_SECOND ) ;
+    len1 = (len1 / GST_SECOND ) ;
+    time = pos1 + (time);
+    if (!gst_element_seek (iObjects->iPipeline, 1.0 , GST_FORMAT_TIME, GST_SEEK_FLAG_ACCURATE,
+                             GST_SEEK_TYPE_SET, time*GST_SECOND ,
+                             GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE)) {
+    iLog->Log(_L("<<CGStreamerTestClass::SeekElement Failed"));
+      }
+
+    if (gst_element_query_position (iObjects->iPipeline, &fmt, &pos2)
+      && gst_element_query_duration (iObjects->iPipeline, &fmt, &len2)) {
+    iLog->Log(_L("CGStreamerTestClass:: after seek query position and duration error"));
+    }
+    pos2 = (pos2 / GST_SECOND ) ;
+    len2 = (len2 / GST_SECOND ) ;
+    iLog->Log(_L("<<CGStreamerTestClass::SeekElement"));   
+    return KErrNone;
+    }
+
+
 
 
 //  End of File

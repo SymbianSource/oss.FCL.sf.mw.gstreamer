@@ -17,6 +17,17 @@
  * Boston, MA 02111-1307, USA.
  */
 
+/**
+ * SECTION:element-decodebin
+ *
+ * #GstBin that auto-magically constructs a decoding pipeline using available
+ * decoders and demuxers via auto-plugging.
+ *
+ * When using decodebin in your application, connect a signal handler to
+ * #GstDecodeBin::new-decoded-pad and connect your sinks from within the
+ * callback function.
+ */
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -26,7 +37,6 @@
 #include <string.h>
 #include <gst/gst.h>
 #include <gst/pbutils/pbutils.h>
-#include <glib_global.h>
 
 #include "gstplay-marshal.h"
 
@@ -55,6 +65,11 @@ GST_DEBUG_CATEGORY_STATIC (gst_decode_bin_debug);
 typedef struct _GstDecodeBin GstDecodeBin;
 typedef struct _GstDecodeBinClass GstDecodeBinClass;
 
+/**
+ * GstDecodeBin:
+ *
+ * Auto-plugging decoder element structure
+ */
 struct _GstDecodeBin
 {
   GstBin bin;                   /* we extend GstBin */
@@ -104,6 +119,13 @@ enum
   LAST_SIGNAL
 };
 
+/* Properties */
+enum
+{
+  PROP_0,
+  PROP_SINK_CAPS,
+};
+
 
 typedef struct
 {
@@ -129,6 +151,10 @@ GstDynamic;
 
 static void gst_decode_bin_class_init (GstDecodeBinClass * klass);
 static void gst_decode_bin_init (GstDecodeBin * decode_bin);
+static void gst_decode_bin_set_property (GObject * object, guint prop_id,
+    const GValue * value, GParamSpec * pspec);
+static void gst_decode_bin_get_property (GObject * object, guint prop_id,
+    GValue * value, GParamSpec * pspec);
 static void gst_decode_bin_dispose (GObject * object);
 static void gst_decode_bin_finalize (GObject * object);
 
@@ -155,6 +181,8 @@ static void new_caps (GstPad * pad, GParamSpec * unused, GstDynamic * dynamic);
 
 static void queue_filled_cb (GstElement * queue, GstDecodeBin * decode_bin);
 static void queue_underrun_cb (GstElement * queue, GstDecodeBin * decode_bin);
+
+static gboolean is_demuxer_element (GstElement * srcelement);
 
 static GstElementClass *parent_class;
 static guint gst_decode_bin_signals[LAST_SIGNAL] = { 0 };
@@ -206,25 +234,58 @@ gst_decode_bin_class_init (GstDecodeBinClass * klass)
 
   parent_class = g_type_class_peek_parent (klass);
 
+  gobject_klass->set_property = GST_DEBUG_FUNCPTR (gst_decode_bin_set_property);
+  gobject_klass->get_property = GST_DEBUG_FUNCPTR (gst_decode_bin_get_property);
+  gobject_klass->dispose = GST_DEBUG_FUNCPTR (gst_decode_bin_dispose);
+  gobject_klass->finalize = GST_DEBUG_FUNCPTR (gst_decode_bin_finalize);
+
+  /**
+   * GstDecodeBin::new-decoded-pad:
+   * @bin: The decodebin
+   * @pad: The newly created pad
+   * @islast: #TRUE if this is the last pad to be added. Deprecated.
+   *
+   * This signal gets emitted as soon as a new pad of the same type as one of
+   * the valid 'raw' types is added.
+   */
   gst_decode_bin_signals[SIGNAL_NEW_DECODED_PAD] =
       g_signal_new ("new-decoded-pad", G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST,
       G_STRUCT_OFFSET (GstDecodeBinClass, new_decoded_pad), NULL, NULL,
       gst_play_marshal_VOID__OBJECT_BOOLEAN, G_TYPE_NONE, 2, GST_TYPE_PAD,
       G_TYPE_BOOLEAN);
+  /**
+   * GstDecodeBin::removed-decoded-pad:
+   * @bin: The decodebin
+   * @pad: The pad that was removed
+   *
+   * This signal is emitted when a 'final' caps pad has been removed.
+   */
   gst_decode_bin_signals[SIGNAL_REMOVED_DECODED_PAD] =
       g_signal_new ("removed-decoded-pad", G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST,
       G_STRUCT_OFFSET (GstDecodeBinClass, removed_decoded_pad), NULL, NULL,
       gst_marshal_VOID__OBJECT, G_TYPE_NONE, 1, GST_TYPE_PAD);
+  /**
+   * GstDecodeBin::unknown-type:
+   * @bin: The decodebin
+   * @pad: The new pad containing caps that cannot be resolved to a 'final'
+   *       stream type.
+   * @caps: The #GstCaps of the pad that cannot be resolved.
+   *
+   * This signal is emitted when a pad for which there is no further possible
+   * decoding is added to the decodebin.
+   */
   gst_decode_bin_signals[SIGNAL_UNKNOWN_TYPE] =
       g_signal_new ("unknown-type", G_TYPE_FROM_CLASS (klass),
       G_SIGNAL_RUN_LAST, G_STRUCT_OFFSET (GstDecodeBinClass, unknown_type),
-      NULL, NULL, gst_marshal_VOID__OBJECT_OBJECT, G_TYPE_NONE, 2,
+      NULL, NULL, gst_marshal_VOID__OBJECT_BOXED, G_TYPE_NONE, 2,
       GST_TYPE_PAD, GST_TYPE_CAPS);
 
-  gobject_klass->dispose = GST_DEBUG_FUNCPTR (gst_decode_bin_dispose);
-  gobject_klass->finalize = GST_DEBUG_FUNCPTR (gst_decode_bin_finalize);
+  g_object_class_install_property (gobject_klass, PROP_SINK_CAPS,
+      g_param_spec_boxed ("sink-caps", "Sink Caps",
+          "The caps of the input data. (NULL = use typefind element)",
+          GST_TYPE_CAPS, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   gst_element_class_add_pad_template (gstelement_klass,
       gst_static_pad_template_get (&decoder_bin_sink_template));
@@ -338,7 +399,7 @@ gst_decode_bin_init (GstDecodeBin * decode_bin)
     }
 
     /* get the sinkpad */
-    pad = gst_element_get_pad (decode_bin->typefind, "sink");
+    pad = gst_element_get_static_pad (decode_bin->typefind, "sink");
 
     /* ghost the sink pad to ourself */
     gpad = gst_ghost_pad_new ("sink", pad);
@@ -377,6 +438,61 @@ gst_decode_bin_dispose (GObject * object)
    * etc. clean up the mess here. */
   /* FIXME do proper cleanup when going to NULL */
   free_dynamics (decode_bin);
+}
+
+static void
+gst_decode_bin_set_sink_caps (GstDecodeBin * dbin, GstCaps * caps)
+{
+  GST_DEBUG_OBJECT (dbin, "Setting new caps: %" GST_PTR_FORMAT, caps);
+
+  g_object_set (dbin->typefind, "force-caps", caps, NULL);
+}
+
+static GstCaps *
+gst_decode_bin_get_sink_caps (GstDecodeBin * dbin)
+{
+  GstCaps *caps;
+
+  GST_DEBUG_OBJECT (dbin, "Getting currently set caps");
+
+  g_object_get (dbin->typefind, "force-caps", &caps, NULL);
+
+  return caps;
+}
+
+static void
+gst_decode_bin_set_property (GObject * object, guint prop_id,
+    const GValue * value, GParamSpec * pspec)
+{
+  GstDecodeBin *dbin;
+
+  dbin = GST_DECODE_BIN (object);
+
+  switch (prop_id) {
+    case PROP_SINK_CAPS:
+      gst_decode_bin_set_sink_caps (dbin, g_value_get_boxed (value));
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+  }
+}
+
+static void
+gst_decode_bin_get_property (GObject * object, guint prop_id,
+    GValue * value, GParamSpec * pspec)
+{
+  GstDecodeBin *dbin;
+
+  dbin = GST_DECODE_BIN (object);
+  switch (prop_id) {
+    case PROP_SINK_CAPS:
+      g_value_take_boxed (value, gst_decode_bin_get_sink_caps (dbin));
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+  }
 }
 
 static void
@@ -570,6 +686,25 @@ free_pad_probes (GstDecodeBin * decode_bin)
   decode_bin->probes = NULL;
 }
 
+/* used when we need to remove a probe because the decoder we plugged failed
+ * to activate */
+static void
+free_pad_probe_for_element (GstDecodeBin * decode_bin, GstElement * element)
+{
+  GList *l;
+
+  for (l = decode_bin->probes; l != NULL; l = g_list_next (l)) {
+    PadProbeData *data = (PadProbeData *) l->data;
+
+    if (GST_ELEMENT_CAST (GST_PAD_PARENT (data->pad)) == element) {
+      gst_pad_remove_data_probe (data->pad, data->sigid);
+      decode_bin->probes = g_list_delete_link (decode_bin->probes, l);
+      g_free (data);
+      return;
+    }
+  }
+}
+
 static gboolean
 add_fakesink (GstDecodeBin * decode_bin)
 {
@@ -616,6 +751,9 @@ remove_fakesink (GstDecodeBin * decode_bin)
   if (decode_bin->fakesink) {
     GST_DEBUG_OBJECT (decode_bin, "Removing fakesink and marking state dirty");
 
+    /* Lock the state to prevent it from changing state to non-NULL
+     * before it's removed */
+    gst_element_set_locked_state (decode_bin->fakesink, TRUE);
     /* setting the state to NULL is never async */
     gst_element_set_state (decode_bin->fakesink, GST_STATE_NULL);
     gst_bin_remove (GST_BIN (decode_bin), decode_bin->fakesink);
@@ -665,6 +803,47 @@ pad_probe (GstPad * pad, GstMiniObject * data, GstDecodeBin * decode_bin)
   if (alldone)
     remove_fakesink (decode_bin);
   return TRUE;
+}
+
+/* FIXME: this should be somehow merged with the queue code in
+ * try_to_link_1() to reduce code duplication */
+static GstPad *
+add_raw_queue (GstDecodeBin * decode_bin, GstPad * pad)
+{
+  GstElement *queue = NULL;
+  GstPad *queuesinkpad = NULL, *queuesrcpad = NULL;
+
+  queue = gst_element_factory_make ("queue", NULL);
+  decode_bin->queue_type = G_OBJECT_TYPE (queue);
+
+  g_object_set (G_OBJECT (queue), "max-size-buffers", 0, NULL);
+  g_object_set (G_OBJECT (queue), "max-size-time", G_GINT64_CONSTANT (0), NULL);
+  g_object_set (G_OBJECT (queue), "max-size-bytes", 8192, NULL);
+  gst_bin_add (GST_BIN (decode_bin), queue);
+  gst_element_set_state (queue, GST_STATE_READY);
+  queuesinkpad = gst_element_get_static_pad (queue, "sink");
+  queuesrcpad = gst_element_get_static_pad (queue, "src");
+
+  if (gst_pad_link (pad, queuesinkpad) != GST_PAD_LINK_OK) {
+    GST_WARNING_OBJECT (decode_bin,
+        "Linking queue failed, trying without queue");
+    gst_element_set_state (queue, GST_STATE_NULL);
+    gst_object_unref (queuesrcpad);
+    gst_object_unref (queuesinkpad);
+    gst_bin_remove (GST_BIN (decode_bin), queue);
+    return gst_object_ref (pad);
+  }
+
+  decode_bin->queues = g_list_append (decode_bin->queues, queue);
+  g_signal_connect (G_OBJECT (queue),
+      "overrun", G_CALLBACK (queue_filled_cb), decode_bin);
+  g_signal_connect (G_OBJECT (queue),
+      "underrun", G_CALLBACK (queue_underrun_cb), decode_bin);
+
+  gst_element_set_state (queue, GST_STATE_PAUSED);
+  gst_object_unref (queuesinkpad);
+
+  return queuesrcpad;
 }
 
 /* given a pad and a caps from an element, find the list of elements
@@ -719,6 +898,17 @@ close_pad_link (GstElement * element, GstPad * pad, GstCaps * caps,
     GstPad *ghost;
     PadProbeData *data;
 
+    /* If we're at a demuxer element but have raw data already
+     * we have to add a queue here. For non-raw data this is done
+     * in try_to_link_1() */
+    if (is_demuxer_element (element)) {
+      GST_DEBUG_OBJECT (decode_bin,
+          "Element %s is a demuxer, inserting a queue",
+          GST_OBJECT_NAME (element));
+
+      pad = add_raw_queue (decode_bin, pad);
+    }
+
     /* make a unique name for this new pad */
     padname = g_strdup_printf ("src%d", decode_bin->numpads);
     decode_bin->numpads++;
@@ -748,6 +938,11 @@ close_pad_link (GstElement * element, GstPad * pad, GstCaps * caps,
     GST_DEBUG_OBJECT (decode_bin, "emitted new-decoded-pad");
 
     g_free (padname);
+
+    /* If we're at a demuxer element pad was set to a queue's
+     * srcpad and must be unref'd here */
+    if (is_demuxer_element (element))
+      gst_object_unref (pad);
   } else {
     GList *to_try;
 
@@ -901,8 +1096,8 @@ try_to_link_1 (GstDecodeBin * decode_bin, GstElement * srcelement, GstPad * pad,
     g_object_set (G_OBJECT (queue), "max-size-bytes", 8192, NULL);
     gst_bin_add (GST_BIN (decode_bin), queue);
     gst_element_set_state (queue, GST_STATE_READY);
-    queuesinkpad = gst_element_get_pad (queue, "sink");
-    usedsrcpad = queuesrcpad = gst_element_get_pad (queue, "src");
+    queuesinkpad = gst_element_get_static_pad (queue, "sink");
+    usedsrcpad = queuesrcpad = gst_element_get_static_pad (queue, "src");
 
     dqlink = gst_pad_link (pad, queuesinkpad);
     g_return_val_if_fail (dqlink == GST_PAD_LINK_OK, NULL);
@@ -929,7 +1124,7 @@ try_to_link_1 (GstDecodeBin * decode_bin, GstElement * srcelement, GstPad * pad,
     /* try to link the given pad to a sinkpad */
     /* FIXME, find the sinkpad by looping over the pads instead of
      * looking it up by name */
-    if ((sinkpad = gst_element_get_pad (element, "sink")) == NULL) {
+    if ((sinkpad = gst_element_get_static_pad (element, "sink")) == NULL) {
       /* if no pad is found we can't do anything */
       GST_WARNING_OBJECT (decode_bin, "could not find sinkpad in element");
       continue;
@@ -993,6 +1188,8 @@ try_to_link_1 (GstDecodeBin * decode_bin, GstElement * srcelement, GstPad * pad,
                   GST_STATE_PAUSED)) == GST_STATE_CHANGE_FAILURE) {
         GST_WARNING_OBJECT (decode_bin, "Couldn't set %s to PAUSED",
             GST_ELEMENT_NAME (element));
+        /* close_link -> close_pad_link -> might have set up a pad probe */
+        free_pad_probe_for_element (decode_bin, element);
         gst_element_set_state (element, GST_STATE_NULL);
         gst_bin_remove (GST_BIN (decode_bin), element);
         continue;
@@ -1089,7 +1286,9 @@ get_our_ghost_pad (GstDecodeBin * decode_bin, GstPad * pad)
 static void
 remove_element_chain (GstDecodeBin * decode_bin, GstPad * pad)
 {
-  GList *int_links, *walk;
+  GstIterator *iter;
+  gboolean done = FALSE;
+  gpointer item;
   GstElement *elem = GST_ELEMENT (GST_OBJECT_PARENT (pad));
 
   while (GST_OBJECT_PARENT (elem) &&
@@ -1103,69 +1302,86 @@ remove_element_chain (GstDecodeBin * decode_bin, GstPad * pad)
   }
 
   GST_DEBUG_OBJECT (decode_bin, "%s:%s", GST_DEBUG_PAD_NAME (pad));
-  int_links = gst_pad_get_internal_links (pad);
+  iter = gst_pad_iterate_internal_links (pad);
+  if (!iter)
+    goto no_iter;
 
   /* remove all elements linked to this pad up to the ghostpad
    * that we created for this stream */
-  for (walk = int_links; walk; walk = g_list_next (walk)) {
-    GstPad *pad;
-    GstPad *ghostpad;
-    GstPad *peer;
+  while (!done) {
+    switch (gst_iterator_next (iter, &item)) {
+      case GST_ITERATOR_OK:{
+        GstPad *pad;
+        GstPad *ghostpad;
+        GstPad *peer;
 
-    pad = GST_PAD (walk->data);
-    GST_DEBUG_OBJECT (decode_bin, "inspecting internal pad %s:%s",
-        GST_DEBUG_PAD_NAME (pad));
+        pad = GST_PAD (item);
+        GST_DEBUG_OBJECT (decode_bin, "inspecting internal pad %s:%s",
+            GST_DEBUG_PAD_NAME (pad));
 
-    ghostpad = get_our_ghost_pad (decode_bin, pad);
-    if (ghostpad) {
-      GST_DEBUG_OBJECT (decode_bin, "found our ghost pad %s:%s for %s:%s",
-          GST_DEBUG_PAD_NAME (ghostpad), GST_DEBUG_PAD_NAME (pad));
+        ghostpad = get_our_ghost_pad (decode_bin, pad);
+        if (ghostpad) {
+          GST_DEBUG_OBJECT (decode_bin, "found our ghost pad %s:%s for %s:%s",
+              GST_DEBUG_PAD_NAME (ghostpad), GST_DEBUG_PAD_NAME (pad));
 
-      g_signal_emit (G_OBJECT (decode_bin),
-          gst_decode_bin_signals[SIGNAL_REMOVED_DECODED_PAD], 0, ghostpad);
+          g_signal_emit (G_OBJECT (decode_bin),
+              gst_decode_bin_signals[SIGNAL_REMOVED_DECODED_PAD], 0, ghostpad);
 
-      gst_element_remove_pad (GST_ELEMENT (decode_bin), ghostpad);
-      gst_object_unref (ghostpad);
-      continue;
-    } else {
-      GST_DEBUG_OBJECT (decode_bin, "not one of our ghostpads");
-    }
-
-    peer = gst_pad_get_peer (pad);
-    if (peer == NULL)
-      continue;
-
-    GST_DEBUG_OBJECT (decode_bin, "internal pad %s:%s linked to pad %s:%s",
-        GST_DEBUG_PAD_NAME (pad), GST_DEBUG_PAD_NAME (peer));
-
-    {
-      GstObject *parent = gst_pad_get_parent (peer);
-
-      if (parent) {
-        GstObject *grandparent = gst_object_get_parent (parent);
-
-        if (grandparent != NULL) {
-          if (GST_ELEMENT (grandparent) != GST_ELEMENT (decode_bin)) {
-            GST_DEBUG_OBJECT (decode_bin, "dead end pad %s:%s parent %s",
-                GST_DEBUG_PAD_NAME (peer), GST_OBJECT_NAME (grandparent));
-          } else {
-            GST_DEBUG_OBJECT (decode_bin, "recursing element %s on pad %s:%s",
-                GST_ELEMENT_NAME (elem), GST_DEBUG_PAD_NAME (pad));
-            remove_element_chain (decode_bin, peer);
-          }
-          gst_object_unref (grandparent);
+          gst_element_remove_pad (GST_ELEMENT (decode_bin), ghostpad);
+          gst_object_unref (ghostpad);
+          continue;
+        } else {
+          GST_DEBUG_OBJECT (decode_bin, "not one of our ghostpads");
         }
-        gst_object_unref (parent);
+
+        peer = gst_pad_get_peer (pad);
+        if (peer) {
+          GstObject *parent = gst_pad_get_parent (peer);
+
+          GST_DEBUG_OBJECT (decode_bin,
+              "internal pad %s:%s linked to pad %s:%s",
+              GST_DEBUG_PAD_NAME (pad), GST_DEBUG_PAD_NAME (peer));
+
+          if (parent) {
+            GstObject *grandparent = gst_object_get_parent (parent);
+
+            if (grandparent != NULL) {
+              if (GST_ELEMENT (grandparent) != GST_ELEMENT (decode_bin)) {
+                GST_DEBUG_OBJECT (decode_bin, "dead end pad %s:%s parent %s",
+                    GST_DEBUG_PAD_NAME (peer), GST_OBJECT_NAME (grandparent));
+              } else {
+                GST_DEBUG_OBJECT (decode_bin,
+                    "recursing element %s on pad %s:%s",
+                    GST_ELEMENT_NAME (elem), GST_DEBUG_PAD_NAME (pad));
+                remove_element_chain (decode_bin, peer);
+              }
+              gst_object_unref (grandparent);
+            }
+            gst_object_unref (parent);
+          }
+          gst_object_unref (peer);
+        }
+        gst_object_unref (item);
       }
+        break;
+      case GST_ITERATOR_RESYNC:
+        gst_iterator_resync (iter);
+        break;
+      case GST_ITERATOR_ERROR:
+        GST_ERROR_OBJECT (pad, "Could not iterate over internally linked pads");
+        done = TRUE;
+        break;
+      case GST_ITERATOR_DONE:
+        done = TRUE;
+        break;
     }
-    gst_object_unref (peer);
   }
   GST_DEBUG_OBJECT (decode_bin, "removing %s", GST_ELEMENT_NAME (elem));
 
-  g_list_free (int_links);
+  gst_iterator_free (iter);
 
+no_iter:
   gst_element_set_state (elem, GST_STATE_NULL);
-
   gst_bin_remove (GST_BIN (decode_bin), elem);
 }
 
@@ -1398,7 +1614,7 @@ elem_is_dynamic (GstElement * element, GstDecodeBin * decode_bin)
       {
         /* try to get the pad to see if it is already created or
          * not */
-        GstPad *pad = gst_element_get_pad (element, templ_name);
+        GstPad *pad = gst_element_get_static_pad (element, templ_name);
 
         if (pad) {
           GST_DEBUG_OBJECT (decode_bin, "got the pad for sometimes template %s",
@@ -1485,7 +1701,7 @@ close_link (GstElement * element, GstDecodeBin * decode_bin)
       case GST_PAD_ALWAYS:
       {
         /* get the pad that we need to autoplug */
-        GstPad *pad = gst_element_get_pad (element, templ_name);
+        GstPad *pad = gst_element_get_static_pad (element, templ_name);
 
         if (pad) {
           GST_DEBUG_OBJECT (decode_bin, "got the pad for always template %s",
@@ -1504,7 +1720,7 @@ close_link (GstElement * element, GstDecodeBin * decode_bin)
       {
         /* try to get the pad to see if it is already created or
          * not */
-        GstPad *pad = gst_element_get_pad (element, templ_name);
+        GstPad *pad = gst_element_get_static_pad (element, templ_name);
 
         if (pad) {
           GST_DEBUG_OBJECT (decode_bin, "got the pad for sometimes template %s",
@@ -1605,7 +1821,7 @@ type_found (GstElement * typefind, guint probability, GstCaps * caps,
   }
 
   /* autoplug the new pad with the caps that the signal gave us. */
-  pad = gst_element_get_pad (typefind, "src");
+  pad = gst_element_get_static_pad (typefind, "src");
   close_pad_link (typefind, pad, caps, decode_bin, FALSE);
   gst_object_unref (pad);
 
@@ -1671,7 +1887,7 @@ cleanup_decodebin (GstDecodeBin * decode_bin)
 
   GST_DEBUG_OBJECT (decode_bin, "cleaning up decodebin");
 
-  typefind_pad = gst_element_get_pad (decode_bin->typefind, "src");
+  typefind_pad = gst_element_get_static_pad (decode_bin->typefind, "src");
   if (GST_IS_PAD (typefind_pad)) {
     g_signal_handlers_block_by_func (typefind_pad, (gpointer) unlinked,
         decode_bin);
@@ -1822,6 +2038,7 @@ plugin_init (GstPlugin * plugin)
   GST_DEBUG ("binding text domain %s to locale dir %s", GETTEXT_PACKAGE,
       LOCALEDIR);
   bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+  bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 #endif /* ENABLE_NLS */
 
   return gst_element_register (plugin, "decodebin", GST_RANK_NONE,

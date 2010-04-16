@@ -86,6 +86,11 @@ GstSegment * gst_segment_new                 (void);
 IMPORT_C
 #endif
 
+GstSegment * gst_segment_copy                (GstSegment *segment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void         gst_segment_free                (GstSegment *segment);
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -143,9 +148,21 @@ gint64       gst_segment_to_running_time     (GstSegment *segment, GstFormat for
 IMPORT_C
 #endif
 
+gint64       gst_segment_to_position         (GstSegment *segment, GstFormat format, gint64 running_time);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 
 gboolean     gst_segment_clip                (GstSegment *segment, GstFormat format, gint64 start,
                                               gint64 stop, gint64 *clip_start, gint64 *clip_stop);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+
+gboolean     gst_segment_set_running_time    (GstSegment *segment, GstFormat format, gint64 running_time);
+
 
 G_END_DECLS
 

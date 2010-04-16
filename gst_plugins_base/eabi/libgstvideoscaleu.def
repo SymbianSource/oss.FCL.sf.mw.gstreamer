@@ -47,4 +47,31 @@ EXPORTS
 	vs_scanline_resample_nearest_UYVY @ 46 NONAME
 	vs_scanline_resample_nearest_Y @ 47 NONAME
 	vs_scanline_resample_nearest_YUYV @ 48 NONAME
+	vs_image_scale_4tap_RGB @ 49 NONAME
+	vs_image_scale_4tap_RGB555 @ 50 NONAME
+	vs_image_scale_4tap_RGB565 @ 51 NONAME
+	vs_image_scale_4tap_RGBA @ 52 NONAME
+	vs_image_scale_4tap_UYVY @ 53 NONAME
+	vs_image_scale_4tap_YUYV @ 54 NONAME
+	vs_scanline_merge_4tap_RGB @ 55 NONAME
+	vs_scanline_merge_4tap_RGB555 @ 56 NONAME
+	vs_scanline_merge_4tap_RGB565 @ 57 NONAME
+	vs_scanline_merge_4tap_RGBA @ 58 NONAME
+	vs_scanline_merge_4tap_UYVY @ 59 NONAME
+	vs_scanline_merge_4tap_YUYV @ 60 NONAME
+	vs_scanline_resample_4tap_RGB @ 61 NONAME
+	vs_scanline_resample_4tap_RGB555 @ 62 NONAME
+	vs_scanline_resample_4tap_RGB565 @ 63 NONAME
+	vs_scanline_resample_4tap_RGBA @ 64 NONAME
+	vs_scanline_resample_4tap_UYVY @ 65 NONAME
+	vs_scanline_resample_4tap_YUYV @ 66 NONAME
+	vs_image_scale_4tap_Y16 @ 67 NONAME
+	vs_image_scale_linear_Y16 @ 68 NONAME
+	vs_image_scale_nearest_Y16 @ 69 NONAME
+	vs_scanline_downsample_Y16 @ 70 NONAME
+	vs_scanline_merge_4tap_Y16 @ 71 NONAME
+	vs_scanline_merge_linear_Y16 @ 72 NONAME
+	vs_scanline_resample_4tap_Y16 @ 73 NONAME
+	vs_scanline_resample_linear_Y16 @ 74 NONAME
+	vs_scanline_resample_nearest_Y16 @ 75 NONAME
 

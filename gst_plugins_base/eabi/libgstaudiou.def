@@ -54,4 +54,19 @@ EXPORTS
 	gst_ring_buffer_set_sample @ 53 NONAME
 	gst_ring_buffer_start @ 54 NONAME
 	gst_ring_buffer_stop @ 55 NONAME
+	gst_audio_check_channel_positions @ 56 NONAME
+	gst_audio_clock_adjust @ 57 NONAME
+	gst_audio_clock_get_time @ 58 NONAME
+	gst_audio_clock_reset @ 59 NONAME
+	gst_base_audio_sink_slave_method_get_type @ 60 NONAME
+	gst_base_audio_src_get_slave_method @ 61 NONAME
+	gst_base_audio_src_set_slave_method @ 62 NONAME
+	gst_base_audio_src_slave_method_get_type @ 63 NONAME
+	gst_buffer_format_get_type @ 64 NONAME
+	gst_buffer_format_type_get_type @ 65 NONAME
+	gst_ring_buffer_activate @ 66 NONAME
+	gst_ring_buffer_convert @ 67 NONAME
+	gst_ring_buffer_is_active @ 68 NONAME
+	gst_ring_buffer_seg_state_get_type @ 69 NONAME
+	gst_ring_buffer_state_get_type @ 70 NONAME
 

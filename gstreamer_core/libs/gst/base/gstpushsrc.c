@@ -60,9 +60,7 @@
 #include <gst/gstmarshal.h>
 
 GST_DEBUG_CATEGORY_STATIC (gst_push_src_debug);
-#ifndef __SYMBIAN32__
 #define GST_CAT_DEFAULT gst_push_src_debug
-#endif
 
 #define _do_init(type) \
     GST_DEBUG_CATEGORY_INIT (gst_push_src_debug, "pushsrc", 0, \

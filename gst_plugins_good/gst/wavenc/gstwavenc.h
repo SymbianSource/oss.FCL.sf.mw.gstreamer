@@ -47,20 +47,20 @@ struct _GstWavEnc {
   GstPad    *srcpad;
 
   /* useful audio data */
-  guint      depth;
+  guint16    format;
   guint      width;
   guint      rate;
   guint      channels;
   guint32    length;
 
   gboolean   sent_header;
+  gboolean   finished_properly;
 };
 
 struct _GstWavEncClass {
   GstElementClass parent_class;
 };
 
-GType gst_wavenc_get_type(void);
 G_END_DECLS
 
 #endif /* __GST_WAV_ENC_H__ */

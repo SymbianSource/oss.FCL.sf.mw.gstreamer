@@ -49,6 +49,8 @@ USERINCLUDE     ../
 
 SOURCEPATH      ../gst/autodetect
 SOURCE          gstautodetect.c
+SOURCE          gstautoaudiosrc.c
+SOURCE          gstautovideosrc.c
 SOURCE          gstautoaudiosink.c
 SOURCE          gstautovideosink.c
 

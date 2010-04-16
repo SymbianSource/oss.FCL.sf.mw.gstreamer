@@ -96,11 +96,20 @@ extern GCond *sync_cond;
 #define LOG_FILENAME_LINE __FILE__, __LINE__
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 

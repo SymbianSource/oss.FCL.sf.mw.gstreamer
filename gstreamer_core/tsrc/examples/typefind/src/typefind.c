@@ -29,12 +29,22 @@
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
+
 static void
 type_found (GstElement * typefind, guint probability, const GstCaps * caps,
     gpointer user_data)

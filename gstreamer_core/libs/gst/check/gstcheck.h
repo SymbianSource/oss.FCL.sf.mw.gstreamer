@@ -40,6 +40,12 @@ G_BEGIN_DECLS
 GST_DEBUG_CATEGORY_EXTERN (check_debug);
 #define GST_CAT_DEFAULT check_debug
 
+#define __CHECK_VERSION_LATER_THAN(major,minor,micro) \
+    (CHECK_MAJOR_VERSION > major || \
+     (CHECK_MAJOR_VERSION == (major) && CHECK_MINOR_VERSION > (minor)) || \
+     (CHECK_MAJOR_VERSION == (major) && CHECK_MINOR_VERSION == (minor) && \
+      CHECK_MICRO_VERSION > (micro)))
+
 /* logging function for tests
  * a test uses g_message() to log a debug line
  * a gst unit test can be run with GST_TEST_DEBUG env var set to see the
@@ -149,6 +155,23 @@ GstPad *gst_check_setup_src_pad (GstElement * element,
 IMPORT_C
 #endif
 
+GstPad * gst_check_setup_src_pad_by_name (GstElement * element,
+          GstStaticPadTemplate * template, gchar *name);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+GstPad * gst_check_setup_sink_pad_by_name (GstElement * element, 
+          GstStaticPadTemplate * template, gchar *name);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void gst_check_teardown_pad_by_name (GstElement * element, gchar *name);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void gst_check_teardown_src_pad (GstElement * element);
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -207,11 +230,8 @@ gst_check_message_error (msg, GST_MESSAGE_ERROR,		\
  *
  * wrapper for checks END_TEST
  */
-
 /*
-#if CHECK_MAJOR_VERSION > 0 || \
-    (CHECK_MAJOR_VERSION == 0 && CHECK_MINOR_VERSION > 9) || \
-    (CHECK_MAJOR_VERSION == 0 && CHECK_MINOR_VERSION == 9 && CHECK_MICRO_VERSION > 3)
+#if __CHECK_VERSION_LATER_THAN(0,9,3)
 #define GST_START_TEST(__testname) \
 static void __testname (int __i__)\
 {\
@@ -230,7 +250,6 @@ static void __testname (int __i__)\
 //#define GST_END_TEST END_TEST
 //#endif
 
-//#define GST_END_TEST }
 
 /* additional fail macros */
 /**
@@ -367,9 +386,11 @@ MAIN_SYNCHRONIZE();
 G_STMT_START {				\
   _gst_check_threads_running = TRUE;	\
 					\
-  mutex = g_mutex_new ();		\
-  start_cond = g_cond_new ();		\
-  sync_cond = g_cond_new ();		\
+  if (mutex == NULL) {			\
+    mutex = g_mutex_new ();		\
+    start_cond = g_cond_new ();		\
+    sync_cond = g_cond_new ();		\
+  }					\
 } G_STMT_END;
 
 #define MAIN_START_THREAD_FUNCTIONS(count, function, data)	\
@@ -410,6 +431,8 @@ G_STMT_START {							\
   /* join all threads */					\
   GST_DEBUG ("MAIN: joining");					\
   g_list_foreach (thread_list, (GFunc) g_thread_join, NULL);	\
+  g_list_free (thread_list);					\
+  thread_list = NULL;						\
   GST_DEBUG ("MAIN: joined");					\
 } G_STMT_END;
 
@@ -511,24 +534,12 @@ fail_unless (gst_element_set_state (element,			\
 #define GST_CHECK_MAIN(name)					\
 int main (int argc, char **argv)				\
 {								\
-    int i, num_fun;                  \
-gst_check_init (NULL, NULL);                    \
-i = sizeof(args);                           \
- num_fun = i/sizeof(int);                   \
-  for(i=0;i<num_fun;i++)                    \
-      if (!strcmp(args[i], argv[1]))                    \
-      {                                     \
-          fn[i]();                                  \
-          break;                                        \
-          }                     \
-  if(i == num_fun)                      \
-      std_log(LOG_FILENAME_LINE, "%s is invalid args", argv[1]);                      \
-  return 0;                                         \
+  Suite *s;                                                     \
+  gst_check_init (&argc, &argv);				\
+  s = name ## _suite ();					\
+  return gst_check_run_suite (s, # name, __FILE__);		\
 }
-
 */
-
-
 #define GST_CHECK_MAIN(name)                    \
     int main (int argc, char **argv)        \
     {                                   \
@@ -563,9 +574,6 @@ i = sizeof(args);                           \
       return 0;                 \
     }
 
-
-
-
 /* Hack to allow run-time selection of unit tests to run via the
  * GST_CHECKS environment variable (test function names, comma-separated) */
 #ifdef __SYMBIAN32__
@@ -574,11 +582,17 @@ IMPORT_C
 
 
 gboolean _gst_check_run_test_func (const gchar * func_name);
-
 /*
-#if CHECK_MAJOR_VERSION > 0 || \
-    (CHECK_MAJOR_VERSION == 0 && CHECK_MINOR_VERSION > 9) || \
-    (CHECK_MAJOR_VERSION == 0 && CHECK_MINOR_VERSION == 9 && CHECK_MICRO_VERSION > 3)
+#if __CHECK_VERSION_LATER_THAN(0,9,6)
+static inline void
+__gst_tcase_add_test (TCase * tc, TFun tf, const char * fname, int signal,
+    int allowed_exit_value, int start, int end)
+{
+  if (_gst_check_run_test_func (fname)) {
+    _tcase_add_test (tc, tf, fname, signal, allowed_exit_value, start, end);
+  }
+}
+#elif __CHECK_VERSION_LATER_THAN(0,9,3)
 static inline void
 __gst_tcase_add_test (TCase * tc, TFun tf, const char * fname, int signal,
     int start, int end)
@@ -601,6 +615,8 @@ __gst_tcase_add_test (TCase * tc, TFun tf, const char * fname, int signal)
 //#endif
 
 //#define _tcase_add_test __gst_tcase_add_test
+
+//#undef __CHECK_VERSION_LATER_THAN
 
 G_END_DECLS
 

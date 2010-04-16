@@ -1,5 +1,4 @@
 %{
-
 #include <math.h>
 #include <string.h>
 
@@ -11,11 +10,6 @@
 #include "../gstinfo.h"
 #include "../gsturi.h"
 #include "grammar.tab.h"
-
-#ifdef __SYMBIAN32__
-#include <glib_global.h>
-#include <gobject_global.h>
-#endif
 
 /* Override the default ECHO so as to avoid fortify warnings. Ignore the
    embedded-NUL case for now. We know yytext is NUL-terminated. */

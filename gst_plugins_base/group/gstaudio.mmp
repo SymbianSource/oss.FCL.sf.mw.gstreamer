@@ -20,6 +20,7 @@
 *
 */
 
+
 #include <platform_paths.hrh>                    
 
 TARGET          libgstaudio.dll
@@ -52,8 +53,10 @@ USERINCLUDE		../../include/gstreamer/gst/controller
 USERINCLUDE		../../include/gstreamer/gst/dataprotocol
 USERINCLUDE		../../include/gstreamer/gst/net
 
+USERINCLUDE     ../gst-libs/audio
+
 SOURCEPATH      ../gst-libs/gst/audio
-SOURCE          audio.c
+SOURCE          audio.c audio-enumtypes.c
 SOURCE          gstaudioclock.c
 SOURCE          mixerutils.c
 SOURCE          multichannel.c
@@ -63,8 +66,6 @@ SOURCE          gstaudiosrc.c
 SOURCE          gstbaseaudiosink.c
 SOURCE          gstbaseaudiosrc.c
 SOURCE          gstringbuffer.c
-SOURCE          multichannel-enumtypes.c
-//SOURCE          gstaudiofiltertemplate.c
 
 
 LIBRARY         euser.lib

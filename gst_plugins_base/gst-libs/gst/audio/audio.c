@@ -16,26 +16,21 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
-
-#include "audio.h"
-#include "multichannel-enumtypes.h"
-
-#include <gst/gststructure.h>
-
-#ifdef __SYMBIAN32__
-#include <glib_global.h>
-#endif
-
 /**
  * SECTION:gstaudio
  * @short_description: Support library for audio elements
  *
  * This library contains some helper functions for audio elements.
  */
+
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+#include "audio.h"
+#include "audio-enumtypes.h"
+
+#include <gst/gststructure.h>
 
 /**
  * gst_audio_frame_byte_size:
@@ -117,7 +112,7 @@ gst_audio_frame_length (GstPad * pad, GstBuffer * buf)
  * Calculate length in nanoseconds of audio buffer @buf based on capabilities of
  * @pad.
  *
- * Return: the length.
+ * Returns: the length.
  */
 #ifdef __SYMBIAN32__
 EXPORT_C

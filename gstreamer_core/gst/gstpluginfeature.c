@@ -81,14 +81,14 @@ gst_plugin_feature_finalize (GObject * object)
  * unaffected; use the return value instead.
  *
  * Normally this function is used like this:
- *
- * <programlisting>
+ * |[
  * GstPluginFeature *loaded_feature;
+ * 
  * loaded_feature = gst_plugin_feature_load (feature);
  * // presumably, we're no longer interested in the potentially-unloaded feature
  * gst_object_unref (feature);
  * feature = loaded_feature;
- * </programlisting>
+ * ]|
  *
  * Returns: A reference to the loaded feature, or NULL on error.
  */
@@ -196,7 +196,7 @@ gst_plugin_feature_set_name (GstPluginFeature * feature, const gchar * name)
   } else {
     feature->name = g_strdup (name);
   }
-  gst_object_set_name (GST_OBJECT (feature), feature->name);
+  gst_object_set_name (GST_OBJECT_CAST (feature), feature->name);
 }
 
 /**

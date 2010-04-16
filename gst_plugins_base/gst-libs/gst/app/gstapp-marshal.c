@@ -1,21 +1,5 @@
-/* GStreamer
- * Copyright (C) 2007
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Library General Public License for more details.
- *
- * You should have received a copy of the GNU Library General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
- */
+#include "gstapp-marshal.h"
+
 #include	<glib-object.h>
 
 
@@ -64,16 +48,14 @@
 #endif /* !G_ENABLE_DEBUG */
 
 
-/* VOID:UINT (gstapp-marshal.list:1) */
-
-/* BOOLEAN:UINT64 (gstapp-marshal.list:2) */
+/* BOOLEAN:UINT64 (gstapp-marshal.list:1) */
 void
 __gst_app_marshal_BOOLEAN__UINT64 (GClosure     *closure,
-                                 GValue       *return_value G_GNUC_UNUSED,
-                                 guint         n_param_values,
-                                 const GValue *param_values,
-                                 gpointer      invocation_hint G_GNUC_UNUSED,
-                                 gpointer      marshal_data)
+                                   GValue       *return_value G_GNUC_UNUSED,
+                                   guint         n_param_values,
+                                   const GValue *param_values,
+                                   gpointer      invocation_hint G_GNUC_UNUSED,
+                                   gpointer      marshal_data)
 {
   typedef gboolean (*GMarshalFunc_BOOLEAN__UINT64) (gpointer     data1,
                                                     guint64      arg_1,
@@ -105,14 +87,14 @@ __gst_app_marshal_BOOLEAN__UINT64 (GClosure     *closure,
   g_value_set_boolean (return_value, v_return);
 }
 
-/* ENUM:OBJECT (gstapp-marshal.list:3) */
+/* ENUM:OBJECT (gstapp-marshal.list:2) */
 void
 __gst_app_marshal_ENUM__OBJECT (GClosure     *closure,
-                              GValue       *return_value G_GNUC_UNUSED,
-                              guint         n_param_values,
-                              const GValue *param_values,
-                              gpointer      invocation_hint G_GNUC_UNUSED,
-                              gpointer      marshal_data)
+                                GValue       *return_value G_GNUC_UNUSED,
+                                guint         n_param_values,
+                                const GValue *param_values,
+                                gpointer      invocation_hint G_GNUC_UNUSED,
+                                gpointer      marshal_data)
 {
   typedef gint (*GMarshalFunc_ENUM__OBJECT) (gpointer     data1,
                                              gpointer     arg_1,
@@ -144,14 +126,14 @@ __gst_app_marshal_ENUM__OBJECT (GClosure     *closure,
   g_value_set_enum (return_value, v_return);
 }
 
-/* ENUM:VOID (gstapp-marshal.list:4) */
+/* ENUM:VOID (gstapp-marshal.list:3) */
 void
 __gst_app_marshal_ENUM__VOID (GClosure     *closure,
-                            GValue       *return_value G_GNUC_UNUSED,
-                            guint         n_param_values,
-                            const GValue *param_values,
-                            gpointer      invocation_hint G_GNUC_UNUSED,
-                            gpointer      marshal_data)
+                              GValue       *return_value G_GNUC_UNUSED,
+                              guint         n_param_values,
+                              const GValue *param_values,
+                              gpointer      invocation_hint G_GNUC_UNUSED,
+                              gpointer      marshal_data)
 {
   typedef gint (*GMarshalFunc_ENUM__VOID) (gpointer     data1,
                                            gpointer     data2);
@@ -180,4 +162,6 @@ __gst_app_marshal_ENUM__VOID (GClosure     *closure,
 
   g_value_set_enum (return_value, v_return);
 }
+
+/* VOID:UINT (gstapp-marshal.list:4) */
 

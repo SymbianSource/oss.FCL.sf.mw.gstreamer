@@ -24,6 +24,7 @@
 #define __GST_TASK_H__
 
 #include <gst/gstobject.h>
+#include <gst/gsttaskpool.h>
 
 G_BEGIN_DECLS
 
@@ -31,8 +32,8 @@ G_BEGIN_DECLS
  * GstTaskFunction:
  * @data: user data passed to the function
  *
- * A function that will repeadedly be called in the thread created by
- * a GstTask. 
+ * A function that will repeatedly be called in the thread created by
+ * a #GstTask.
  */
 typedef void         (*GstTaskFunction)          (void *data);
 
@@ -47,11 +48,12 @@ typedef void         (*GstTaskFunction)          (void *data);
 
 typedef struct _GstTask GstTask;
 typedef struct _GstTaskClass GstTaskClass;
+typedef struct _GstTaskPrivate GstTaskPrivate;
 
 /**
  * GstTaskState:
  * @GST_TASK_STARTED: the task is started and running
- * @GST_TASK_STOPPED:  the task is stopped
+ * @GST_TASK_STOPPED: the task is stopped
  * @GST_TASK_PAUSED: the task is paused
  *
  * The different states a task can be in
@@ -108,13 +110,32 @@ typedef enum {
 #define GST_TASK_GET_LOCK(task)		(GST_TASK_CAST(task)->lock)
 
 /**
+ * GstTaskThreadCallbacks:
+ * @enter_thread: a thread is entered, this callback is called when the new
+ *   thread enters its function.
+ * @leave_thread: a thread is exiting, this is called when the thread is about
+ *   to leave its function
+ *
+ * Custom GstTask thread callback functions that can be installed. 
+ *
+ * Since: 0.10.24
+ */
+typedef struct {
+  /* manage the lifetime of the thread */
+  void      (*enter_thread)     (GstTask *task, GThread *thread, gpointer user_data);
+  void      (*leave_thread)     (GstTask *task, GThread *thread, gpointer user_data);
+  /*< private >*/
+  gpointer     _gst_reserved[GST_PADDING];
+} GstTaskThreadCallbacks;
+
+/**
  * GstTask:
  * @state: the state of the task
  * @cond: used to pause/resume the task
- * @lock: The lock taken when iterating the taskfunction
+ * @lock: The lock taken when iterating the task function
  * @func: the function executed by this task
  * @data: data passed to the task function
- * @running: a flag indicating that the task is running.
+ * @running: a flag indicating that the task is running
  *
  * The #GstTask object.
  */
@@ -138,17 +159,17 @@ struct _GstTask {
       /* thread this task is currently running in */
       GThread  *thread;
     } ABI;
-    /* adding + 0 to mark ABI change to be undone later */
-    gpointer _gst_reserved[GST_PADDING + 0];
+    gpointer _gst_reserved[GST_PADDING - 1];
   } abidata;
 
+  GstTaskPrivate *priv;
 };
 
 struct _GstTaskClass {
   GstObjectClass parent_class;
 
   /*< private >*/
-  GThreadPool *pool;
+  GstTaskPool *pool;
 
   /*< private >*/
   gpointer _gst_reserved[GST_PADDING];
@@ -180,8 +201,38 @@ void		gst_task_set_lock	(GstTask *task, GStaticRecMutex *mutex);
 IMPORT_C
 #endif
 
+void		gst_task_set_priority	(GstTask *task, GThreadPriority priority);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+
+GstTaskPool *   gst_task_get_pool       (GstTask *task);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void            gst_task_set_pool       (GstTask *task, GstTaskPool *pool);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+
+void            gst_task_set_thread_callbacks  (GstTask *task,
+                                                GstTaskThreadCallbacks *callbacks,
+						gpointer user_data,
+						GDestroyNotify notify);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 
 GstTaskState	gst_task_get_state	(GstTask *task);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+gboolean        gst_task_set_state      (GstTask *task, GstTaskState state);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -208,4 +259,3 @@ gboolean	gst_task_join		(GstTask *task);
 G_END_DECLS
 
 #endif /* __GST_TASK_H__ */
-

@@ -25,50 +25,32 @@
 #include <e32std.h> 
 #include <pls.h> // For emulator WSD API 
 #include <glib.h>
+#include <config.h>
+#include <stdlib.h> 
 
 extern "C" char* libgstreamer_get_dll_path(char* dllName)
 {
-    TUint ch = TUint('A');
-    char* fullPath = dllName;
-    #ifdef __WINSCW__ 
-    char* dllPath = "z:\\sys\\bin\\plugins";
-    fullPath = g_strjoin ("\\", dllPath,dllName, NULL);
-    #else
-    char* dllPath = "sys\\bin";
-    
-    char* filename;
-    TInt i; 
+    char* dllFullPath = NULL;
     RFs fs;
-    TDriveList driveList;
-    //err = fs.Connect();
+    CDir* directory=NULL;
     if( !(fs.Connect()) )
     {
-        //err = fs.DriveList(driveList);
-        if( !(fs.DriveList(driveList)) )
+        TFindFile findFile(fs);
+        TFileName file;
+        TPtrC8 filename;
+        filename.Set( reinterpret_cast<TUint8*>( dllName ) );
+        file.Copy( filename );
+        if( ! findFile.FindWildByDir(file,KResFileNamePath,directory) )
         {
-            for( i = 0; i< KMaxDrives; i++ )
-            {
-            
-                if( driveList[i] != 0 )
-                {
-                    char temp[3];
-                    temp[0]= char(ch);
-                    temp[1]= ':';
-                    temp[2]= '\0';
-                    
-                    filename = g_strjoin ("\\", temp,dllPath,dllName, NULL);
-                    if (g_file_test (filename, G_FILE_TEST_EXISTS))
-                    {
-                        fullPath = filename;
-                        break;
-                    }
-                }
-                ch++;
-            }
+            TBuf8<KMaxFileName> fileName;
+            fileName.Copy( findFile.File() );
+            TInt length = fileName.Size() + 1;
+            dllFullPath = (char*)malloc( length );
+            memcpy( dllFullPath, fileName.PtrZ(), length );
+            delete directory;
         }
         fs.Close();
     }
-    #endif
-    return fullPath;
+    return dllFullPath;
 }
 

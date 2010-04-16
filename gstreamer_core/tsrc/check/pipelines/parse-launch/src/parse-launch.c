@@ -37,11 +37,20 @@
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 #define GST_TYPE_PARSE_TEST_ELEMENT (gst_parse_test_element_get_type())
@@ -568,6 +577,112 @@ gst_parse_test_element_change_state (GstElement * element,
   return GST_ELEMENT_CLASS (parent_class)->change_state (element, transition);
 }
 
+void test_missing_elements()
+{
+  GstParseContext *ctx;
+  GstElement *element;
+  GError *err = NULL;
+  gchar **arr;
+
+  xmlfile = "test_missing_elements";
+    std_log(LOG_FILENAME_LINE, "Test Started test_missing_elements");
+  /* avoid misleading 'no such element' error debug messages when using cvs */
+  if (!g_getenv ("GST_DEBUG"))
+    gst_debug_set_default_threshold (GST_LEVEL_NONE);
+
+  /* one missing element */
+  ctx = gst_parse_context_new ();
+  element = gst_parse_launch_full ("fakesrc ! coffeesink", ctx,
+      GST_PARSE_FLAG_FATAL_ERRORS, &err);
+  fail_unless (err != NULL, "expected error");
+  fail_unless_equals_int (err->code, GST_PARSE_ERROR_NO_SUCH_ELEMENT);
+  fail_unless (element == NULL, "expected NULL return with FATAL_ERRORS");
+  arr = gst_parse_context_get_missing_elements (ctx);
+  fail_unless (arr != NULL, "expected missing elements");
+  fail_unless_equals_string (arr[0], "coffeesink");
+  fail_unless (arr[1] == NULL);
+  g_strfreev (arr);
+  gst_parse_context_free (ctx);
+  g_error_free (err);
+  err = NULL;
+
+  /* multiple missing elements */
+  ctx = gst_parse_context_new ();
+  element = gst_parse_launch_full ("fakesrc ! bogusenc ! identity ! goomux ! "
+      "fakesink", ctx, GST_PARSE_FLAG_FATAL_ERRORS, &err);
+  fail_unless (err != NULL, "expected error");
+  fail_unless_equals_int (err->code, GST_PARSE_ERROR_NO_SUCH_ELEMENT);
+  fail_unless (element == NULL, "expected NULL return with FATAL_ERRORS");
+  arr = gst_parse_context_get_missing_elements (ctx);
+  fail_unless (arr != NULL, "expected missing elements");
+  fail_unless_equals_string (arr[0], "bogusenc");
+  fail_unless_equals_string (arr[1], "goomux");
+  fail_unless (arr[2] == NULL);
+  g_strfreev (arr);
+  gst_parse_context_free (ctx);
+  g_error_free (err);
+  err = NULL;
+
+  /* multiple missing elements, different link pattern */
+  ctx = gst_parse_context_new ();
+  element = gst_parse_launch_full ("fakesrc ! bogusenc ! mux.sink "
+      "blahsrc ! goomux name=mux ! fakesink   fakesrc ! goosink", ctx,
+      GST_PARSE_FLAG_FATAL_ERRORS, &err);
+  fail_unless (err != NULL, "expected error");
+  fail_unless_equals_int (err->code, GST_PARSE_ERROR_NO_SUCH_ELEMENT);
+  fail_unless (element == NULL, "expected NULL return with FATAL_ERRORS");
+  arr = gst_parse_context_get_missing_elements (ctx);
+  fail_unless (arr != NULL, "expected missing elements");
+  fail_unless_equals_string (arr[0], "bogusenc");
+  fail_unless_equals_string (arr[1], "blahsrc");
+  fail_unless_equals_string (arr[2], "goomux");
+  fail_unless_equals_string (arr[3], "goosink");
+  fail_unless (arr[4] == NULL);
+  g_strfreev (arr);
+  gst_parse_context_free (ctx);
+  g_error_free (err);
+  err = NULL;
+  
+  std_log(LOG_FILENAME_LINE, "Test Successful");
+   create_xml(0);
+}
+
+
+void test_flags()
+{
+  GstElement *element;
+  GError *err = NULL;
+
+  xmlfile = "test_flags";
+    std_log(LOG_FILENAME_LINE, "Test Started test_flags");
+    
+  /* avoid misleading 'no such element' error debug messages when using cvs */
+  if (!g_getenv ("GST_DEBUG"))
+    gst_debug_set_default_threshold (GST_LEVEL_NONE);
+
+  /* default behaviour is to return any already constructed bins/elements */
+  element = gst_parse_launch_full ("fakesrc ! coffeesink", NULL, 0, &err);
+  fail_unless (err != NULL, "expected error");
+  fail_unless_equals_int (err->code, GST_PARSE_ERROR_NO_SUCH_ELEMENT);
+  fail_unless (element != NULL, "expected partial pipeline/element");
+  g_error_free (err);
+  err = NULL;
+  gst_object_unref (element);
+
+  /* test GST_PARSE_FLAG_FATAL_ERRORS */
+  element = gst_parse_launch_full ("fakesrc ! coffeesink", NULL,
+      GST_PARSE_FLAG_FATAL_ERRORS, &err);
+  fail_unless (err != NULL, "expected error");
+  fail_unless_equals_int (err->code, GST_PARSE_ERROR_NO_SUCH_ELEMENT);
+  fail_unless (element == NULL, "expected NULL return with FATAL_ERRORS");
+  g_error_free (err);
+  err = NULL;
+  
+  std_log(LOG_FILENAME_LINE, "Test Successful");
+   create_xml(0);
+}
+
+
 # if 0
 void
 parse_suite (void)
@@ -580,12 +695,14 @@ delayed_link();
 }
 #endif
 
-void (*fn[5]) (void) = {
+void (*fn[]) (void) = {
 test_launch_lines,
 test_launch_lines2,
 expected_to_fail_pipes,
 leaking_fail_pipes,
-delayed_link
+delayed_link,
+test_missing_elements,
+test_flags
 };
 
 char *args[] = {
@@ -593,7 +710,9 @@ char *args[] = {
 "test_launch_lines2",
 "expected_to_fail_pipes",
 "leaking_fail_pipes",
-"delayed_link"
+"delayed_link",
+"test_missing_elements",
+"test_flags"
 };
 
 GST_CHECK_MAIN (parse-launch);

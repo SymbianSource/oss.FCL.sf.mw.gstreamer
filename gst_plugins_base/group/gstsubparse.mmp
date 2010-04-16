@@ -62,6 +62,7 @@ LIBRARY		libgobject.lib
 LIBRARY		libglib.lib
 LIBRARY		libc.lib
 LIBRARY		libgstreamer.lib
+LIBRARY		libgstbase.lib
 
 
 MACRO           HAVE_CONFIG_H

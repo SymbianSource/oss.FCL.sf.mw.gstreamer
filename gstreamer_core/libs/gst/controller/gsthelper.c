@@ -41,8 +41,6 @@
 #define GST_CAT_DEFAULT controller_debug
 GST_DEBUG_CATEGORY_EXTERN (GST_CAT_DEFAULT);
 
-extern GQuark priv_gst_controller_key;
-
 /**
  * gst_object_control_properties:
  * @object: the object of which some properties should be controlled
@@ -149,12 +147,10 @@ EXPORT_C
 gboolean
 gst_object_set_controller (GObject * object, GstController * controller)
 {
-  GstController *ctrl;
-
   g_return_val_if_fail (G_IS_OBJECT (object), FALSE);
   g_return_val_if_fail (controller, FALSE);
 
-  if (!(ctrl = g_object_get_qdata (object, priv_gst_controller_key))) {
+  if (!g_object_get_qdata (object, priv_gst_controller_key)) {
     g_object_set_qdata (object, priv_gst_controller_key, controller);
     return (TRUE);
   }
@@ -207,12 +203,14 @@ gst_object_sync_values (GObject * object, GstClockTime timestamp)
   GstController *ctrl = NULL;
 
   g_return_val_if_fail (G_IS_OBJECT (object), FALSE);
-  g_return_val_if_fail (GST_CLOCK_TIME_IS_VALID (timestamp), FALSE);
 
   if ((ctrl = g_object_get_qdata (object, priv_gst_controller_key))) {
     return gst_controller_sync_values (ctrl, timestamp);
   }
-  return (FALSE);
+  /* this is no failure, its called by elements regardless if there is a
+   * controller assigned or not
+   */
+  return (TRUE);
 }
 
 /**

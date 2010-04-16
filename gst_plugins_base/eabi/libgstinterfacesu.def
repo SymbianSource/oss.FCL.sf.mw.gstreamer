@@ -88,4 +88,31 @@ EXPORTS
 	gst_x_overlay_handle_events @ 87 NONAME
 	gst_x_overlay_prepare_xwindow_id @ 88 NONAME
 	gst_x_overlay_set_xwindow_id @ 89 NONAME
+	gst_navigation_command_get_type @ 90 NONAME
+	gst_navigation_event_get_type @ 91 NONAME
+	gst_navigation_event_parse_command @ 92 NONAME
+	gst_navigation_event_parse_key_event @ 93 NONAME
+	gst_navigation_event_parse_mouse_button_event @ 94 NONAME
+	gst_navigation_event_parse_mouse_move_event @ 95 NONAME
+	gst_navigation_event_type_get_type @ 96 NONAME
+	gst_navigation_message_get_type @ 97 NONAME
+	gst_navigation_message_new_angles_changed @ 98 NONAME
+	gst_navigation_message_new_commands_changed @ 99 NONAME
+	gst_navigation_message_new_mouse_over @ 100 NONAME
+	gst_navigation_message_parse_angles_changed @ 101 NONAME
+	gst_navigation_message_parse_mouse_over @ 102 NONAME
+	gst_navigation_message_type_get_type @ 103 NONAME
+	gst_navigation_query_get_type @ 104 NONAME
+	gst_navigation_query_new_angles @ 105 NONAME
+	gst_navigation_query_new_commands @ 106 NONAME
+	gst_navigation_query_parse_angles @ 107 NONAME
+	gst_navigation_query_parse_commands_length @ 108 NONAME
+	gst_navigation_query_parse_commands_nth @ 109 NONAME
+	gst_navigation_query_set_angles @ 110 NONAME
+	gst_navigation_query_set_commands @ 111 NONAME
+	gst_navigation_query_set_commandsv @ 112 NONAME
+	gst_navigation_query_type_get_type @ 113 NONAME
+	gst_navigation_send_command @ 114 NONAME
+	gst_color_balance_get_balance_type @ 115 NONAME
+	gst_mixer_get_mixer_type @ 116 NONAME
 

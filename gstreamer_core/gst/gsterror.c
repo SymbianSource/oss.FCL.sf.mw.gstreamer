@@ -147,7 +147,8 @@ _gst_core_errors_init (void)
   TABLE (t, CORE, NOT_IMPLEMENTED,
       N_("Internal GStreamer error: code not implemented." FILE_A_BUG));
   TABLE (t, CORE, STATE_CHANGE,
-      N_("Internal GStreamer error: state change failed." FILE_A_BUG));
+      N_("GStreamer error: state change failed and some element failed to "
+          "post a proper error message with the reason for the failure."));
   TABLE (t, CORE, PAD, N_("Internal GStreamer error: pad problem." FILE_A_BUG));
   TABLE (t, CORE, THREAD,
       N_("Internal GStreamer error: thread problem." FILE_A_BUG));
@@ -248,6 +249,11 @@ _gst_stream_errors_init (void)
   TABLE (t, STREAM, DEMUX, N_("Could not demultiplex stream."));
   TABLE (t, STREAM, MUX, N_("Could not multiplex stream."));
   TABLE (t, STREAM, FORMAT, N_("The stream is in the wrong format."));
+  TABLE (t, STREAM, DECRYPT,
+      N_("The stream is encrypted and decryption is not supported."));
+  TABLE (t, STREAM, DECRYPT_NOKEY,
+      N_("The stream is encrypted and can't be decrypted because no suitable "
+          "key has been supplied."));
 
   return t;
 }

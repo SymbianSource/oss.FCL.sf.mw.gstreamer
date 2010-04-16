@@ -21,37 +21,31 @@
  */
 /**
  * SECTION:element-fakesrc
- * @short_description: Generate (meaningless) buffers
  * @see_also: #GstFakeSink
  *
- * <refsect2>
- * <para>
  * The fakesrc element is a multipurpose element that can generate
  * a wide range of buffers and can operate in various scheduling modes.
- * </para>
- * <para>
+ * 
  * It is mostly used as a testing element, one trivial example for testing
  * basic <application>GStreamer</application> core functionality is:
- * </para>
+ * 
+ * <refsect2>
  * <title>Example launch line</title>
- * <para>
- * <programlisting>
+ * |[
  * gst-launch -v fakesrc num-buffers=5 ! fakesink
- * </programlisting>
- * This pipeline will push 5 empty buffers to the fakesink element and then
+ * ]| This pipeline will push 5 empty buffers to the fakesink element and then
  * sends an EOS.
- * </para>
- * <para>
- * Last reviewed on 2005-12-02 (0.9.7)
- * </para>
  * </refsect2>
+ * 
+ * Last reviewed on 2008-06-20 (0.10.21)
+ */
+
+/* FIXME: this ignores basesrc::blocksize property, which could be used as an
+ * alias to ::sizemax (see gst_base_src_get_blocksize()).
  */
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
-#endif
-#ifdef __SYMBIAN32__
-#include <gst_global.h>
 #endif
 
 #include <stdlib.h>
@@ -59,11 +53,6 @@
 
 #include "gstfakesrc.h"
 #include <gst/gstmarshal.h>
-#ifdef __SYMBIAN32__
-#include <glib_global.h>
-#include <gobject_global.h>
-#include <gstelement.h>
-#endif
 
 static GstStaticPadTemplate srctemplate = GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
@@ -98,6 +87,7 @@ enum
 #define DEFAULT_PARENTSIZE      4096*10
 #define DEFAULT_CAN_ACTIVATE_PULL TRUE
 #define DEFAULT_CAN_ACTIVATE_PUSH TRUE
+#define DEFAULT_FORMAT          GST_FORMAT_BYTES
 
 enum
 {
@@ -119,7 +109,9 @@ enum
   PROP_LAST_MESSAGE,
   PROP_CAN_ACTIVATE_PULL,
   PROP_CAN_ACTIVATE_PUSH,
-  PROP_IS_LIVE
+  PROP_IS_LIVE,
+  PROP_FORMAT,
+  PROP_LAST,
 };
 
 /* not implemented
@@ -235,6 +227,34 @@ static GstFlowReturn gst_fake_src_create (GstBaseSrc * src, guint64 offset,
 static guint gst_fake_src_signals[LAST_SIGNAL] = { 0 };
 
 static void
+marshal_VOID__MINIOBJECT_OBJECT (GClosure * closure, GValue * return_value,
+    guint n_param_values, const GValue * param_values, gpointer invocation_hint,
+    gpointer marshal_data)
+{
+  typedef void (*marshalfunc_VOID__MINIOBJECT_OBJECT) (gpointer obj,
+      gpointer arg1, gpointer arg2, gpointer data2);
+  register marshalfunc_VOID__MINIOBJECT_OBJECT callback;
+  register GCClosure *cc = (GCClosure *) closure;
+  register gpointer data1, data2;
+
+  g_return_if_fail (n_param_values == 3);
+
+  if (G_CCLOSURE_SWAP_DATA (closure)) {
+    data1 = closure->data;
+    data2 = g_value_peek_pointer (param_values + 0);
+  } else {
+    data1 = g_value_peek_pointer (param_values + 0);
+    data2 = closure->data;
+  }
+  callback =
+      (marshalfunc_VOID__MINIOBJECT_OBJECT) (marshal_data ? marshal_data :
+      cc->callback);
+
+  callback (data1, gst_value_get_mini_object (param_values + 1),
+      g_value_get_object (param_values + 2), data2);
+}
+
+static void
 gst_fake_src_base_init (gpointer g_class)
 {
   GstElementClass *gstelement_class = GST_ELEMENT_CLASS (g_class);
@@ -252,11 +272,9 @@ static void
 gst_fake_src_class_init (GstFakeSrcClass * klass)
 {
   GObjectClass *gobject_class;
-  GstElementClass *gstelement_class;
   GstBaseSrcClass *gstbase_src_class;
 
   gobject_class = G_OBJECT_CLASS (klass);
-  gstelement_class = GST_ELEMENT_CLASS (klass);
   gstbase_src_class = GST_BASE_SRC_CLASS (klass);
 
   gobject_class->finalize = GST_DEBUG_FUNCPTR (gst_fake_src_finalize);
@@ -273,63 +291,77 @@ gst_fake_src_class_init (GstFakeSrcClass * klass)
 */
   g_object_class_install_property (gobject_class, PROP_DATA,
       g_param_spec_enum ("data", "data", "Data allocation method",
-          GST_TYPE_FAKE_SRC_DATA, DEFAULT_DATA, G_PARAM_READWRITE));
+          GST_TYPE_FAKE_SRC_DATA, DEFAULT_DATA,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (G_OBJECT_CLASS (klass), PROP_SIZETYPE,
       g_param_spec_enum ("sizetype", "sizetype",
           "How to determine buffer sizes", GST_TYPE_FAKE_SRC_SIZETYPE,
-          DEFAULT_SIZETYPE, G_PARAM_READWRITE));
+          DEFAULT_SIZETYPE, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_SIZEMIN,
       g_param_spec_int ("sizemin", "sizemin", "Minimum buffer size", 0,
-          G_MAXINT, DEFAULT_SIZEMIN, G_PARAM_READWRITE));
+          G_MAXINT, DEFAULT_SIZEMIN,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_SIZEMAX,
       g_param_spec_int ("sizemax", "sizemax", "Maximum buffer size", 0,
-          G_MAXINT, DEFAULT_SIZEMAX, G_PARAM_READWRITE));
+          G_MAXINT, DEFAULT_SIZEMAX,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_PARENTSIZE,
       g_param_spec_int ("parentsize", "parentsize",
           "Size of parent buffer for sub-buffered allocation", 0, G_MAXINT,
-          DEFAULT_PARENTSIZE, G_PARAM_READWRITE));
+          DEFAULT_PARENTSIZE, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_FILLTYPE,
       g_param_spec_enum ("filltype", "filltype",
           "How to fill the buffer, if at all", GST_TYPE_FAKE_SRC_FILLTYPE,
-          DEFAULT_FILLTYPE, G_PARAM_READWRITE));
+          DEFAULT_FILLTYPE, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_DATARATE,
       g_param_spec_int ("datarate", "Datarate",
           "Timestamps buffers with number of bytes per second (0 = none)", 0,
-          G_MAXINT, DEFAULT_DATARATE, G_PARAM_READWRITE));
+          G_MAXINT, DEFAULT_DATARATE,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_SYNC,
       g_param_spec_boolean ("sync", "Sync", "Sync to the clock to the datarate",
-          DEFAULT_SYNC, G_PARAM_READWRITE));
+          DEFAULT_SYNC, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_PATTERN,
       g_param_spec_string ("pattern", "pattern", "pattern", DEFAULT_PATTERN,
-          G_PARAM_READWRITE));
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_LAST_MESSAGE,
       g_param_spec_string ("last-message", "last-message",
-          "The last status message", NULL, G_PARAM_READABLE));
+          "The last status message", NULL,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_SILENT,
       g_param_spec_boolean ("silent", "Silent",
           "Don't produce last_message events", DEFAULT_SILENT,
-          G_PARAM_READWRITE));
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_SIGNAL_HANDOFFS,
       g_param_spec_boolean ("signal-handoffs", "Signal handoffs",
           "Send a signal before pushing the buffer", DEFAULT_SIGNAL_HANDOFFS,
-          G_PARAM_READWRITE));
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_DUMP,
       g_param_spec_boolean ("dump", "Dump", "Dump buffer contents to stdout",
-          DEFAULT_DUMP, G_PARAM_READWRITE));
-  g_object_class_install_property (gobject_class,
-      PROP_CAN_ACTIVATE_PUSH,
+          DEFAULT_DUMP, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+  g_object_class_install_property (gobject_class, PROP_CAN_ACTIVATE_PUSH,
       g_param_spec_boolean ("can-activate-push", "Can activate push",
           "Can activate in push mode", DEFAULT_CAN_ACTIVATE_PUSH,
-          G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
-  g_object_class_install_property (gobject_class,
-      PROP_CAN_ACTIVATE_PULL,
+          G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS));
+  g_object_class_install_property (gobject_class, PROP_CAN_ACTIVATE_PULL,
       g_param_spec_boolean ("can-activate-pull", "Can activate pull",
           "Can activate in pull mode", DEFAULT_CAN_ACTIVATE_PULL,
-          G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+          G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_IS_LIVE,
       g_param_spec_boolean ("is-live", "Is this a live source",
           "True if the element cannot produce data in PAUSED", FALSE,
-          G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+          G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS));
+  /**
+   * GstFakeSrc:format
+   *
+   * Set the format of the newsegment events to produce.
+   *
+   * Since: 0.10.20
+   */
+  g_object_class_install_property (gobject_class, PROP_FORMAT,
+      g_param_spec_enum ("format", "Format",
+          "The format of the segment events", GST_TYPE_FORMAT,
+          DEFAULT_FORMAT, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   /**
    * GstFakeSrc::handoff:
@@ -342,7 +374,7 @@ gst_fake_src_class_init (GstFakeSrcClass * klass)
   gst_fake_src_signals[SIGNAL_HANDOFF] =
       g_signal_new ("handoff", G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST,
       G_STRUCT_OFFSET (GstFakeSrcClass, handoff), NULL, NULL,
-      gst_marshal_VOID__OBJECT_OBJECT, G_TYPE_NONE, 2, GST_TYPE_BUFFER,
+      marshal_VOID__MINIOBJECT_OBJECT, G_TYPE_NONE, 2, GST_TYPE_BUFFER,
       GST_TYPE_PAD);
 
   gstbase_src_class->is_seekable = GST_DEBUG_FUNCPTR (gst_fake_src_is_seekable);
@@ -372,6 +404,7 @@ gst_fake_src_init (GstFakeSrc * fakesrc, GstFakeSrcClass * g_class)
   fakesrc->last_message = NULL;
   fakesrc->datarate = DEFAULT_DATARATE;
   fakesrc->sync = DEFAULT_SYNC;
+  fakesrc->format = DEFAULT_FORMAT;
 }
 
 static void
@@ -418,8 +451,7 @@ gst_fake_src_event_handler (GstBaseSrc * basesrc, GstEvent * event)
     g_object_notify (G_OBJECT (src), "last_message");
   }
 
-
-  return TRUE;
+  return GST_BASE_SRC_CLASS (parent_class)->event (basesrc, event);
 }
 
 static void
@@ -506,6 +538,9 @@ gst_fake_src_set_property (GObject * object, guint prop_id,
     case PROP_IS_LIVE:
       gst_base_src_set_live (basesrc, g_value_get_boolean (value));
       break;
+    case PROP_FORMAT:
+      src->format = g_value_get_enum (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -577,6 +612,9 @@ gst_fake_src_get_property (GObject * object, guint prop_id, GValue * value,
       break;
     case PROP_IS_LIVE:
       g_value_set_boolean (value, gst_base_src_is_live (basesrc));
+      break;
+    case PROP_FORMAT:
+      g_value_set_enum (value, src->format);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -839,6 +877,8 @@ gst_fake_src_start (GstBaseSrc * basesrc)
   src->buffer_count = 0;
   src->pattern_byte = 0x00;
   src->bytes_sent = 0;
+
+  gst_base_src_set_format (basesrc, src->format);
 
   return TRUE;
 }

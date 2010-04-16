@@ -95,6 +95,11 @@ gboolean        gst_rtp_buffer_validate              (GstBuffer *buffer);
 IMPORT_C
 #endif
 
+gboolean        gst_rtp_buffer_list_validate         (GstBufferList *list);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 
 void            gst_rtp_buffer_set_packet_len        (GstBuffer *buffer, guint len);
 #ifdef __SYMBIAN32__
@@ -167,7 +172,17 @@ guint32         gst_rtp_buffer_get_ssrc              (GstBuffer *buffer);
 IMPORT_C
 #endif
 
+guint32         gst_rtp_buffer_list_get_ssrc         (GstBufferList *list);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void            gst_rtp_buffer_set_ssrc              (GstBuffer *buffer, guint32 ssrc);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void            gst_rtp_buffer_list_set_ssrc         (GstBufferList *list, guint32 ssrc);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -205,7 +220,17 @@ guint8          gst_rtp_buffer_get_payload_type      (GstBuffer *buffer);
 IMPORT_C
 #endif
 
+guint8          gst_rtp_buffer_list_get_payload_type (GstBufferList *list);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void            gst_rtp_buffer_set_payload_type      (GstBuffer *buffer, guint8 payload_type);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void            gst_rtp_buffer_list_set_payload_type (GstBufferList *list, guint8 payload_type);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -216,7 +241,17 @@ guint16         gst_rtp_buffer_get_seq               (GstBuffer *buffer);
 IMPORT_C
 #endif
 
+guint16         gst_rtp_buffer_list_get_seq          (GstBufferList *list);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void            gst_rtp_buffer_set_seq               (GstBuffer *buffer, guint16 seq);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+guint16         gst_rtp_buffer_list_set_seq          (GstBufferList *list, guint16 seq);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -227,7 +262,17 @@ guint32         gst_rtp_buffer_get_timestamp         (GstBuffer *buffer);
 IMPORT_C
 #endif
 
+guint32         gst_rtp_buffer_list_get_timestamp    (GstBufferList *list);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void            gst_rtp_buffer_set_timestamp         (GstBuffer *buffer, guint32 timestamp);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void            gst_rtp_buffer_list_set_timestamp    (GstBufferList *list, guint32 timestamp);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -245,6 +290,11 @@ IMPORT_C
 
 
 guint           gst_rtp_buffer_get_payload_len       (GstBuffer *buffer);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+guint           gst_rtp_buffer_list_get_payload_len  (GstBufferList *list);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif

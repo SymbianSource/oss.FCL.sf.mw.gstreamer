@@ -126,6 +126,9 @@ G_BEGIN_DECLS
 
 /**
  * GstTagImageType:
+ * @GST_TAG_IMAGE_TYPE_NONE                  : No image type. Can be used to
+ *      tell functions such as gst_tag_image_data_to_image_buffer() that no
+ *      image type should be set. (Since: 0.10.20)
  * @GST_TAG_IMAGE_TYPE_UNDEFINED             : Undefined/other image type
  * @GST_TAG_IMAGE_TYPE_FRONT_COVER           : Cover (front)
  * @GST_TAG_IMAGE_TYPE_BACK_COVER            : Cover (back)
@@ -151,8 +154,10 @@ G_BEGIN_DECLS
  *
  * Since: 0.10.9
  */
+/* Note: keep in sync with register_tag_image_type_enum() */
 typedef enum {
-  GST_TAG_IMAGE_TYPE_UNDEFINED,
+  GST_TAG_IMAGE_TYPE_NONE = -1,
+  GST_TAG_IMAGE_TYPE_UNDEFINED = 0,
   GST_TAG_IMAGE_TYPE_FRONT_COVER,
   GST_TAG_IMAGE_TYPE_BACK_COVER,
   GST_TAG_IMAGE_TYPE_LEAFLET_PAGE,
@@ -256,6 +261,15 @@ IMPORT_C
 #endif
 
 G_CONST_RETURN gchar *  gst_tag_to_id3_tag                      (const gchar *          gst_tag);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+
+gboolean                gst_tag_list_add_id3_image (GstTagList   * tag_list,
+                                                    const guint8 * image_data,
+                                                    guint          image_data_len,
+                                                    guint          id3_picture_type);
 
 /* other tag-related functions */
 #ifdef __SYMBIAN32__
@@ -276,6 +290,14 @@ IMPORT_C
 gchar                 * gst_tag_freeform_string_to_utf8 (const gchar  * data,
                                                          gint           size,
                                                          const gchar ** env_vars);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+
+GstBuffer             * gst_tag_image_data_to_image_buffer (const guint8   * image_data,
+                                                            guint            image_data_len,
+                                                            GstTagImageType  image_type);
 
 /* FIXME 0.11: replace with a more general gst_tag_library_init() */
 #ifdef __SYMBIAN32__

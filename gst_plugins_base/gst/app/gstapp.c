@@ -44,7 +44,7 @@ GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
 #ifdef __SYMBIAN32__
 EXPORT_C GstPluginDesc* _GST_PLUGIN_DESC()
 {
-	return &gst_plugin_desc;
+    return &gst_plugin_desc;
 }
 
 #endif

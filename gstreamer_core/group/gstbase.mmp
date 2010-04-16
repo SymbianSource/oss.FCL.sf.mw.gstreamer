@@ -57,17 +57,15 @@ USERINCLUDE		../../include/gstreamer/gst/controller
 USERINCLUDE		../../include/gstreamer/gst/dataprotocol
 USERINCLUDE		../../include/gstreamer/gst/net
 
+USERINCLUDE		../libs/
 
-SOURCEPATH      ../libs/gst/base
+SOURCEPATH ../libs/gst/base
+SOURCE gstadapter.c gstbasesink.c 
+SOURCE gstbasesrc.c gstbasetransform.c 
+SOURCE gstbitreader.c gstbytereader.c 
+SOURCE gstcollectpads.c gstdataqueue.c 
+SOURCE gstpushsrc.c gsttypefindhelper.c
 
-SOURCE          gstadapter.c
-SOURCE          gstbasesink.c
-SOURCE          gstbasesrc.c
-SOURCE          gstbasetransform.c
-SOURCE          gstcollectpads.c
-SOURCE          gstpushsrc.c
-SOURCE          gsttypefindhelper.c
-SOURCE          gstdataqueue.c
 
 LIBRARY         euser.lib
 LIBRARY         libc.lib

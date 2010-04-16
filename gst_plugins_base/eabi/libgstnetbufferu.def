@@ -7,4 +7,7 @@ EXPORTS
 	gst_netaddress_set_ip6_address @ 6 NONAME
 	gst_netbuffer_get_type @ 7 NONAME
 	gst_netbuffer_new @ 8 NONAME
+	gst_netaddress_get_address_bytes @ 9 NONAME
+	gst_netaddress_set_address_bytes @ 10 NONAME
+	gst_netaddress_to_string @ 11 NONAME
 

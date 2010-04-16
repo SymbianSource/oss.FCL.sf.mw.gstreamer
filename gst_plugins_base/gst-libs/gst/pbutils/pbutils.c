@@ -72,10 +72,6 @@
 # include "config.h"
 #endif
 
-#ifdef __SYMBIAN32__
-#include <gst_global.h>
-#endif
-
 #include "pbutils.h"
 
 #include "gst/gst-i18n-plugin.h"
@@ -109,6 +105,7 @@ gst_pb_utils_init (void)
   GST_DEBUG ("binding text domain %s to locale dir %s", GETTEXT_PACKAGE,
       LOCALEDIR);
   bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+  bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 #endif
 
   inited = TRUE;

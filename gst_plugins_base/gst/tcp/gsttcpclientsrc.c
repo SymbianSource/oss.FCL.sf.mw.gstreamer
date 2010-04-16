@@ -18,16 +18,26 @@
  * Boston, MA 02111-1307, USA.
  */
 
+/**
+ * SECTION:element-tcpclientsrc
+ * @see_also: #tcpclientsink
+ *
+ * <refsect2>
+ * <title>Example launch line</title>
+ * |[
+ * # server:
+ * nc -l -p 3000
+ * # client:
+ * gst-launch tcpclientsrc protocol=none port=3000 ! fdsink fd=2
+ * ]| everything you type in the server is shown on the client
+ * </refsect2>
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#ifdef __SYMBIAN32__
-#include "gst/gst-i18n-plugin.h"
-#else
 #include <gst/gst-i18n-plugin.h>
-#endif
 #include "gsttcp.h"
 #include "gsttcpclientsrc.h"
 #include <string.h>             /* memset */
@@ -112,13 +122,15 @@ gst_tcp_client_src_class_init (GstTCPClientSrcClass * klass)
   g_object_class_install_property (gobject_class, PROP_HOST,
       g_param_spec_string ("host", "Host",
           "The host IP address to receive packets from", TCP_DEFAULT_HOST,
-          G_PARAM_READWRITE));
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_PORT,
       g_param_spec_int ("port", "Port", "The port to receive packets from", 0,
-          TCP_HIGHEST_PORT, TCP_DEFAULT_PORT, G_PARAM_READWRITE));
+          TCP_HIGHEST_PORT, TCP_DEFAULT_PORT,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, PROP_PROTOCOL,
       g_param_spec_enum ("protocol", "Protocol", "The protocol to wrap data in",
-          GST_TYPE_TCP_PROTOCOL, GST_TCP_PROTOCOL_NONE, G_PARAM_READWRITE));
+          GST_TYPE_TCP_PROTOCOL, GST_TCP_PROTOCOL_NONE,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   gstbasesrc_class->get_caps = gst_tcp_client_src_getcaps;
   gstbasesrc_class->start = gst_tcp_client_src_start;
@@ -139,8 +151,6 @@ gst_tcp_client_src_init (GstTCPClientSrc * this, GstTCPClientSrcClass * g_class)
   this->sock_fd.fd = -1;
   this->protocol = GST_TCP_PROTOCOL_NONE;
   this->caps = NULL;
-
-  gst_base_src_set_live (GST_BASE_SRC (this), TRUE);
 
   GST_OBJECT_FLAG_UNSET (this, GST_TCP_CLIENT_SRC_OPEN);
 }
@@ -336,23 +346,12 @@ gst_tcp_client_src_start (GstBaseSrc * bsrc)
   GST_DEBUG_OBJECT (src, "connecting to server");
   ret = connect (src->sock_fd.fd, (struct sockaddr *) &src->server_sin,
       sizeof (src->server_sin));
+  if (ret)
+    goto connect_failed;
 
-  if (ret) {
-    gst_tcp_client_src_stop (GST_BASE_SRC (src));
-    switch (errno) {
-      case ECONNREFUSED:
-        GST_ELEMENT_ERROR (src, RESOURCE, OPEN_READ,
-            (_("Connection to %s:%d refused."), src->host, src->port), (NULL));
-        return FALSE;
-        break;
-      default:
-        GST_ELEMENT_ERROR (src, RESOURCE, OPEN_READ, (NULL),
-            ("connect to %s:%d failed: %s", src->host, src->port,
-                g_strerror (errno)));
-        return FALSE;
-        break;
-    }
-  }
+  /* add the socket to the poll */
+  gst_poll_add_fd (src->fdset, &src->sock_fd);
+  gst_poll_fd_ctl_read (src->fdset, &src->sock_fd, TRUE);
 
   return TRUE;
 
@@ -370,6 +369,22 @@ no_socket:
 name_resolv:
   {
     gst_tcp_client_src_stop (GST_BASE_SRC (src));
+    return FALSE;
+  }
+connect_failed:
+  {
+    gst_tcp_client_src_stop (GST_BASE_SRC (src));
+    switch (errno) {
+      case ECONNREFUSED:
+        GST_ELEMENT_ERROR (src, RESOURCE, OPEN_READ,
+            (_("Connection to %s:%d refused."), src->host, src->port), (NULL));
+        break;
+      default:
+        GST_ELEMENT_ERROR (src, RESOURCE, OPEN_READ, (NULL),
+            ("connect to %s:%d failed: %s", src->host, src->port,
+                g_strerror (errno)));
+        break;
+    }
     return FALSE;
   }
 }

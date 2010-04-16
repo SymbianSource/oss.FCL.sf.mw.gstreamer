@@ -21,18 +21,14 @@
  * SECTION:element-gdpdepay
  * @see_also: gdppay
  *
- * <refsect2>
- * <para>
  * This element depayloads GStreamer Data Protocol buffers back to deserialized
  * buffers and events.
- * </para>
- * <para>
- * <programlisting>
+ *
+ * <refsect2>
+ * |[
  * gst-launch -v -m filesrc location=test.gdp ! gdpdepay ! xvimagesink
- * </programlisting>
- * This pipeline plays back a serialized video stream as created in the
+ * ]| This pipeline plays back a serialized video stream as created in the
  * example for gdppay.
- * </para>
  * </refsect2>
  */
 
@@ -260,8 +256,8 @@ gst_gdp_depay_chain (GstPad * pad, GstBuffer * buffer)
         this->header = header;
 
         GST_LOG_OBJECT (this,
-            "read GDP header, payload size %d, switching to state PAYLOAD",
-            this->payload_length);
+            "read GDP header, payload size %d, payload type %d, switching to state PAYLOAD",
+            this->payload_length, this->payload_type);
         this->state = GST_GDP_DEPAY_STATE_PAYLOAD;
         break;
       }
@@ -287,6 +283,13 @@ gst_gdp_depay_chain (GstPad * pad, GstBuffer * buffer)
         } else {
           goto wrong_type;
         }
+
+        if (this->payload_length
+            && (!gst_dp_validate_payload (GST_DP_HEADER_LENGTH, this->header,
+                    gst_adapter_peek (this->adapter, this->payload_length)))) {
+          goto payload_validate_error;
+        }
+
         break;
       }
       case GST_GDP_DEPAY_STATE_BUFFER:
@@ -389,6 +392,13 @@ header_validate_error:
   {
     GST_ELEMENT_ERROR (this, STREAM, DECODE, (NULL),
         ("GDP packet header does not validate"));
+    ret = GST_FLOW_ERROR;
+    goto done;
+  }
+payload_validate_error:
+  {
+    GST_ELEMENT_ERROR (this, STREAM, DECODE, (NULL),
+        ("GDP packet payload does not validate"));
     ret = GST_FLOW_ERROR;
     goto done;
   }

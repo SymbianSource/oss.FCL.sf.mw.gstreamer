@@ -17,11 +17,6 @@ PRJ_EXPORTS
 ../gst-libs/gst/interfaces/xoverlay.h				/sf/mw/gstreamer/include/gstreamer/gst/interfaces/xoverlay.h
 ../gst-libs/gst/interfaces/interfaces-enumtypes.h		/sf/mw/gstreamer/include/gstreamer/gst/interfaces/interfaces-enumtypes.h
 
-//app
-../gst-libs/gst/app/gstappbuffer.h				/sf/mw/gstreamer/include/gstreamer/gst/app/gstappbuffer.h
-../gst-libs/gst/app/gstappsink.h				/sf/mw/gstreamer/include/gstreamer/gst/app/gstappsink.h
-../gst-libs/gst/app/gstappsrc.h					/sf/mw/gstreamer/include/gstreamer/gst/app/gstappsrc.h
-
 // audio
 ../gst-libs/gst/audio/audio.h					/sf/mw/gstreamer/include/gstreamer/gst/audio/audio.h
 ../gst-libs/gst/audio/gstaudioclock.h				/sf/mw/gstreamer/include/gstreamer/gst/audio/gstaudioclock.h
@@ -33,11 +28,10 @@ PRJ_EXPORTS
 ../gst-libs/gst/audio/gstringbuffer.h				/sf/mw/gstreamer/include/gstreamer/gst/audio/gstringbuffer.h
 ../gst-libs/gst/audio/mixerutils.h				/sf/mw/gstreamer/include/gstreamer/gst/audio/mixerutils.h
 ../gst-libs/gst/audio/multichannel.h				/sf/mw/gstreamer/include/gstreamer/gst/audio/multichannel.h
-../gst-libs/gst/audio/multichannel-enumtypes.h			/sf/mw/gstreamer/include/gstreamer/gst/audio/multichannel-enumtypes.h
+../gst-libs/gst/audio/audio-enumtypes.h			/sf/mw/gstreamer/include/gstreamer/gst/audio/audio-enumtypes.h
 
 // cdda
-../gst-libs/gst/cdda/base64.h					/sf/mw/gstreamer/include/gstreamer/gst/cdda/base64.h
-../gst-libs/gst/cdda/sha1.h					/sf/mw/gstreamer/include/gstreamer/gst/cdda/sha1.h
+//../gst-libs/gst/cdda/base64.h					/sf/mw/gstreamer/include/gstreamer/gst/cdda/base64.h
 ../gst-libs/gst/cdda/gstcddabasesrc.h				/sf/mw/gstreamer/include/gstreamer/gst/cdda/gstcddabasesrc.h
 
 // floatcast
@@ -48,6 +42,10 @@ PRJ_EXPORTS
 ../gst-libs/gst/riff/riff-media.h				/sf/mw/gstreamer/include/gstreamer/gst/riff/riff-media.h
 ../gst-libs/gst/riff/riff-read.h				/sf/mw/gstreamer/include/gstreamer/gst/riff/riff-read.h
 
+//app
+../gst-libs/gst/app/gstappbuffer.h				/sf/mw/gstreamer/include/gstreamer/gst/app/gstappbuffer.h
+../gst-libs/gst/app/gstappsink.h				/sf/mw/gstreamer/include/gstreamer/gst/app/gstappsink.h
+../gst-libs/gst/app/gstappsrc.h					/sf/mw/gstreamer/include/gstreamer/gst/app/gstappsrc.h
 // rtp
 ../gst-libs/gst/rtp/gstbasertpdepayload.h			/sf/mw/gstreamer/include/gstreamer/gst/rtp/gstbasertpdepayload.h
 ../gst-libs/gst/rtp/gstbasertppayload.h				/sf/mw/gstreamer/include/gstreamer/gst/rtp/gstbasertppayload.h
@@ -67,6 +65,7 @@ PRJ_EXPORTS
 ../gst-libs/gst/video/gstvideofilter.h				/sf/mw/gstreamer/include/gstreamer/gst/video/gstvideofilter.h
 ../gst-libs/gst/video/gstvideosink.h				/sf/mw/gstreamer/include/gstreamer/gst/video/gstvideosink.h
 ../gst-libs/gst/video/video.h					/sf/mw/gstreamer/include/gstreamer/gst/video/video.h
+../gst-libs/gst/video/video-enumtypes.h					/sf/mw/gstreamer/include/gstreamer/gst/video/video-enumtypes.h
 
 // adder
 ../gst/adder/gstadder.h						/sf/mw/gstreamer/include/gstreamer/gst/adder/gstadder.h
@@ -78,11 +77,11 @@ PRJ_EXPORTS
 ../gst/audioconvert/plugin.h					/sf/mw/gstreamer/include/gstreamer/gst/audioconvert/plugin.h
 
 // audioresample
-../gst/audioresample/buffer.h					/sf/mw/gstreamer/include/gstreamer/gst/audioresample/buffer.h
-../gst/audioresample/debug.h					/sf/mw/gstreamer/include/gstreamer/gst/audioresample/debug.h
-../gst/audioresample/functable.h				/sf/mw/gstreamer/include/gstreamer/gst/audioresample/functable.h
+//../gst/audioresample/buffer.h					/sf/mw/gstreamer/include/gstreamer/gst/audioresample/buffer.h
+//../gst/audioresample/debug.h					/sf/mw/gstreamer/include/gstreamer/gst/audioresample/debug.h
+//../gst/audioresample/functable.h				/sf/mw/gstreamer/include/gstreamer/gst/audioresample/functable.h
 ../gst/audioresample/gstaudioresample.h				/sf/mw/gstreamer/include/gstreamer/gst/audioresample/gstaudioresample.h
-../gst/audioresample/resample.h					/sf/mw/gstreamer/include/gstreamer/gst/audioresample/resample.h
+//../gst/audioresample/resample.h					/sf/mw/gstreamer/include/gstreamer/gst/audioresample/resample.h
 
 // audiotestsrc
 ../gst/audiotestsrc/gstaudiotestsrc.h				/sf/mw/gstreamer/include/gstreamer/gst/audiotestsrc/gstaudiotestsrc.h
@@ -139,7 +138,7 @@ PRJ_EXPORTS
 ../gst/volume/gstvolume.h					/sf/mw/gstreamer/include/gstreamer/gst/volume/gstvolume.h
 
 //liboil   - Since liboil port is available, No need to use liboil stub.
-../gst/oil/liboil.h       															/sf/mw/gstreamer/include/gstreamer/gst/liboil.h
+//../gst/oil/liboil.h       															/sf/mw/gstreamer/include/gstreamer/gst/liboil.h
 
 // fft
 ../gst-libs/gst/fft/_kiss_fft_guts_f32.h			/sf/mw/gstreamer/include/gstreamer/gst/fft/_kiss_fft_guts_f32.h
@@ -189,16 +188,15 @@ gstdecodebin2.mmp
 gstsubparse.mmp
 gsttcp.mmp
 gsttypefind.mmp
-gstapp.mmp
 gstgdp.mmp
 gstfft.mmp
-liboil.mmp
+gstapp.mmp
 
-#ifdef VIDEO
 // Video mmp
-gstvideo.mmp		//compiled
-gstvideorate.mmp		//compiled
-gstvideoscale.mmp 	// liboil  //not compiled
-gstvideotestsrc.mmp	//  liboil
+gstvideo.mmp
+gstvideorate.mmp        
+gstvideoscale.mmp   
+gstvideotestsrc.mmp 
 ffmpegcolorspace.mmp
-#endif
+
+

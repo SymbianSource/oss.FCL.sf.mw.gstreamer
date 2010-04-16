@@ -20,6 +20,7 @@
 *
 */
 
+
 PRJ_PLATFORMS
 DEFAULT
 
@@ -82,6 +83,9 @@ PRJ_EXPORTS
 ../gst/gstparamspecs.h 					/sf/mw/gstreamer/include/gstreamer/gst/gstparamspecs.h
 ../gst/gstpoll.h 					/sf/mw/gstreamer/include/gstreamer/gst/gstpoll.h
 ../gst/gstregistrybinary.h 				/sf/mw/gstreamer/include/gstreamer/gst/gstregistrybinary.h
+../gst/gstpreset.h 				/sf/mw/gstreamer/include/gstreamer/gst/gstpreset.h
+../gst/gstbufferlist.h 				/sf/mw/gstreamer/include/gstreamer/gst/gstbufferlist.h
+../gst/gsttaskpool.h 				/sf/mw/gstreamer/include/gstreamer/gst/gsttaskpool.h
 
 //libs
 
@@ -108,7 +112,10 @@ PRJ_EXPORTS
 ../libs/gst/net/gstnet.h				/sf/mw/gstreamer/include/gstreamer/gst/net/gstnet.h
 ../libs/gst/net/gstnettimepacket.h  			/sf/mw/gstreamer/include/gstreamer/gst/net/gstnettimepacket.h
 ../libs/gst/net/gstnettimeprovider.h			/sf/mw/gstreamer/include/gstreamer/gst/net/gstnettimeprovider.h
-									
+
+
+
+										
 PRJ_MMPFILES							
 gstreamer.mmp		
 gstbase.mmp
@@ -117,3 +124,6 @@ gstdataprotocol.mmp
 gstnet.mmp
 gstelements.mmp
 gstindexers.mmp
+
+
+					

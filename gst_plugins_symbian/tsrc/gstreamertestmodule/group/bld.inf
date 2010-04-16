@@ -26,13 +26,29 @@ PRJ_PLATFORMS
 DEFAULT
 
 PRJ_TESTEXPORTS
-#ifdef FF_GSTREAMER
-../data/16khzstereo.mp3 /epoc32/winscw/c/data/16khzstereo.mp3
-#endif
+/epoc32/release/winscw/udeb/libgstcoreelements.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgstcoreelements.dll
+/epoc32/release/winscw/udeb/libgstcoreindexers.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgstcoreindexers.dll
+/epoc32/release/winscw/udeb/libgstwavparse.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgstwavparse.dll
+/epoc32/release/winscw/udeb/libgstwavenc.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgstwavenc.dll
+/epoc32/release/winscw/udeb/libgstdevsoundsink.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgstdevsoundsink.dll
+/epoc32/release/winscw/udeb/libgstdevsoundsrc.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgstdevsoundsrc.dll
+/epoc32/release/winscw/udeb/libgstaudioconvert.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgstaudioconvert.dll
+/epoc32/release/winscw/udeb/libgstaudioresample.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgstaudioresample.dll
+/epoc32/release/winscw/udeb/libgstaudiotestsrc.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgstaudiotestsrc.dll
+/epoc32/release/winscw/udeb/libgstdecodebin.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgstdecodebin.dll
+/epoc32/release/winscw/udeb/libgstdecodebin2.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgstdecodebin2.dll
+/epoc32/release/winscw/udeb/libgstplaybin.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgstplaybin.dll
+/epoc32/release/winscw/udeb/libgsttypefindfunctions.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgsttypefindfunctions.dll
+/epoc32/release/winscw/udeb/libgstqueue2.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgstlibgstqueue2.dll
+/epoc32/release/winscw/udeb/libgstaudiorate.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgstaudiorate.dll
+/epoc32/release/winscw/udeb/libgstautodetect.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgstautodetect.dll
+
+../conf/GStreamerTestClass.cfg   /epoc32/winscw/c/TestFramework/GStreamerTestClass.cfg
+../init/GStreamerTestClass.ini   /epoc32/winscw/c/TestFramework/GStreamerTestClass.ini
+
 
 PRJ_TESTMMPFILES
-#ifdef FF_GSTREAMER
 GStreamerTestClass.mmp
-#endif
+
 
 //  End of File

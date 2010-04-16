@@ -54,6 +54,8 @@ typedef enum {
   GST_CDDA_BASE_SRC_MODE_CONTINUOUS       /* stream = whole disc */
 } GstCddaBaseSrcMode;
 
+#define GST_TYPE_CDDA_BASE_SRC_MODE          (gst_cdda_base_src_mode_get_type ())
+
 /**
  * GstCddaBaseSrcTrack:
  * @is_audio: Whether this is an audio track
@@ -138,6 +140,11 @@ IMPORT_C
 
 
 GType    gst_cdda_base_src_get_type (void);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+GType    gst_cdda_base_src_mode_get_type (void);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif

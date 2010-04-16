@@ -20,6 +20,7 @@
 *
 */
 
+
 #include <platform_paths.hrh>                    
 
 TARGET          libgstaudioresample.dll
@@ -51,13 +52,12 @@ USERINCLUDE		../../include/gstreamer/gst/dataprotocol
 USERINCLUDE		../../include/gstreamer/gst/net
 
 SOURCEPATH      ../gst/audioresample
-SOURCE      buffer.c
-SOURCE      functable.c
+
 SOURCE      gstaudioresample.c
-SOURCE      resample.c
-SOURCE      resample_chunk.c
-SOURCE      resample_functable.c
-SOURCE      resample_ref.c
+//SOURCE      resample.c
+SOURCE      speex_resampler_double.c
+SOURCE      speex_resampler_float.c 
+SOURCE      speex_resampler_int.c
 
 LIBRARY         euser.lib
 LIBRARY         libgobject.lib
@@ -66,6 +66,7 @@ LIBRARY         libc.lib
 LIBRARY         libm.lib
 LIBRARY         libgstreamer.lib
 LIBRARY         libgstbase.lib
+LIBRARY			liboil.lib
 
 
 MACRO           HAVE_CONFIG_H

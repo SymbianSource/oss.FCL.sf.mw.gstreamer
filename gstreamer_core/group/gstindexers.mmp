@@ -58,12 +58,12 @@ OS_LAYER_GLIB_SYSTEMINCLUDE
 //USERINCLUDE		../../include/gstreamer/gst/dataprotocol
 //USERINCLUDE		../../include/gstreamer/gst/net
 
- USERINCLUDE		../../include/gstreamer
- USERINCLUDE		../../include/gstreamer/gst
- USERINCLUDE		../../include/gstreamer/gst/base
- USERINCLUDE		../../include/gstreamer/gst/controller
- USERINCLUDE		../../include/gstreamer/gst/dataprotocol
- USERINCLUDE		../../include/gstreamer/gst/net
+USERINCLUDE		../../include/gstreamer
+USERINCLUDE		../../include/gstreamer/gst
+USERINCLUDE		../../include/gstreamer/gst/base
+USERINCLUDE		../../include/gstreamer/gst/controller
+USERINCLUDE		../../include/gstreamer/gst/dataprotocol
+USERINCLUDE		../../include/gstreamer/gst/net
 
 
 SOURCEPATH      ../plugins/indexers

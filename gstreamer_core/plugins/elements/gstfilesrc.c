@@ -21,7 +21,6 @@
  */
 /**
  * SECTION:element-filesrc
- * @short_description: read from arbitrary point in a file
  * @see_also: #GstFileSrc
  *
  * Read data from a file in the local file system.
@@ -30,22 +29,28 @@
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif
-#ifdef __SYMBIAN32__
-#include <gst_global.h>
-#endif
 
 #include <gst/gst.h>
 #include "gstfilesrc.h"
 
 #include <stdio.h>
 #include <sys/types.h>
+#ifdef G_OS_WIN32
+#include <io.h>                 /* lseek, open, close, read */
+/* On win32, stat* default to 32 bit; we need the 64-bit
+ * variants, so explicitly define it that way. */
+#define stat __stat64
+#define fstat _fstat64
+#undef lseek
+#define lseek _lseeki64
+#undef off_t
+#define off_t guint64
+/* Prevent stat.h from defining the stat* functions as
+ * _stat*, since we're explicitly overriding that */
+#undef _INC_STAT_INL
+#endif
 #include <sys/stat.h>
 #include <fcntl.h>
-
-#ifdef __SYMBIAN32__
-#include <glib_global.h>
-#include <gobject_global.h>
-#endif
 
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>
@@ -55,15 +60,10 @@
 # include <sys/mman.h>
 #endif
 
-#ifdef HAVE_WIN32
-#  include <io.h>               /* lseek, open, close, read */
-#endif
-
 #include <errno.h>
 #include <string.h>
 
 #include "../../gst/gst-i18n-lib.h"
-#include <gstelement.h>
 
 static GstStaticPadTemplate srctemplate = GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
@@ -83,6 +83,38 @@ static GstStaticPadTemplate srctemplate = GST_STATIC_PAD_TEMPLATE ("src",
 #ifndef O_BINARY
 #define O_BINARY (0)
 #endif
+
+/* Copy of glib's g_open due to win32 libc/cross-DLL brokenness: we can't
+ * use the 'file descriptor' opened in glib (and returned from this function)
+ * in this library, as they may have unrelated C runtimes. */
+#ifdef __SYMBIAN32__
+EXPORT_C
+#endif
+
+int
+gst_open (const gchar * filename, int flags, int mode)
+{
+#ifdef G_OS_WIN32
+  wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
+  int retval;
+  int save_errno;
+
+  if (wfilename == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  retval = _wopen (wfilename, flags, mode);
+  save_errno = errno;
+
+  g_free (wfilename);
+
+  errno = save_errno;
+  return retval;
+#else
+  return open (filename, flags, mode);
+#endif
+}
 
 
 /**********************************************************************
@@ -165,6 +197,7 @@ static gboolean gst_file_src_is_seekable (GstBaseSrc * src);
 static gboolean gst_file_src_get_size (GstBaseSrc * src, guint64 * size);
 static GstFlowReturn gst_file_src_create (GstBaseSrc * src, guint64 offset,
     guint length, GstBuffer ** buffer);
+static gboolean gst_file_src_query (GstBaseSrc * src, GstQuery * query);
 
 static void gst_file_src_uri_handler_init (gpointer g_iface,
     gpointer iface_data);
@@ -204,11 +237,9 @@ static void
 gst_file_src_class_init (GstFileSrcClass * klass)
 {
   GObjectClass *gobject_class;
-  GstElementClass *gstelement_class;
   GstBaseSrcClass *gstbasesrc_class;
 
   gobject_class = G_OBJECT_CLASS (klass);
-  gstelement_class = GST_ELEMENT_CLASS (klass);
   gstbasesrc_class = GST_BASE_SRC_CLASS (klass);
 
   gobject_class->set_property = gst_file_src_set_property;
@@ -217,18 +248,23 @@ gst_file_src_class_init (GstFileSrcClass * klass)
   g_object_class_install_property (gobject_class, ARG_FD,
       g_param_spec_int ("fd", "File-descriptor",
           "File-descriptor for the file being mmap()d", 0, G_MAXINT, 0,
-          G_PARAM_READABLE));
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, ARG_LOCATION,
       g_param_spec_string ("location", "File Location",
-          "Location of the file to read", NULL, G_PARAM_READWRITE));
+          "Location of the file to read", NULL,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
+          GST_PARAM_MUTABLE_READY));
   g_object_class_install_property (gobject_class, ARG_MMAPSIZE,
       g_param_spec_ulong ("mmapsize", "mmap() Block Size",
           "Size in bytes of mmap()d regions", 0, G_MAXULONG, DEFAULT_MMAPSIZE,
-          G_PARAM_READWRITE));
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
+          GST_PARAM_MUTABLE_PLAYING));
   g_object_class_install_property (gobject_class, ARG_TOUCH,
       g_param_spec_boolean ("touch", "Touch mapped region read data",
           "Touch mmapped data regions to force them to be read from disk",
-          DEFAULT_TOUCH, G_PARAM_READWRITE));
+          DEFAULT_TOUCH,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
+          GST_PARAM_MUTABLE_PLAYING));
   /**
    * GstFileSrc:use-mmap
    *
@@ -250,12 +286,14 @@ gst_file_src_class_init (GstFileSrcClass * klass)
   g_object_class_install_property (gobject_class, ARG_USEMMAP,
       g_param_spec_boolean ("use-mmap", "Use mmap to read data",
           "Whether to use mmap() instead of read()",
-          DEFAULT_USEMMAP, G_PARAM_READWRITE));
+          DEFAULT_USEMMAP, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
+          GST_PARAM_MUTABLE_READY));
   g_object_class_install_property (gobject_class, ARG_SEQUENTIAL,
       g_param_spec_boolean ("sequential", "Optimise for sequential mmap access",
           "Whether to use madvise to hint to the kernel that access to "
           "mmap pages will be sequential",
-          DEFAULT_SEQUENTIAL, G_PARAM_READWRITE));
+          DEFAULT_SEQUENTIAL, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
+          GST_PARAM_MUTABLE_PLAYING));
 
   gobject_class->finalize = GST_DEBUG_FUNCPTR (gst_file_src_finalize);
 
@@ -264,6 +302,7 @@ gst_file_src_class_init (GstFileSrcClass * klass)
   gstbasesrc_class->is_seekable = GST_DEBUG_FUNCPTR (gst_file_src_is_seekable);
   gstbasesrc_class->get_size = GST_DEBUG_FUNCPTR (gst_file_src_get_size);
   gstbasesrc_class->create = GST_DEBUG_FUNCPTR (gst_file_src_create);
+  gstbasesrc_class->query = GST_DEBUG_FUNCPTR (gst_file_src_query);
 
   if (sizeof (off_t) < 8) {
     GST_LOG ("No large file support, sizeof (off_t) = %" G_GSIZE_FORMAT "!",
@@ -325,6 +364,8 @@ gst_file_src_set_location (GstFileSrc * src, const gchar * location)
     src->filename = NULL;
     src->uri = NULL;
   } else {
+    /* we store the filename as received by the application. On Windoes this
+     * should be UTF8 */
     src->filename = g_strdup (location);
     src->uri = gst_uri_construct ("file", src->filename);
   }
@@ -336,7 +377,8 @@ gst_file_src_set_location (GstFileSrc * src, const gchar * location)
   /* ERROR */
 wrong_state:
   {
-    GST_DEBUG_OBJECT (src, "setting location in wrong state");
+    g_warning ("Changing the `location' property on filesink when a file is "
+        "open is not supported.");
     GST_OBJECT_UNLOCK (src);
     return FALSE;
   }
@@ -534,8 +576,8 @@ gst_mmap_buffer_finalize (GstMmapBuffer * mmap_buffer)
   GST_LOG ("unmapped region %08lx+%08lx at %p",
       (gulong) offset, (gulong) size, data);
 
-  GST_MINI_OBJECT_CLASS (mmap_buffer_parent_class)->
-      finalize (GST_MINI_OBJECT (mmap_buffer));
+  GST_MINI_OBJECT_CLASS (mmap_buffer_parent_class)->finalize (GST_MINI_OBJECT
+      (mmap_buffer));
 }
 
 static GstBuffer *
@@ -567,12 +609,11 @@ gst_file_src_map_region (GstFileSrc * src, off_t offset, gsize size,
 #ifdef MADV_SEQUENTIAL
   if (src->sequential) {
     /* madvise to tell the kernel what to do with it */
-  #ifndef __SYMBIAN32__
     if (madvise (mmapregion, size, MADV_SEQUENTIAL) < 0) {
       GST_WARNING_OBJECT (src, "warning: madvise failed: %s",
           g_strerror (errno));
     }
-  #endif
+  }
 #endif
 
   /* fill in the rest of the fields */
@@ -792,9 +833,14 @@ gst_file_src_create_read (GstFileSrc * src, guint64 offset, guint length,
     src->read_position = offset;
   }
 
-  buf = gst_buffer_new_and_alloc (length);
+  buf = gst_buffer_try_new_and_alloc (length);
+  if (G_UNLIKELY (buf == NULL && length > 0)) {
+    GST_ERROR_OBJECT (src, "Failed to allocate %u bytes", length);
+    return GST_FLOW_ERROR;
+  }
 
-  GST_LOG_OBJECT (src, "Reading %d bytes", length);
+  GST_LOG_OBJECT (src, "Reading %d bytes at offset 0x%" G_GINT64_MODIFIER "x",
+      length, offset);
   ret = read (src->fd, GST_BUFFER_DATA (buf), length);
   if (G_UNLIKELY (ret < 0))
     goto could_not_read;
@@ -869,6 +915,28 @@ gst_file_src_create (GstBaseSrc * basesrc, guint64 offset, guint length,
 }
 
 static gboolean
+gst_file_src_query (GstBaseSrc * basesrc, GstQuery * query)
+{
+  gboolean ret = FALSE;
+  GstFileSrc *src = GST_FILE_SRC (basesrc);
+
+  switch (GST_QUERY_TYPE (query)) {
+    case GST_QUERY_URI:
+      gst_query_set_uri (query, src->uri);
+      ret = TRUE;
+      break;
+    default:
+      ret = FALSE;
+      break;
+  }
+
+  if (!ret)
+    ret = GST_BASE_SRC_CLASS (parent_class)->query (basesrc, query);
+
+  return ret;
+}
+
+static gboolean
 gst_file_src_is_seekable (GstBaseSrc * basesrc)
 {
   GstFileSrc *src = GST_FILE_SRC (basesrc);
@@ -917,7 +985,8 @@ gst_file_src_start (GstBaseSrc * basesrc)
   GST_INFO_OBJECT (src, "opening file %s", src->filename);
 
   /* open the file */
-  src->fd = open (src->filename, O_RDONLY | O_BINARY);
+  src->fd = gst_open (src->filename, O_RDONLY | O_BINARY, 0);
+
   if (src->fd < 0)
     goto open_failed;
 
@@ -1039,15 +1108,17 @@ gst_file_src_stop (GstBaseSrc * basesrc)
 }
 
 /*** GSTURIHANDLER INTERFACE *************************************************/
+
 #ifdef __SYMBIAN32__
 GstURIType
 #else
-static guint
+static GstURIType
 #endif 
 gst_file_src_uri_get_type (void)
 {
   return GST_URI_SRC;
 }
+
 static gchar **
 gst_file_src_uri_get_protocols (void)
 {
@@ -1055,6 +1126,7 @@ gst_file_src_uri_get_protocols (void)
 
   return protocols;
 }
+
 static const gchar *
 gst_file_src_uri_get_uri (GstURIHandler * handler)
 {
@@ -1066,47 +1138,54 @@ gst_file_src_uri_get_uri (GstURIHandler * handler)
 static gboolean
 gst_file_src_uri_set_uri (GstURIHandler * handler, const gchar * uri)
 {
-  gchar *protocol, *location;
-  gboolean ret;
+  gchar *location, *hostname = NULL;
+  gboolean ret = FALSE;
   GstFileSrc *src = GST_FILE_SRC (handler);
+  GError *error = NULL;
 
-  protocol = gst_uri_get_protocol (uri);
-  if (strcmp (protocol, "file") != 0) {
-    g_free (protocol);
-    return FALSE;
-  }
-  g_free (protocol);
-
-  /* allow file://localhost/foo/bar by stripping localhost but fail
-   * for every other hostname */
-  if (g_str_has_prefix (uri, "file://localhost/")) {
-    char *tmp;
-
-    /* 16 == strlen ("file://localhost") */
-    tmp = g_strconcat ("file://", uri + 16, NULL);
-    /* we use gst_uri_get_location() although we already have the
-     * "location" with uri + 16 because it provides unescaping */
-    location = gst_uri_get_location (tmp);
-    g_free (tmp);
-  } else if (strcmp (uri, "file://") == 0) {
+  if (strcmp (uri, "file://") == 0) {
     /* Special case for "file://" as this is used by some applications
      *  to test with gst_element_make_from_uri if there's an element
      *  that supports the URI protocol. */
     gst_file_src_set_location (src, NULL);
     return TRUE;
-  } else {
-    location = gst_uri_get_location (uri);
   }
 
-  if (!location)
-    return FALSE;
-  if (!g_path_is_absolute (location)) {
-    g_free (location);
-    return FALSE;
+  location = g_filename_from_uri (uri, &hostname, &error);
+
+  if (!location || error) {
+    if (error) {
+      GST_WARNING_OBJECT (src, "Invalid URI '%s' for filesrc: %s", uri,
+          error->message);
+      g_error_free (error);
+    } else {
+      GST_WARNING_OBJECT (src, "Invalid URI '%s' for filesrc", uri);
+    }
+    goto beach;
   }
+
+  if ((hostname) && (strcmp (hostname, "localhost"))) {
+    /* Only 'localhost' is permitted */
+    GST_WARNING_OBJECT (src, "Invalid hostname '%s' for filesrc", hostname);
+    goto beach;
+  }
+#ifdef G_OS_WIN32
+  /* Unfortunately, g_filename_from_uri() doesn't handle some UNC paths
+   * correctly on windows, it leaves them with an extra backslash
+   * at the start if they're of the mozilla-style file://///host/path/file 
+   * form. Correct this.
+   */
+  if (location[0] == '\\' && location[1] == '\\' && location[2] == '\\')
+    g_memmove (location, location + 1, strlen (location + 1) + 1);
+#endif
 
   ret = gst_file_src_set_location (src, location);
-  g_free (location);
+
+beach:
+  if (location)
+    g_free (location);
+  if (hostname)
+    g_free (hostname);
 
   return ret;
 }

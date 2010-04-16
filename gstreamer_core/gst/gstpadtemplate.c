@@ -110,6 +110,14 @@
 
 enum
 {
+  PROP_NAME_TEMPLATE = 1,
+  PROP_DIRECTION,
+  PROP_PRESENCE,
+  PROP_CAPS
+};
+
+enum
+{
   TEMPL_PAD_CREATED,
   /* FILL ME */
   LAST_SIGNAL
@@ -118,35 +126,13 @@ enum
 static GstObject *parent_class = NULL;
 static guint gst_pad_template_signals[LAST_SIGNAL] = { 0 };
 
-static void gst_pad_template_class_init (GstPadTemplateClass * klass);
-static void gst_pad_template_init (GstPadTemplate * templ,
-    GstPadTemplateClass * klass);
 static void gst_pad_template_dispose (GObject * object);
-#ifdef __SYMBIAN32__
-EXPORT_C
-#endif
+static void gst_pad_template_set_property (GObject * object, guint prop_id,
+    const GValue * value, GParamSpec * pspec);
+static void gst_pad_template_get_property (GObject * object, guint prop_id,
+    GValue * value, GParamSpec * pspec);
 
-
-GType
-gst_pad_template_get_type (void)
-{
-  static GType padtemplate_type = 0;
-
-  if (G_UNLIKELY (padtemplate_type == 0)) {
-    static const GTypeInfo padtemplate_info = {
-      sizeof (GstPadTemplateClass), NULL, NULL,
-      (GClassInitFunc) gst_pad_template_class_init, NULL, NULL,
-      sizeof (GstPadTemplate),
-      0,
-      (GInstanceInitFunc) gst_pad_template_init, NULL
-    };
-
-    padtemplate_type =
-        g_type_register_static (GST_TYPE_OBJECT, "GstPadTemplate",
-        &padtemplate_info, 0);
-  }
-  return padtemplate_type;
-}
+G_DEFINE_TYPE (GstPadTemplate, gst_pad_template, GST_TYPE_OBJECT);
 
 static void
 gst_pad_template_class_init (GstPadTemplateClass * klass)
@@ -173,11 +159,65 @@ gst_pad_template_class_init (GstPadTemplateClass * klass)
 
   gobject_class->dispose = gst_pad_template_dispose;
 
+  gobject_class->get_property = gst_pad_template_get_property;
+  gobject_class->set_property = gst_pad_template_set_property;
+
+  /**
+   * GstPadTemplate:name-template
+   *
+   * The name template of the pad template.
+   *
+   * Since: 0.10.21
+   */
+  g_object_class_install_property (gobject_class, PROP_NAME_TEMPLATE,
+      g_param_spec_string ("name-template", "Name template",
+          "The name template of the pad template", NULL,
+          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GstPadTemplate:direction
+   *
+   * The direction of the pad described by the pad template.
+   *
+   * Since: 0.10.21
+   */
+  g_object_class_install_property (gobject_class, PROP_DIRECTION,
+      g_param_spec_enum ("direction", "Direction",
+          "The direction of the pad described by the pad template",
+          GST_TYPE_PAD_DIRECTION, GST_PAD_UNKNOWN,
+          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GstPadTemplate:presence
+   *
+   * When the pad described by the pad template will become available.
+   *
+   * Since: 0.10.21
+   */
+  g_object_class_install_property (gobject_class, PROP_PRESENCE,
+      g_param_spec_enum ("presence", "Presence",
+          "When the pad described by the pad template will become available",
+          GST_TYPE_PAD_PRESENCE, GST_PAD_ALWAYS,
+          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GstPadTemplate:caps
+   *
+   * The capabilities of the pad described by the pad template.
+   *
+   * Since: 0.10.21
+   */
+  g_object_class_install_property (gobject_class, PROP_CAPS,
+      g_param_spec_boxed ("caps", "Caps",
+          "The capabilities of the pad described by the pad template",
+          GST_TYPE_CAPS,
+          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+
   gstobject_class->path_string_separator = "*";
 }
 
 static void
-gst_pad_template_init (GstPadTemplate * templ, GstPadTemplateClass * klass)
+gst_pad_template_init (GstPadTemplate * templ)
 {
   /* FIXME 0.11: Does anybody remember why this is here? If not, let's
    * change it for 0.11 and let gst_element_class_add_pad_template() for
@@ -191,8 +231,7 @@ gst_pad_template_init (GstPadTemplate * templ, GstPadTemplateClass * klass)
    * owned by the creator of the object
    */
   if (GST_OBJECT_IS_FLOATING (templ)) {
-    gst_object_ref (templ);
-    gst_object_sink (templ);
+    gst_object_ref_sink (templ);
   }
 }
 
@@ -234,9 +273,9 @@ name_is_valid (const gchar * name, GstPadPresence presence)
           " allowed in GST_PAD_REQUEST padtemplate", name);
       return FALSE;
     }
-    if (str && (*(str + 1) != 's' && *(str + 1) != 'd')) {
+    if (str && (*(str + 1) != 's' && *(str + 1) != 'd' && *(str + 1) != 'u')) {
       g_warning ("invalid name template %s: conversion specification must be of"
-          " type '%%d' or '%%s' for GST_PAD_REQUEST padtemplate", name);
+          " type '%%d', '%%u' or '%%s' for GST_PAD_REQUEST padtemplate", name);
       return FALSE;
     }
     if (str && (*(str + 2) != '\0')) {
@@ -281,19 +320,20 @@ GstPadTemplate *
 gst_static_pad_template_get (GstStaticPadTemplate * pad_template)
 {
   GstPadTemplate *new;
+  GstCaps *caps;
 
   if (!name_is_valid (pad_template->name_template, pad_template->presence))
     return NULL;
 
+  caps = gst_static_caps_get (&pad_template->static_caps);
+
   new = g_object_new (gst_pad_template_get_type (),
-      "name", pad_template->name_template, NULL);
+      "name", pad_template->name_template,
+      "name-template", pad_template->name_template,
+      "direction", pad_template->direction,
+      "presence", pad_template->presence, "caps", caps, NULL);
 
-  GST_PAD_TEMPLATE_NAME_TEMPLATE (new) = g_strdup (pad_template->name_template);
-  GST_PAD_TEMPLATE_DIRECTION (new) = pad_template->direction;
-  GST_PAD_TEMPLATE_PRESENCE (new) = pad_template->presence;
-
-  GST_PAD_TEMPLATE_CAPS (new) =
-      gst_caps_make_writable (gst_static_caps_get (&pad_template->static_caps));
+  gst_caps_unref (caps);
 
   return new;
 }
@@ -333,12 +373,11 @@ gst_pad_template_new (const gchar * name_template,
   }
 
   new = g_object_new (gst_pad_template_get_type (),
-      "name", name_template, NULL);
+      "name", name_template, "name-template", name_template,
+      "direction", direction, "presence", presence, "caps", caps, NULL);
 
-  GST_PAD_TEMPLATE_NAME_TEMPLATE (new) = g_strdup (name_template);
-  GST_PAD_TEMPLATE_DIRECTION (new) = direction;
-  GST_PAD_TEMPLATE_PRESENCE (new) = presence;
-  GST_PAD_TEMPLATE_CAPS (new) = caps;
+  if (caps)
+    gst_caps_unref (caps);
 
   return new;
 }
@@ -349,8 +388,10 @@ gst_pad_template_new (const gchar * name_template,
  *
  * Gets the capabilities of the static pad template.
  *
- * Returns: the #GstCaps of the static pad template. If you need to keep a
- * reference to the caps, take a ref (see gst_caps_ref ()).
+ * Returns: the #GstCaps of the static pad template.
+ * Unref after usage. Since the core holds an additional
+ * ref to the returned caps, use gst_caps_make_writable()
+ * on the returned caps to modify it.
  */
 #ifdef __SYMBIAN32__
 EXPORT_C
@@ -401,4 +442,57 @@ gst_pad_template_pad_created (GstPadTemplate * templ, GstPad * pad)
 {
   g_signal_emit (G_OBJECT (templ),
       gst_pad_template_signals[TEMPL_PAD_CREATED], 0, pad);
+}
+
+static void
+gst_pad_template_set_property (GObject * object, guint prop_id,
+    const GValue * value, GParamSpec * pspec)
+{
+  /* these properties are all construct-only */
+  switch (prop_id) {
+    case PROP_NAME_TEMPLATE:
+      GST_PAD_TEMPLATE_NAME_TEMPLATE (object) = g_value_dup_string (value);
+      break;
+    case PROP_DIRECTION:
+      GST_PAD_TEMPLATE_DIRECTION (object) = g_value_get_enum (value);
+      break;
+    case PROP_PRESENCE:
+      GST_PAD_TEMPLATE_PRESENCE (object) = g_value_get_enum (value);
+      break;
+    case PROP_CAPS:
+      /* allow caps == NULL for backwards compatibility (ie. g_object_new()
+       * called without any of the new properties) (FIXME 0.11) */
+      if (g_value_get_boxed (value) != NULL) {
+        GST_PAD_TEMPLATE_CAPS (object) =
+            gst_caps_copy (g_value_get_boxed (value));
+      }
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+  }
+}
+
+static void
+gst_pad_template_get_property (GObject * object, guint prop_id, GValue * value,
+    GParamSpec * pspec)
+{
+  /* these properties are all construct-only */
+  switch (prop_id) {
+    case PROP_NAME_TEMPLATE:
+      g_value_set_string (value, GST_PAD_TEMPLATE_NAME_TEMPLATE (object));
+      break;
+    case PROP_DIRECTION:
+      g_value_set_enum (value, GST_PAD_TEMPLATE_DIRECTION (object));
+      break;
+    case PROP_PRESENCE:
+      g_value_set_enum (value, GST_PAD_TEMPLATE_PRESENCE (object));
+      break;
+    case PROP_CAPS:
+      g_value_set_boxed (value, GST_PAD_TEMPLATE_CAPS (object));
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+  }
 }

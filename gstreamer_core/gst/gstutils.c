@@ -3,7 +3,7 @@
  *                    2000 Wim Taymans <wtay@chello.be>
  *                    2002 Thomas Vander Stichele <thomas@apestaart.org>
  *
- * gstutils.c: Utility functions: gtk_get_property stuff, etc.
+ * gstutils.c: Utility functions
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -37,8 +37,16 @@
 #include "gsterror.h"
 #include "gstinfo.h"
 #include "gstparse.h"
+#include "gstvalue.h"
 #include "gst-i18n-lib.h"
 
+/**
+ * gst_util_dump_mem:
+ * @mem: a pointer to the memory to dump
+ * @size: the size of the memory block to dump
+ *
+ * Dumps the memory block into a hex representation. Useful for debugging.
+ */
 #ifdef __SYMBIAN32__
 #include <glib_global.h>
 #include <gobject_global.h>
@@ -95,6 +103,9 @@ gst_util_dump_mem (const guchar * mem, guint size)
  *
  * Converts the string to the type of the value and
  * sets the value with it.
+ *
+ * Note that this function is dangerous as it does not return any indication
+ * if the conversion worked or not.
  */
 #ifdef __SYMBIAN32__
 EXPORT_C
@@ -103,7 +114,7 @@ EXPORT_C
 void
 gst_util_set_value_from_string (GValue * value, const gchar * value_str)
 {
-  gint sscanf_ret;
+  gboolean res;
 
   g_return_if_fail (value != NULL);
   g_return_if_fail (value_str != NULL);
@@ -111,86 +122,13 @@ gst_util_set_value_from_string (GValue * value, const gchar * value_str)
   GST_CAT_DEBUG (GST_CAT_PARAMS, "parsing '%s' to type %s", value_str,
       g_type_name (G_VALUE_TYPE (value)));
 
-  switch (G_VALUE_TYPE (value)) {
-    case G_TYPE_STRING:
-      g_value_set_string (value, value_str);
-      break;
-    case G_TYPE_ENUM:
-    case G_TYPE_INT:{
-      gint i;
-
-      sscanf_ret = sscanf (value_str, "%d", &i);
-      g_return_if_fail (sscanf_ret == 1);
-      g_value_set_int (value, i);
-      break;
-    }
-    case G_TYPE_UINT:{
-      guint i;
-
-      sscanf_ret = sscanf (value_str, "%u", &i);
-      g_return_if_fail (sscanf_ret == 1);
-      g_value_set_uint (value, i);
-      break;
-    }
-    case G_TYPE_LONG:{
-      glong i;
-
-      sscanf_ret = sscanf (value_str, "%ld", &i);
-      g_return_if_fail (sscanf_ret == 1);
-      g_value_set_long (value, i);
-      break;
-    }
-    case G_TYPE_ULONG:{
-      gulong i;
-
-      sscanf_ret = sscanf (value_str, "%lu", &i);
-      g_return_if_fail (sscanf_ret == 1);
-      g_value_set_ulong (value, i);
-      break;
-    }
-    case G_TYPE_BOOLEAN:{
-      gboolean i = FALSE;
-
-      if (!g_ascii_strncasecmp ("true", value_str, 4))
-        i = TRUE;
-      g_value_set_boolean (value, i);
-      break;
-    }
-    case G_TYPE_CHAR:{
-      gchar i;
-
-      sscanf_ret = sscanf (value_str, "%c", &i);
-      g_return_if_fail (sscanf_ret == 1);
-      g_value_set_char (value, i);
-      break;
-    }
-    case G_TYPE_UCHAR:{
-      guchar i;
-
-      sscanf_ret = sscanf (value_str, "%c", &i);
-      g_return_if_fail (sscanf_ret == 1);
-      g_value_set_uchar (value, i);
-      break;
-    }
-    case G_TYPE_FLOAT:{
-      gfloat i;
-
-      sscanf_ret = sscanf (value_str, "%f", &i);
-      g_return_if_fail (sscanf_ret == 1);
-      g_value_set_float (value, i);
-      break;
-    }
-    case G_TYPE_DOUBLE:{
-      gfloat i;
-
-      sscanf_ret = sscanf (value_str, "%g", &i);
-      g_return_if_fail (sscanf_ret == 1);
-      g_value_set_double (value, (gdouble) i);
-      break;
-    }
-    default:
-      break;
+  res = gst_value_deserialize (value, value_str);
+  if (!res && G_VALUE_TYPE (value) == G_TYPE_BOOLEAN) {
+    /* backwards compat, all booleans that fail to parse are false */
+    g_value_set_boolean (value, FALSE);
+    res = TRUE;
   }
+  g_return_if_fail (res);
 }
 
 /**
@@ -201,6 +139,9 @@ gst_util_set_value_from_string (GValue * value, const gchar * value_str)
  *
  * Convertes the string value to the type of the objects argument and
  * sets the argument with it.
+ *
+ * Note that this function silently returns if @object has no property named
+ * @name or when @value cannot be converted to the type of the property.
  */
 #ifdef __SYMBIAN32__
 EXPORT_C
@@ -210,111 +151,41 @@ void
 gst_util_set_object_arg (GObject * object, const gchar * name,
     const gchar * value)
 {
-  gboolean sscanf_ret;
+  GParamSpec *pspec;
+  GType value_type;
+  GValue v = { 0, };
 
-  if (name && value) {
-    GParamSpec *paramspec;
+  g_return_if_fail (G_IS_OBJECT (object));
+  g_return_if_fail (name != NULL);
+  g_return_if_fail (value != NULL);
 
-    paramspec =
-        g_object_class_find_property (G_OBJECT_GET_CLASS (object), name);
+  pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (object), name);
+  if (!pspec)
+    return;
 
-    if (!paramspec) {
-      return;
-    }
+  value_type = G_PARAM_SPEC_VALUE_TYPE (pspec);
 
-    GST_DEBUG ("paramspec->flags is %d, paramspec->value_type is %d",
-        paramspec->flags, (gint) paramspec->value_type);
+  GST_DEBUG ("pspec->flags is %d, pspec->value_type is %s",
+      pspec->flags, g_type_name (value_type));
 
-    if (paramspec->flags & G_PARAM_WRITABLE) {
-      switch (paramspec->value_type) {
-        case G_TYPE_STRING:
-          g_object_set (G_OBJECT (object), name, value, NULL);
-          break;
-        case G_TYPE_ENUM:
-        case G_TYPE_INT:{
-          gint i;
+  if (!(pspec->flags & G_PARAM_WRITABLE))
+    return;
 
-          sscanf_ret = sscanf (value, "%d", &i);
-          g_return_if_fail (sscanf_ret == 1);
-          g_object_set (G_OBJECT (object), name, i, NULL);
-          break;
-        }
-        case G_TYPE_UINT:{
-          guint i;
+  g_value_init (&v, value_type);
 
-          sscanf_ret = sscanf (value, "%u", &i);
-          g_return_if_fail (sscanf_ret == 1);
-          g_object_set (G_OBJECT (object), name, i, NULL);
-          break;
-        }
-        case G_TYPE_LONG:{
-          glong i;
-
-          sscanf_ret = sscanf (value, "%ld", &i);
-          g_return_if_fail (sscanf_ret == 1);
-          g_object_set (G_OBJECT (object), name, i, NULL);
-          break;
-        }
-        case G_TYPE_ULONG:{
-          gulong i;
-
-          sscanf_ret = sscanf (value, "%lu", &i);
-          g_return_if_fail (sscanf_ret == 1);
-          g_object_set (G_OBJECT (object), name, i, NULL);
-          break;
-        }
-        case G_TYPE_BOOLEAN:{
-          gboolean i = FALSE;
-
-          if (!g_ascii_strncasecmp ("true", value, 4))
-            i = TRUE;
-          g_object_set (G_OBJECT (object), name, i, NULL);
-          break;
-        }
-        case G_TYPE_CHAR:{
-          gchar i;
-
-          sscanf_ret = sscanf (value, "%c", &i);
-          g_return_if_fail (sscanf_ret == 1);
-          g_object_set (G_OBJECT (object), name, i, NULL);
-          break;
-        }
-        case G_TYPE_UCHAR:{
-          guchar i;
-
-          sscanf_ret = sscanf (value, "%c", &i);
-          g_return_if_fail (sscanf_ret == 1);
-          g_object_set (G_OBJECT (object), name, i, NULL);
-          break;
-        }
-        case G_TYPE_FLOAT:{
-          gfloat i;
-
-          sscanf_ret = sscanf (value, "%f", &i);
-          g_return_if_fail (sscanf_ret == 1);
-          g_object_set (G_OBJECT (object), name, i, NULL);
-          break;
-        }
-        case G_TYPE_DOUBLE:{
-          gfloat i;
-
-          sscanf_ret = sscanf (value, "%g", &i);
-          g_return_if_fail (sscanf_ret == 1);
-          g_object_set (G_OBJECT (object), name, (gdouble) i, NULL);
-          break;
-        }
-        default:
-          if (G_IS_PARAM_SPEC_ENUM (paramspec)) {
-            gint i;
-
-            sscanf_ret = sscanf (value, "%d", &i);
-            g_return_if_fail (sscanf_ret == 1);
-            g_object_set (G_OBJECT (object), name, i, NULL);
-          }
-          break;
-      }
-    }
+  /* special case for element <-> xml (de)serialisation */
+  if (GST_VALUE_HOLDS_STRUCTURE (&v) && strcmp (value, "NULL") == 0) {
+    g_value_set_boxed (&v, NULL);
+    goto done;
   }
+
+  if (!gst_value_deserialize (&v, value))
+    return;
+
+done:
+
+  g_object_set_property (object, pspec->name, &v);
+  g_value_unset (&v);
 }
 
 /* work around error C2520: conversion from unsigned __int64 to double
@@ -435,7 +306,7 @@ gst_util_div128_64 (GstUInt64 c1, GstUInt64 c0, guint64 denom)
 }
 
 static guint64
-gst_util_uint64_scale_int64 (guint64 val, guint64 num, guint64 denom)
+gst_util_uint64_scale_int64_unchecked (guint64 val, guint64 num, guint64 denom)
 {
   GstUInt64 a0, a1, b0, b1, c0, ct, c1, result;
   GstUInt64 v, n;
@@ -467,7 +338,7 @@ gst_util_uint64_scale_int64 (guint64 val, guint64 num, guint64 denom)
   c1.ll = (guint64) a1.l.high + b0.l.high + ct.l.high + b1.ll;
 
   /* if high bits bigger than denom, we overflow */
-  if (c1.ll >= denom)
+  if (G_UNLIKELY (c1.ll >= denom))
     goto overflow;
 
   /* shortcut for division by 1, c1.ll should be 0 because of the
@@ -497,6 +368,36 @@ overflow:
   }
 }
 
+static inline guint64
+gst_util_uint64_scale_int_unchecked (guint64 val, gint num, gint denom)
+{
+  GstUInt64 result;
+  GstUInt64 low, high;
+
+  /* do 96 bits mult/div */
+  low.ll = val;
+  result.ll = ((guint64) low.l.low) * num;
+  high.ll = ((guint64) low.l.high) * num + (result.l.high);
+
+  low.ll = high.ll / denom;
+  result.l.high = high.ll % denom;
+  result.ll /= denom;
+
+  /* avoid overflow */
+  if (G_UNLIKELY (low.ll + result.l.high > G_MAXUINT32))
+    goto overflow;
+
+  result.l.high += low.l.low;
+
+  return result.ll;
+
+overflow:
+  {
+    return G_MAXUINT64;
+  }
+}
+
+
 /**
  * gst_util_uint64_scale:
  * @val: the number to scale
@@ -519,33 +420,33 @@ gst_util_uint64_scale (guint64 val, guint64 num, guint64 denom)
 {
   g_return_val_if_fail (denom != 0, G_MAXUINT64);
 
-  if (num == 0)
+  if (G_UNLIKELY (num == 0))
     return 0;
 
-  if (num == 1 && denom == 1)
+  if (G_UNLIKELY (num == denom))
     return val;
 
   /* if the denom is high, we need to do a 64 muldiv */
-  if (denom > G_MAXINT32)
+  if (G_UNLIKELY (denom > G_MAXINT32))
     goto do_int64;
 
   /* if num and denom are low we can do a 32 bit muldiv */
-  if (num <= G_MAXINT32)
+  if (G_LIKELY (num <= G_MAXINT32))
     goto do_int32;
 
   /* val and num are high, we need 64 muldiv */
-  if (val > G_MAXINT32)
+  if (G_UNLIKELY (val > G_MAXINT32))
     goto do_int64;
 
   /* val is low and num is high, we can swap them and do 32 muldiv */
-  return gst_util_uint64_scale_int (num, (gint) val, (gint) denom);
+  return gst_util_uint64_scale_int_unchecked (num, (gint) val, (gint) denom);
 
 do_int32:
-  return gst_util_uint64_scale_int (val, (gint) num, (gint) denom);
+  return gst_util_uint64_scale_int_unchecked (val, (gint) num, (gint) denom);
 
 do_int64:
   /* to the more heavy implementations... */
-  return gst_util_uint64_scale_int64 (val, num, denom);
+  return gst_util_uint64_scale_int64_unchecked (val, num, denom);
 }
 
 /**
@@ -569,43 +470,71 @@ EXPORT_C
 guint64
 gst_util_uint64_scale_int (guint64 val, gint num, gint denom)
 {
-  GstUInt64 result;
-  GstUInt64 low, high;
-
   g_return_val_if_fail (denom > 0, G_MAXUINT64);
   g_return_val_if_fail (num >= 0, G_MAXUINT64);
 
-  if (num == 0)
+  if (G_UNLIKELY (num == 0))
     return 0;
 
-  if (num == 1 && denom == 1)
+  if (G_UNLIKELY (num == denom))
     return val;
 
   if (val <= G_MAXUINT32)
     /* simple case */
     return val * num / denom;
 
-  /* do 96 bits mult/div */
-  low.ll = val;
-  result.ll = ((guint64) low.l.low) * num;
-  high.ll = ((guint64) low.l.high) * num + (result.l.high);
+  return gst_util_uint64_scale_int_unchecked (val, num, denom);
+}
 
-  low.ll = high.ll / denom;
-  result.l.high = high.ll % denom;
-  result.ll /= denom;
+/**
+ * gst_util_seqnum_next:
+ *
+ * Return a constantly incrementing sequence number.
+ *
+ * This function is used internally to GStreamer to be able to determine which
+ * events and messages are "the same". For example, elements may set the seqnum
+ * on a segment-done message to be the same as that of the last seek event, to
+ * indicate that event and the message correspond to the same segment.
+ *
+ * Returns: A constantly incrementing 32-bit unsigned integer, which might
+ * overflow back to 0 at some point. Use gst_util_seqnum_compare() to make sure
+ * you handle wraparound correctly.
+ *
+ * Since: 0.10.22
+ */
+#ifdef __SYMBIAN32__
+EXPORT_C
+#endif
 
-  /* avoid overflow */
-  if (low.ll + result.l.high > G_MAXUINT32)
-    goto overflow;
+guint32
+gst_util_seqnum_next (void)
+{
+  static gint counter = 0;
+  return g_atomic_int_exchange_and_add (&counter, 1);
+}
 
-  result.l.high += low.l.low;
+/**
+ * gst_util_seqnum_compare:
+ * @s1: A sequence number.
+ * @s2: Another sequence number.
+ *
+ * Compare two sequence numbers, handling wraparound.
+ * 
+ * The current implementation just returns (gint32)(@s1 - @s2).
+ *
+ * Returns: A negative number if @s1 is before @s2, 0 if they are equal, or a
+ * positive number if @s1 is after @s2.
+ *
+ * Since: 0.10.22
+ */
+#ifdef __SYMBIAN32__
+EXPORT_C
+#endif
 
-  return result.ll;
-
-overflow:
-  {
-    return G_MAXUINT64;
-  }
+gint32
+gst_util_seqnum_compare (guint32 s1, guint32 s2)
+{
+  return (gint32) (s1 - s2);
 }
 
 /* -----------------------------------------------------
@@ -928,6 +857,60 @@ gst_element_request_compatible_pad (GstElement * element,
   return pad;
 }
 
+/*
+ * Checks if the source pad and the sink pad can be linked.
+ * Both @srcpad and @sinkpad must be unlinked and have a parent.
+ */
+static gboolean
+gst_pad_check_link (GstPad * srcpad, GstPad * sinkpad)
+{
+  /* FIXME This function is gross.  It's almost a direct copy of
+   * gst_pad_link_filtered().  Any decent programmer would attempt
+   * to merge the two functions, which I will do some day. --ds
+   */
+
+  /* generic checks */
+  g_return_val_if_fail (GST_IS_PAD (srcpad), FALSE);
+  g_return_val_if_fail (GST_IS_PAD (sinkpad), FALSE);
+
+  GST_CAT_INFO (GST_CAT_PADS, "trying to link %s:%s and %s:%s",
+      GST_DEBUG_PAD_NAME (srcpad), GST_DEBUG_PAD_NAME (sinkpad));
+
+  /* FIXME: shouldn't we convert this to g_return_val_if_fail? */
+  if (GST_PAD_PEER (srcpad) != NULL) {
+    GST_CAT_INFO (GST_CAT_PADS, "Source pad %s:%s has a peer, failed",
+        GST_DEBUG_PAD_NAME (srcpad));
+    return FALSE;
+  }
+  if (GST_PAD_PEER (sinkpad) != NULL) {
+    GST_CAT_INFO (GST_CAT_PADS, "Sink pad %s:%s has a peer, failed",
+        GST_DEBUG_PAD_NAME (sinkpad));
+    return FALSE;
+  }
+  if (!GST_PAD_IS_SRC (srcpad)) {
+    GST_CAT_INFO (GST_CAT_PADS, "Src pad %s:%s is not source pad, failed",
+        GST_DEBUG_PAD_NAME (srcpad));
+    return FALSE;
+  }
+  if (!GST_PAD_IS_SINK (sinkpad)) {
+    GST_CAT_INFO (GST_CAT_PADS, "Sink pad %s:%s is not sink pad, failed",
+        GST_DEBUG_PAD_NAME (sinkpad));
+    return FALSE;
+  }
+  if (GST_PAD_PARENT (srcpad) == NULL) {
+    GST_CAT_INFO (GST_CAT_PADS, "Src pad %s:%s has no parent, failed",
+        GST_DEBUG_PAD_NAME (srcpad));
+    return FALSE;
+  }
+  if (GST_PAD_PARENT (sinkpad) == NULL) {
+    GST_CAT_INFO (GST_CAT_PADS, "Sink pad %s:%s has no parent, failed",
+        GST_DEBUG_PAD_NAME (srcpad));
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
 /**
  * gst_element_get_compatible_pad:
  * @element: a #GstElement in which the pad should be found.
@@ -954,8 +937,6 @@ gst_element_get_compatible_pad (GstElement * element, GstPad * pad,
   GstCaps *templcaps;
   GstPad *foundpad = NULL;
   gboolean done;
-
-  /* FIXME check for caps compatibility */
 
   g_return_val_if_fail (GST_IS_ELEMENT (element), NULL);
   g_return_val_if_fail (GST_IS_PAD (pad), NULL);
@@ -985,22 +966,47 @@ gst_element_get_compatible_pad (GstElement * element, GstPad * pad,
 
         peer = gst_pad_get_peer (current);
 
-        if (peer == NULL && gst_pad_can_link (pad, current)) {
+        if (peer == NULL && gst_pad_check_link (pad, current)) {
+          GstCaps *temp, *temp2, *intersection;
 
-          GST_CAT_DEBUG (GST_CAT_ELEMENT_PADS,
-              "found existing unlinked pad %s:%s",
-              GST_DEBUG_PAD_NAME (current));
+          /* Now check if the two pads' caps are compatible */
+          temp = gst_pad_get_caps (pad);
+          if (caps) {
+            intersection = gst_caps_intersect (temp, caps);
+            gst_caps_unref (temp);
+          } else {
+            intersection = temp;
+          }
 
-          gst_iterator_free (pads);
+          temp = gst_pad_get_caps (current);
+          temp2 = gst_caps_intersect (temp, intersection);
+          gst_caps_unref (temp);
+          gst_caps_unref (intersection);
 
-          return current;
+          intersection = temp2;
+
+          if (!gst_caps_is_empty (intersection)) {
+            gst_caps_unref (intersection);
+
+            GST_CAT_DEBUG (GST_CAT_ELEMENT_PADS,
+                "found existing unlinked compatible pad %s:%s",
+                GST_DEBUG_PAD_NAME (current));
+            gst_iterator_free (pads);
+
+            return current;
+          } else {
+            GST_CAT_DEBUG (GST_CAT_ELEMENT_PADS, "incompatible pads");
+          }
+          gst_caps_unref (intersection);
         } else {
-          GST_CAT_DEBUG (GST_CAT_ELEMENT_PADS, "unreffing pads");
-
-          gst_object_unref (current);
-          if (peer)
-            gst_object_unref (peer);
+          GST_CAT_DEBUG (GST_CAT_ELEMENT_PADS,
+              "already linked or cannot be linked (peer = %p)", peer);
         }
+        GST_CAT_DEBUG (GST_CAT_ELEMENT_PADS, "unreffing pads");
+
+        gst_object_unref (current);
+        if (peer)
+          gst_object_unref (peer);
         break;
       }
       case GST_ITERATOR_DONE:
@@ -1016,12 +1022,18 @@ gst_element_get_compatible_pad (GstElement * element, GstPad * pad,
   }
   gst_iterator_free (pads);
 
+  GST_CAT_DEBUG_OBJECT (GST_CAT_ELEMENT_PADS, element,
+      "Could not find a compatible unlinked always pad to link to %s:%s, now checking request pads",
+      GST_DEBUG_PAD_NAME (pad));
+
   /* try to create a new one */
   /* requesting is a little crazy, we need a template. Let's create one */
+  /* FIXME: why not gst_pad_get_pad_template (pad); */
   templcaps = gst_pad_get_caps (pad);
 
   templ = gst_pad_template_new ((gchar *) GST_PAD_NAME (pad),
       GST_PAD_DIRECTION (pad), GST_PAD_ALWAYS, templcaps);
+
   foundpad = gst_element_request_compatible_pad (element, templ);
   gst_object_unref (templ);
 
@@ -1160,8 +1172,8 @@ gst_element_factory_can_src_caps (GstElementFactory * factory,
     GstStaticPadTemplate *template = (GstStaticPadTemplate *) templates->data;
 
     if (template->direction == GST_PAD_SRC) {
-      if (gst_caps_is_always_compatible (gst_static_caps_get (&template->
-                  static_caps), caps))
+      if (gst_caps_is_always_compatible (gst_static_caps_get
+              (&template->static_caps), caps))
         return TRUE;
     }
     templates = g_list_next (templates);
@@ -1437,7 +1449,8 @@ gst_element_link_pads (GstElement * src, const gchar * srcpadname,
   /* get a src pad */
   if (srcpadname) {
     /* name specified, look it up */
-    srcpad = gst_element_get_pad (src, srcpadname);
+    if (!(srcpad = gst_element_get_static_pad (src, srcpadname)))
+      srcpad = gst_element_get_request_pad (src, srcpadname);
     if (!srcpad) {
       GST_CAT_DEBUG (GST_CAT_ELEMENT_PADS, "no pad %s:%s",
           GST_ELEMENT_NAME (src), srcpadname);
@@ -1470,7 +1483,8 @@ gst_element_link_pads (GstElement * src, const gchar * srcpadname,
   /* get a destination pad */
   if (destpadname) {
     /* name specified, look it up */
-    destpad = gst_element_get_pad (dest, destpadname);
+    if (!(destpad = gst_element_get_static_pad (dest, destpadname)))
+      destpad = gst_element_get_request_pad (dest, destpadname);
     if (!destpad) {
       GST_CAT_DEBUG (GST_CAT_ELEMENT_PADS, "no pad %s:%s",
           GST_ELEMENT_NAME (dest), destpadname);
@@ -1775,6 +1789,7 @@ EXPORT_C
 gboolean
 gst_element_link_many (GstElement * element_1, GstElement * element_2, ...)
 {
+  gboolean res = TRUE;
   va_list args;
 
   g_return_val_if_fail (GST_IS_ELEMENT (element_1), FALSE);
@@ -1783,8 +1798,10 @@ gst_element_link_many (GstElement * element_1, GstElement * element_2, ...)
   va_start (args, element_2);
 
   while (element_2) {
-    if (!gst_element_link (element_1, element_2))
-      return FALSE;
+    if (!gst_element_link (element_1, element_2)) {
+      res = FALSE;
+      break;
+    }
 
     element_1 = element_2;
     element_2 = va_arg (args, GstElement *);
@@ -1792,7 +1809,7 @@ gst_element_link_many (GstElement * element_1, GstElement * element_2, ...)
 
   va_end (args);
 
-  return TRUE;
+  return res;
 }
 
 /**
@@ -1841,6 +1858,9 @@ gst_element_unlink_pads (GstElement * src, const gchar * srcpadname,
     GstElement * dest, const gchar * destpadname)
 {
   GstPad *srcpad, *destpad;
+  gboolean srcrequest, destrequest;
+
+  srcrequest = destrequest = FALSE;
 
   g_return_if_fail (src != NULL);
   g_return_if_fail (GST_IS_ELEMENT (src));
@@ -1850,23 +1870,33 @@ gst_element_unlink_pads (GstElement * src, const gchar * srcpadname,
   g_return_if_fail (destpadname != NULL);
 
   /* obtain the pads requested */
-  srcpad = gst_element_get_pad (src, srcpadname);
+  if (!(srcpad = gst_element_get_static_pad (src, srcpadname)))
+    if ((srcpad = gst_element_get_request_pad (src, srcpadname)))
+      srcrequest = TRUE;
   if (srcpad == NULL) {
     GST_WARNING_OBJECT (src, "source element has no pad \"%s\"", srcpadname);
     return;
   }
-  destpad = gst_element_get_pad (dest, destpadname);
+  if (!(destpad = gst_element_get_static_pad (dest, destpadname)))
+    if ((destpad = gst_element_get_request_pad (dest, destpadname)))
+      destrequest = TRUE;
   if (destpad == NULL) {
     GST_WARNING_OBJECT (dest, "destination element has no pad \"%s\"",
         destpadname);
-    gst_object_unref (srcpad);
-    return;
+    goto free_src;
   }
 
   /* we're satisified they can be unlinked, let's do it */
   gst_pad_unlink (srcpad, destpad);
-  gst_object_unref (srcpad);
+
+  if (destrequest)
+    gst_element_release_request_pad (dest, destpad);
   gst_object_unref (destpad);
+
+free_src:
+  if (srcrequest)
+    gst_element_release_request_pad (src, srcpad);
+  gst_object_unref (srcpad);
 }
 
 /**
@@ -1940,8 +1970,7 @@ gst_element_unlink (GstElement * src, GstElement * dest)
         if (GST_PAD_IS_SRC (pad)) {
           GstPad *peerpad = gst_pad_get_peer (pad);
 
-          /* see if the pad is connected and is really a pad
-           * of dest */
+          /* see if the pad is linked and is really a pad of dest */
           if (peerpad) {
             GstElement *peerelem;
 
@@ -2135,70 +2164,6 @@ gst_element_seek_simple (GstElement * element, GstFormat format,
 }
 
 /**
- * gst_pad_can_link:
- * @srcpad: the source #GstPad to link.
- * @sinkpad: the sink #GstPad to link.
- *
- * Checks if the source pad and the sink pad can be linked.
- * Both @srcpad and @sinkpad must be unlinked.
- *
- * Returns: TRUE if the pads can be linked, FALSE otherwise.
- */
-#ifdef __SYMBIAN32__
-EXPORT_C
-#endif
-
-gboolean
-gst_pad_can_link (GstPad * srcpad, GstPad * sinkpad)
-{
-  /* FIXME This function is gross.  It's almost a direct copy of
-   * gst_pad_link_filtered().  Any decent programmer would attempt
-   * to merge the two functions, which I will do some day. --ds
-   */
-
-  /* generic checks */
-  g_return_val_if_fail (GST_IS_PAD (srcpad), FALSE);
-  g_return_val_if_fail (GST_IS_PAD (sinkpad), FALSE);
-
-  GST_CAT_INFO (GST_CAT_PADS, "trying to link %s:%s and %s:%s",
-      GST_DEBUG_PAD_NAME (srcpad), GST_DEBUG_PAD_NAME (sinkpad));
-
-  /* FIXME: shouldn't we convert this to g_return_val_if_fail? */
-  if (GST_PAD_PEER (srcpad) != NULL) {
-    GST_CAT_INFO (GST_CAT_PADS, "Source pad %s:%s has a peer, failed",
-        GST_DEBUG_PAD_NAME (srcpad));
-    return FALSE;
-  }
-  if (GST_PAD_PEER (sinkpad) != NULL) {
-    GST_CAT_INFO (GST_CAT_PADS, "Sink pad %s:%s has a peer, failed",
-        GST_DEBUG_PAD_NAME (sinkpad));
-    return FALSE;
-  }
-  if (!GST_PAD_IS_SRC (srcpad)) {
-    GST_CAT_INFO (GST_CAT_PADS, "Src pad %s:%s is not source pad, failed",
-        GST_DEBUG_PAD_NAME (srcpad));
-    return FALSE;
-  }
-  if (!GST_PAD_IS_SINK (sinkpad)) {
-    GST_CAT_INFO (GST_CAT_PADS, "Sink pad %s:%s is not sink pad, failed",
-        GST_DEBUG_PAD_NAME (sinkpad));
-    return FALSE;
-  }
-  if (GST_PAD_PARENT (srcpad) == NULL) {
-    GST_CAT_INFO (GST_CAT_PADS, "Src pad %s:%s has no parent, failed",
-        GST_DEBUG_PAD_NAME (srcpad));
-    return FALSE;
-  }
-  if (GST_PAD_PARENT (sinkpad) == NULL) {
-    GST_CAT_INFO (GST_CAT_PADS, "Sink pad %s:%s has no parent, failed",
-        GST_DEBUG_PAD_NAME (srcpad));
-    return FALSE;
-  }
-
-  return TRUE;
-}
-
-/**
  * gst_pad_use_fixed_caps:
  * @pad: the pad to use
  *
@@ -2249,9 +2214,7 @@ gst_pad_get_fixed_caps_func (GstPad * pad)
         "using pad caps %p %" GST_PTR_FORMAT, result, result);
 
     result = gst_caps_ref (result);
-    goto done;
-  }
-  if (GST_PAD_PAD_TEMPLATE (pad)) {
+  } else if (GST_PAD_PAD_TEMPLATE (pad)) {
     GstPadTemplate *templ = GST_PAD_PAD_TEMPLATE (pad);
 
     result = GST_PAD_TEMPLATE_CAPS (templ);
@@ -2260,12 +2223,10 @@ gst_pad_get_fixed_caps_func (GstPad * pad)
         result);
 
     result = gst_caps_ref (result);
-    goto done;
+  } else {
+    GST_CAT_DEBUG (GST_CAT_CAPS, "pad has no caps");
+    result = gst_caps_new_empty ();
   }
-  GST_CAT_DEBUG (GST_CAT_CAPS, "pad has no caps");
-  result = gst_caps_new_empty ();
-
-done:
   GST_OBJECT_UNLOCK (pad);
 
   return result;
@@ -2559,6 +2520,11 @@ gst_buffer_merge (GstBuffer * buf1, GstBuffer * buf2)
  * If the buffers point to contiguous areas of memory, the buffer
  * is created without copying the data.
  *
+ * This is a convenience function for C programmers. See also 
+ * gst_buffer_merge(), which does the same thing without 
+ * unreffing the input parameters. Language bindings without 
+ * explicit reference counting should not wrap this function.
+ *
  * Returns: the new #GstBuffer which is the concatenation of the source buffers.
  */
 #ifdef __SYMBIAN32__
@@ -2606,6 +2572,7 @@ gst_buffer_stamp (GstBuffer * dest, const GstBuffer * src)
 static gboolean
 intersect_caps_func (GstPad * pad, GValue * ret, GstPad * orig)
 {
+  /* skip the pad, the request came from */
   if (pad != orig) {
     GstCaps *peercaps, *existing;
 
@@ -2649,7 +2616,8 @@ gst_pad_proxy_getcaps (GstPad * pad)
 
   g_return_val_if_fail (GST_IS_PAD (pad), NULL);
 
-  GST_DEBUG ("proxying getcaps for %s:%s", GST_DEBUG_PAD_NAME (pad));
+  GST_CAT_DEBUG (GST_CAT_PADS, "proxying getcaps for %s:%s",
+      GST_DEBUG_PAD_NAME (pad));
 
   element = gst_pad_get_parent_element (pad);
   if (element == NULL)
@@ -2757,7 +2725,8 @@ gst_pad_proxy_setcaps (GstPad * pad, GstCaps * caps)
   g_return_val_if_fail (GST_IS_PAD (pad), FALSE);
   g_return_val_if_fail (caps != NULL, FALSE);
 
-  GST_DEBUG ("proxying pad link for %s:%s", GST_DEBUG_PAD_NAME (pad));
+  GST_CAT_DEBUG (GST_CAT_PADS, "proxying pad link for %s:%s",
+      GST_DEBUG_PAD_NAME (pad));
 
   element = gst_pad_get_parent_element (pad);
   if (element == NULL)
@@ -2957,7 +2926,6 @@ gst_pad_query_convert (GstPad * pad, GstFormat src_format, gint64 src_val,
   gboolean ret;
 
   g_return_val_if_fail (GST_IS_PAD (pad), FALSE);
-  g_return_val_if_fail (src_val >= 0, FALSE);
   g_return_val_if_fail (dest_format != NULL, FALSE);
   g_return_val_if_fail (dest_val != NULL, FALSE);
 
@@ -3024,7 +2992,11 @@ gst_pad_query_peer_convert (GstPad * pad, GstFormat src_format, gint64 src_val,
  * @value: value to set
  *
  * Unconditionally sets the atomic integer to @value.
+ * 
+ * Deprecated: Use g_atomic_int_set().
+ *
  */
+#ifndef GST_REMOVE_DEPRECATED
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
@@ -3032,12 +3004,9 @@ EXPORT_C
 void
 gst_atomic_int_set (gint * atomic_int, gint value)
 {
-  int ignore;
-
-  *atomic_int = value;
-  /* read acts as a memory barrier */
-  ignore = g_atomic_int_get (atomic_int);
+  g_atomic_int_set (atomic_int, value);
 }
+#endif
 
 /**
  * gst_pad_add_data_probe:
@@ -3076,17 +3045,68 @@ EXPORT_C
 gulong
 gst_pad_add_data_probe (GstPad * pad, GCallback handler, gpointer data)
 {
+  return gst_pad_add_data_probe_full (pad, handler, data, NULL);
+}
+
+/**
+ * gst_pad_add_data_probe_full:
+ * @pad: pad to add the data probe handler to
+ * @handler: function to call when data is passed over pad
+ * @data: data to pass along with the handler
+ * @notify: function to call when the probe is disconnected, or NULL
+ *
+ * Adds a "data probe" to a pad. This function will be called whenever data
+ * passes through a pad. In this case data means both events and buffers. The
+ * probe will be called with the data as an argument, meaning @handler should
+ * have the same callback signature as the #GstPad::have-data signal.
+ * Note that the data will have a reference count greater than 1, so it will
+ * be immutable -- you must not change it.
+ *
+ * For source pads, the probe will be called after the blocking function, if any
+ * (see gst_pad_set_blocked_async()), but before looking up the peer to chain
+ * to. For sink pads, the probe function will be called before configuring the
+ * sink with new caps, if any, and before calling the pad's chain function.
+ *
+ * Your data probe should return TRUE to let the data continue to flow, or FALSE
+ * to drop it. Dropping data is rarely useful, but occasionally comes in handy
+ * with events.
+ *
+ * Although probes are implemented internally by connecting @handler to the
+ * have-data signal on the pad, if you want to remove a probe it is insufficient
+ * to only call g_signal_handler_disconnect on the returned handler id. To
+ * remove a probe, use the appropriate function, such as
+ * gst_pad_remove_data_probe().
+ *
+ * The @notify function is called when the probe is disconnected and usually
+ * used to free @data.
+ *
+ * Returns: The handler id.
+ *
+ * Since: 0.10.20
+ */
+#ifdef __SYMBIAN32__
+EXPORT_C
+#endif
+
+gulong
+gst_pad_add_data_probe_full (GstPad * pad, GCallback handler,
+    gpointer data, GDestroyNotify notify)
+{
   gulong sigid;
 
   g_return_val_if_fail (GST_IS_PAD (pad), 0);
   g_return_val_if_fail (handler != NULL, 0);
 
   GST_OBJECT_LOCK (pad);
-  sigid = g_signal_connect (pad, "have-data", handler, data);
+
+  /* we only expose a GDestroyNotify in our API because that's less confusing */
+  sigid = g_signal_connect_data (pad, "have-data", handler, data,
+      (GClosureNotify) notify, 0);
+
   GST_PAD_DO_EVENT_SIGNALS (pad)++;
   GST_PAD_DO_BUFFER_SIGNALS (pad)++;
-  GST_DEBUG ("adding data probe to pad %s:%s, now %d data, %d event probes",
-      GST_DEBUG_PAD_NAME (pad),
+  GST_CAT_DEBUG_OBJECT (GST_CAT_PADS, pad,
+      "adding data probe, now %d data, %d event probes",
       GST_PAD_DO_BUFFER_SIGNALS (pad), GST_PAD_DO_EVENT_SIGNALS (pad));
   GST_OBJECT_UNLOCK (pad);
 
@@ -3111,16 +3131,48 @@ EXPORT_C
 gulong
 gst_pad_add_event_probe (GstPad * pad, GCallback handler, gpointer data)
 {
+  return gst_pad_add_event_probe_full (pad, handler, data, NULL);
+}
+
+/**
+ * gst_pad_add_event_probe_full:
+ * @pad: pad to add the event probe handler to
+ * @handler: function to call when events are passed over pad
+ * @data: data to pass along with the handler, or NULL
+ * @notify: function to call when probe is disconnected, or NULL
+ *
+ * Adds a probe that will be called for all events passing through a pad. See
+ * gst_pad_add_data_probe() for more information.
+ *
+ * The @notify function is called when the probe is disconnected and usually
+ * used to free @data.
+ *
+ * Returns: The handler id
+ *
+ * Since: 0.10.20
+ */
+#ifdef __SYMBIAN32__
+EXPORT_C
+#endif
+
+gulong
+gst_pad_add_event_probe_full (GstPad * pad, GCallback handler,
+    gpointer data, GDestroyNotify notify)
+{
   gulong sigid;
 
   g_return_val_if_fail (GST_IS_PAD (pad), 0);
   g_return_val_if_fail (handler != NULL, 0);
 
   GST_OBJECT_LOCK (pad);
-  sigid = g_signal_connect (pad, "have-data::event", handler, data);
+
+  /* we only expose a GDestroyNotify in our API because that's less confusing */
+  sigid = g_signal_connect_data (pad, "have-data::event", handler, data,
+      (GClosureNotify) notify, 0);
+
   GST_PAD_DO_EVENT_SIGNALS (pad)++;
-  GST_DEBUG ("adding event probe to pad %s:%s, now %d probes",
-      GST_DEBUG_PAD_NAME (pad), GST_PAD_DO_EVENT_SIGNALS (pad));
+  GST_CAT_DEBUG_OBJECT (GST_CAT_PADS, pad, "adding event probe, now %d probes",
+      GST_PAD_DO_EVENT_SIGNALS (pad));
   GST_OBJECT_UNLOCK (pad);
 
   return sigid;
@@ -3144,16 +3196,48 @@ EXPORT_C
 gulong
 gst_pad_add_buffer_probe (GstPad * pad, GCallback handler, gpointer data)
 {
+  return gst_pad_add_buffer_probe_full (pad, handler, data, NULL);
+}
+
+/**
+ * gst_pad_add_buffer_probe_full:
+ * @pad: pad to add the buffer probe handler to
+ * @handler: function to call when buffer are passed over pad
+ * @data: data to pass along with the handler
+ * @notify: function to call when the probe is disconnected, or NULL
+ *
+ * Adds a probe that will be called for all buffers passing through a pad. See
+ * gst_pad_add_data_probe() for more information.
+ *
+ * The @notify function is called when the probe is disconnected and usually
+ * used to free @data.
+ *
+ * Returns: The handler id
+ *
+ * Since: 0.10.20
+ */
+#ifdef __SYMBIAN32__
+EXPORT_C
+#endif
+
+gulong
+gst_pad_add_buffer_probe_full (GstPad * pad, GCallback handler,
+    gpointer data, GDestroyNotify notify)
+{
   gulong sigid;
 
   g_return_val_if_fail (GST_IS_PAD (pad), 0);
   g_return_val_if_fail (handler != NULL, 0);
 
   GST_OBJECT_LOCK (pad);
-  sigid = g_signal_connect (pad, "have-data::buffer", handler, data);
+
+  /* we only expose a GDestroyNotify in our API because that's less confusing */
+  sigid = g_signal_connect_data (pad, "have-data::buffer", handler, data,
+      (GClosureNotify) notify, 0);
+
   GST_PAD_DO_BUFFER_SIGNALS (pad)++;
-  GST_DEBUG ("adding buffer probe to pad %s:%s, now %d probes",
-      GST_DEBUG_PAD_NAME (pad), GST_PAD_DO_BUFFER_SIGNALS (pad));
+  GST_CAT_DEBUG_OBJECT (GST_CAT_PADS, pad, "adding buffer probe, now %d probes",
+      GST_PAD_DO_BUFFER_SIGNALS (pad));
   GST_OBJECT_UNLOCK (pad);
 
   return sigid;
@@ -3180,10 +3264,9 @@ gst_pad_remove_data_probe (GstPad * pad, guint handler_id)
   g_signal_handler_disconnect (pad, handler_id);
   GST_PAD_DO_BUFFER_SIGNALS (pad)--;
   GST_PAD_DO_EVENT_SIGNALS (pad)--;
-  GST_DEBUG
-      ("removed data probe from pad %s:%s, now %d event, %d buffer probes",
-      GST_DEBUG_PAD_NAME (pad), GST_PAD_DO_EVENT_SIGNALS (pad),
-      GST_PAD_DO_BUFFER_SIGNALS (pad));
+  GST_CAT_DEBUG_OBJECT (GST_CAT_PADS, pad,
+      "removed data probe, now %d event, %d buffer probes",
+      GST_PAD_DO_EVENT_SIGNALS (pad), GST_PAD_DO_BUFFER_SIGNALS (pad));
   GST_OBJECT_UNLOCK (pad);
 
 }
@@ -3208,8 +3291,9 @@ gst_pad_remove_event_probe (GstPad * pad, guint handler_id)
   GST_OBJECT_LOCK (pad);
   g_signal_handler_disconnect (pad, handler_id);
   GST_PAD_DO_EVENT_SIGNALS (pad)--;
-  GST_DEBUG ("removed event probe from pad %s:%s, now %d event probes",
-      GST_DEBUG_PAD_NAME (pad), GST_PAD_DO_EVENT_SIGNALS (pad));
+  GST_CAT_DEBUG_OBJECT (GST_CAT_PADS, pad,
+      "removed event probe, now %d event probes",
+      GST_PAD_DO_EVENT_SIGNALS (pad));
   GST_OBJECT_UNLOCK (pad);
 }
 
@@ -3233,8 +3317,9 @@ gst_pad_remove_buffer_probe (GstPad * pad, guint handler_id)
   GST_OBJECT_LOCK (pad);
   g_signal_handler_disconnect (pad, handler_id);
   GST_PAD_DO_BUFFER_SIGNALS (pad)--;
-  GST_DEBUG ("removed buffer probe from pad %s:%s, now %d buffer probes",
-      GST_DEBUG_PAD_NAME (pad), GST_PAD_DO_BUFFER_SIGNALS (pad));
+  GST_CAT_DEBUG_OBJECT (GST_CAT_PADS, pad,
+      "removed buffer probe, now %d buffer probes",
+      GST_PAD_DO_BUFFER_SIGNALS (pad));
   GST_OBJECT_UNLOCK (pad);
 
 }
@@ -3264,8 +3349,9 @@ gst_element_found_tags_for_pad (GstElement * element,
   g_return_if_fail (list != NULL);
 
   gst_pad_push_event (pad, gst_event_new_tag (gst_tag_list_copy (list)));
+  /* FIXME 0.11: Set the pad as source. */
   gst_element_post_message (element,
-      gst_message_new_tag (GST_OBJECT (element), list));
+      gst_message_new_tag_full (GST_OBJECT (element), pad, list));
 }
 
 static void
@@ -3311,10 +3397,10 @@ gst_element_found_tags (GstElement * element, GstTagList * list)
 }
 
 static GstPad *
-element_find_unconnected_pad (GstElement * element, GstPadDirection direction)
+element_find_unlinked_pad (GstElement * element, GstPadDirection direction)
 {
   GstIterator *iter;
-  GstPad *unconnected_pad = NULL;
+  GstPad *unlinked_pad = NULL;
   gboolean done;
 
   switch (direction) {
@@ -3341,11 +3427,11 @@ element_find_unconnected_pad (GstElement * element, GstPadDirection direction)
 
         peer = gst_pad_get_peer (GST_PAD (pad));
         if (peer == NULL) {
-          unconnected_pad = pad;
+          unlinked_pad = pad;
           done = TRUE;
           GST_CAT_DEBUG (GST_CAT_ELEMENT_PADS,
               "found existing unlinked pad %s:%s",
-              GST_DEBUG_PAD_NAME (unconnected_pad));
+              GST_DEBUG_PAD_NAME (unlinked_pad));
         } else {
           gst_object_unref (pad);
           gst_object_unref (peer);
@@ -3366,30 +3452,30 @@ element_find_unconnected_pad (GstElement * element, GstPadDirection direction)
 
   gst_iterator_free (iter);
 
-  return unconnected_pad;
+  return unlinked_pad;
 }
 
 /**
- * gst_bin_find_unconnected_pad:
- * @bin: bin in which to look for elements with unconnected pads
- * @direction: whether to look for an unconnected source or sink pad
+ * gst_bin_find_unlinked_pad:
+ * @bin: bin in which to look for elements with unlinked pads
+ * @direction: whether to look for an unlinked source or sink pad
  *
- * Recursively looks for elements with an unconnected pad of the given
- * direction within the specified bin and returns an unconnected pad
+ * Recursively looks for elements with an unlinked pad of the given
+ * direction within the specified bin and returns an unlinked pad
  * if one is found, or NULL otherwise. If a pad is found, the caller
  * owns a reference to it and should use gst_object_unref() on the
  * pad when it is not needed any longer.
  *
- * Returns: unconnected pad of the given direction, or NULL.
+ * Returns: unlinked pad of the given direction, or NULL.
  *
- * Since: 0.10.3
+ * Since: 0.10.20
  */
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
 
 GstPad *
-gst_bin_find_unconnected_pad (GstBin * bin, GstPadDirection direction)
+gst_bin_find_unlinked_pad (GstBin * bin, GstPadDirection direction)
 {
   GstIterator *iter;
   gboolean done;
@@ -3405,7 +3491,7 @@ gst_bin_find_unconnected_pad (GstBin * bin, GstPadDirection direction)
 
     switch (gst_iterator_next (iter, &element)) {
       case GST_ITERATOR_OK:
-        pad = element_find_unconnected_pad (GST_ELEMENT (element), direction);
+        pad = element_find_unlinked_pad (GST_ELEMENT (element), direction);
         gst_object_unref (element);
         if (pad != NULL)
           done = TRUE;
@@ -3428,20 +3514,48 @@ gst_bin_find_unconnected_pad (GstBin * bin, GstPadDirection direction)
 }
 
 /**
+ * gst_bin_find_unconnected_pad:
+ * @bin: bin in which to look for elements with unlinked pads
+ * @direction: whether to look for an unlinked source or sink pad
+ *
+ * Recursively looks for elements with an unlinked pad of the given
+ * direction within the specified bin and returns an unlinked pad
+ * if one is found, or NULL otherwise. If a pad is found, the caller
+ * owns a reference to it and should use gst_object_unref() on the
+ * pad when it is not needed any longer.
+ *
+ * Returns: unlinked pad of the given direction, or NULL.
+ *
+ * Since: 0.10.3
+ *
+ * Deprecated: use gst_bin_find_unlinked_pad() instead.
+ */
+#ifndef GST_REMOVE_DEPRECATED
+
+#ifdef __SYMBIAN32__
+EXPORT_C
+#endif
+GstPad *
+gst_bin_find_unconnected_pad (GstBin * bin, GstPadDirection direction)
+{
+  return gst_bin_find_unlinked_pad (bin, direction);
+}
+#endif
+
+/**
  * gst_parse_bin_from_description:
  * @bin_description: command line describing the bin
- * @ghost_unconnected_pads: whether to automatically create ghost pads
- *                          for unconnected source or sink pads within
- *                          the bin
+ * @ghost_unlinked_pads: whether to automatically create ghost pads
+ *     for unlinked source or sink pads within the bin
  * @err: where to store the error message in case of an error, or NULL
  *
  * This is a convenience wrapper around gst_parse_launch() to create a
  * #GstBin from a gst-launch-style pipeline description. See
  * gst_parse_launch() and the gst-launch man page for details about the
- * syntax. Ghost pads on the bin for unconnected source or sink pads
+ * syntax. Ghost pads on the bin for unlinked source or sink pads
  * within the bin can automatically be created (but only a maximum of
  * one ghost pad for each direction will be created; if you expect
- * multiple unconnected source pads or multiple unconnected sink pads
+ * multiple unlinked source pads or multiple unlinked sink pads
  * and want them all ghosted, you will have to create the ghost pads
  * yourself).
  *
@@ -3455,7 +3569,43 @@ EXPORT_C
 
 GstElement *
 gst_parse_bin_from_description (const gchar * bin_description,
-    gboolean ghost_unconnected_pads, GError ** err)
+    gboolean ghost_unlinked_pads, GError ** err)
+{
+  return gst_parse_bin_from_description_full (bin_description,
+      ghost_unlinked_pads, NULL, 0, err);
+}
+
+/**
+ * gst_parse_bin_from_description_full:
+ * @bin_description: command line describing the bin
+ * @ghost_unlinked_pads: whether to automatically create ghost pads
+ *     for unlinked source or sink pads within the bin
+ * @context: a parse context allocated with gst_parse_context_new(), or %NULL
+ * @flags: parsing options, or #GST_PARSE_FLAG_NONE
+ * @err: where to store the error message in case of an error, or NULL
+ *
+ * This is a convenience wrapper around gst_parse_launch() to create a
+ * #GstBin from a gst-launch-style pipeline description. See
+ * gst_parse_launch() and the gst-launch man page for details about the
+ * syntax. Ghost pads on the bin for unlinked source or sink pads
+ * within the bin can automatically be created (but only a maximum of
+ * one ghost pad for each direction will be created; if you expect
+ * multiple unlinked source pads or multiple unlinked sink pads
+ * and want them all ghosted, you will have to create the ghost pads
+ * yourself).
+ *
+ * Returns: a newly-created bin, or NULL if an error occurred.
+ *
+ * Since: 0.10.20
+ */
+#ifdef __SYMBIAN32__
+EXPORT_C
+#endif
+
+GstElement *
+gst_parse_bin_from_description_full (const gchar * bin_description,
+    gboolean ghost_unlinked_pads, GstParseContext * context,
+    GstParseFlags flags, GError ** err)
 {
 #ifndef GST_DISABLE_PARSE
   GstPad *pad = NULL;
@@ -3469,7 +3619,7 @@ gst_parse_bin_from_description (const gchar * bin_description,
 
   /* parse the pipeline to a bin */
   desc = g_strdup_printf ("bin.( %s )", bin_description);
-  bin = (GstBin *) gst_parse_launch (desc, err);
+  bin = (GstBin *) gst_parse_launch_full (desc, context, flags, err);
   g_free (desc);
 
   if (bin == NULL || (err && *err != NULL)) {
@@ -3479,12 +3629,12 @@ gst_parse_bin_from_description (const gchar * bin_description,
   }
 
   /* find pads and ghost them if necessary */
-  if (ghost_unconnected_pads) {
-    if ((pad = gst_bin_find_unconnected_pad (bin, GST_PAD_SRC))) {
+  if (ghost_unlinked_pads) {
+    if ((pad = gst_bin_find_unlinked_pad (bin, GST_PAD_SRC))) {
       gst_element_add_pad (GST_ELEMENT (bin), gst_ghost_pad_new ("src", pad));
       gst_object_unref (pad);
     }
-    if ((pad = gst_bin_find_unconnected_pad (bin, GST_PAD_SINK))) {
+    if ((pad = gst_bin_find_unlinked_pad (bin, GST_PAD_SINK))) {
       gst_element_add_pad (GST_ELEMENT (bin), gst_ghost_pad_new ("sink", pad));
       gst_object_unref (pad);
     }
@@ -3494,7 +3644,7 @@ gst_parse_bin_from_description (const gchar * bin_description,
 #else
   gchar *msg;
 
-  GST_WARNING ("Disabled API called: gst_parse_bin_from_description()");
+  GST_WARNING ("Disabled API called");
 
   msg = gst_error_get_message (GST_CORE_ERROR, GST_CORE_ERROR_DISABLED);
   g_set_error (err, GST_CORE_ERROR, GST_CORE_ERROR_DISABLED, "%s", msg);
@@ -3606,4 +3756,96 @@ gst_util_get_timestamp (void)
   g_get_current_time (&now);
   return GST_TIMEVAL_TO_TIME (now);
 #endif
+}
+
+/**
+ * gst_util_array_binary_search:
+ * @array: the sorted input array
+ * @num_elements: number of elements in the array
+ * @element_size: size of every element in bytes
+ * @search_func: function to compare two elements, @search_data will always be passed as second argument
+ * @mode: search mode that should be used
+ * @search_data: element that should be found
+ * @user_data: data to pass to @search_func
+ *
+ * Searches inside @array for @search_data by using the comparison function
+ * @search_func. @array must be sorted ascending.
+ *
+ * As @search_data is always passed as second argument to @search_func it's
+ * not required that @search_data has the same type as the array elements.
+ *
+ * The complexity of this search function is O(log (num_elements)).
+ *
+ * Returns: The address of the found element or %NULL if nothing was found
+ *
+ * Since: 0.10.23
+ */
+#ifdef __SYMBIAN32__
+EXPORT_C
+#endif
+
+gpointer
+gst_util_array_binary_search (gpointer array, guint num_elements,
+    gsize element_size, GCompareDataFunc search_func, GstSearchMode mode,
+    gconstpointer search_data, gpointer user_data)
+{
+  glong left = 0, right = num_elements - 1, m;
+  gint ret;
+  guint8 *data = (guint8 *) array;
+
+  g_return_val_if_fail (array != NULL, NULL);
+  g_return_val_if_fail (element_size > 0, NULL);
+  g_return_val_if_fail (search_func != NULL, NULL);
+
+  /* 0. No elements => return NULL */
+  if (num_elements == 0)
+    return NULL;
+
+  /* 1. If search_data is before the 0th element return the 0th element */
+  ret = search_func (data, search_data, user_data);
+  if ((ret >= 0 && mode == GST_SEARCH_MODE_AFTER) || ret == 0)
+    return data;
+  else if (ret > 0)
+    return NULL;
+
+  /* 2. If search_data is after the last element return the last element */
+  ret =
+      search_func (data + (num_elements - 1) * element_size, search_data,
+      user_data);
+  if ((ret <= 0 && mode == GST_SEARCH_MODE_BEFORE) || ret == 0)
+    return data + (num_elements - 1) * element_size;
+  else if (ret < 0)
+    return NULL;
+
+  /* 3. else binary search */
+  while (TRUE) {
+    m = left + (right - left) / 2;
+
+    ret = search_func (data + m * element_size, search_data, user_data);
+
+    if (ret == 0) {
+      return data + m * element_size;
+    } else if (ret < 0) {
+      left = m + 1;
+    } else {
+      right = m - 1;
+    }
+
+    /* No exact match found */
+    if (right < left) {
+      if (mode == GST_SEARCH_MODE_EXACT) {
+        return NULL;
+      } else if (mode == GST_SEARCH_MODE_AFTER) {
+        if (ret < 0)
+          return (m < num_elements) ? data + (m + 1) * element_size : NULL;
+        else
+          return data + m * element_size;
+      } else {
+        if (ret < 0)
+          return data + m * element_size;
+        else
+          return (m > 0) ? data + (m - 1) * element_size : NULL;
+      }
+    }
+  }
 }

@@ -48,24 +48,24 @@
 #endif /* !G_ENABLE_DEBUG */
 
 
-/* BOOLEAN:OBJECT,OBJECT (gstplay-marshal.list:1) */
+/* BOOLEAN:OBJECT,BOXED (gstplay-marshal.list:1) */
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
 
 void
-gst_play_marshal_BOOLEAN__OBJECT_OBJECT (GClosure     *closure,
-                                         GValue       *return_value G_GNUC_UNUSED,
-                                         guint         n_param_values,
-                                         const GValue *param_values,
-                                         gpointer      invocation_hint G_GNUC_UNUSED,
-                                         gpointer      marshal_data)
+gst_play_marshal_BOOLEAN__OBJECT_BOXED (GClosure     *closure,
+                                        GValue       *return_value G_GNUC_UNUSED,
+                                        guint         n_param_values,
+                                        const GValue *param_values,
+                                        gpointer      invocation_hint G_GNUC_UNUSED,
+                                        gpointer      marshal_data)
 {
-  typedef gboolean (*GMarshalFunc_BOOLEAN__OBJECT_OBJECT) (gpointer     data1,
-                                                           gpointer     arg_1,
-                                                           gpointer     arg_2,
-                                                           gpointer     data2);
-  register GMarshalFunc_BOOLEAN__OBJECT_OBJECT callback;
+  typedef gboolean (*GMarshalFunc_BOOLEAN__OBJECT_BOXED) (gpointer     data1,
+                                                          gpointer     arg_1,
+                                                          gpointer     arg_2,
+                                                          gpointer     data2);
+  register GMarshalFunc_BOOLEAN__OBJECT_BOXED callback;
   register GCClosure *cc = (GCClosure*) closure;
   register gpointer data1, data2;
   gboolean v_return;
@@ -83,11 +83,11 @@ gst_play_marshal_BOOLEAN__OBJECT_OBJECT (GClosure     *closure,
       data1 = g_value_peek_pointer (param_values + 0);
       data2 = closure->data;
     }
-  callback = (GMarshalFunc_BOOLEAN__OBJECT_OBJECT) (marshal_data ? marshal_data : cc->callback);
+  callback = (GMarshalFunc_BOOLEAN__OBJECT_BOXED) (marshal_data ? marshal_data : cc->callback);
 
   v_return = callback (data1,
                        g_marshal_value_peek_object (param_values + 1),
-                       g_marshal_value_peek_object (param_values + 2),
+                       g_marshal_value_peek_boxed (param_values + 2),
                        data2);
 
   g_value_set_boolean (return_value, v_return);
@@ -140,24 +140,24 @@ gst_play_marshal_BOOLEAN__OBJECT_OBJECT_OBJECT (GClosure     *closure,
   g_value_set_boolean (return_value, v_return);
 }
 
-/* BOXED:OBJECT,OBJECT (gstplay-marshal.list:3) */
+/* BOXED:OBJECT,BOXED (gstplay-marshal.list:3) */
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
 
 void
-gst_play_marshal_BOXED__OBJECT_OBJECT (GClosure     *closure,
-                                       GValue       *return_value G_GNUC_UNUSED,
-                                       guint         n_param_values,
-                                       const GValue *param_values,
-                                       gpointer      invocation_hint G_GNUC_UNUSED,
-                                       gpointer      marshal_data)
+gst_play_marshal_BOXED__OBJECT_BOXED (GClosure     *closure,
+                                      GValue       *return_value G_GNUC_UNUSED,
+                                      guint         n_param_values,
+                                      const GValue *param_values,
+                                      gpointer      invocation_hint G_GNUC_UNUSED,
+                                      gpointer      marshal_data)
 {
-  typedef gpointer (*GMarshalFunc_BOXED__OBJECT_OBJECT) (gpointer     data1,
-                                                         gpointer     arg_1,
-                                                         gpointer     arg_2,
-                                                         gpointer     data2);
-  register GMarshalFunc_BOXED__OBJECT_OBJECT callback;
+  typedef gpointer (*GMarshalFunc_BOXED__OBJECT_BOXED) (gpointer     data1,
+                                                        gpointer     arg_1,
+                                                        gpointer     arg_2,
+                                                        gpointer     data2);
+  register GMarshalFunc_BOXED__OBJECT_BOXED callback;
   register GCClosure *cc = (GCClosure*) closure;
   register gpointer data1, data2;
   gpointer v_return;
@@ -175,11 +175,11 @@ gst_play_marshal_BOXED__OBJECT_OBJECT (GClosure     *closure,
       data1 = g_value_peek_pointer (param_values + 0);
       data2 = closure->data;
     }
-  callback = (GMarshalFunc_BOXED__OBJECT_OBJECT) (marshal_data ? marshal_data : cc->callback);
+  callback = (GMarshalFunc_BOXED__OBJECT_BOXED) (marshal_data ? marshal_data : cc->callback);
 
   v_return = callback (data1,
                        g_marshal_value_peek_object (param_values + 1),
-                       g_marshal_value_peek_object (param_values + 2),
+                       g_marshal_value_peek_boxed (param_values + 2),
                        data2);
 
   g_value_take_boxed (return_value, v_return);
@@ -273,25 +273,25 @@ gst_play_marshal_ENUM__OBJECT_OBJECT_BOXED (GClosure     *closure,
   g_value_set_enum (return_value, v_return);
 }
 
-/* ENUM:OBJECT,OBJECT,OBJECT (gstplay-marshal.list:6) */
+/* ENUM:OBJECT,BOXED,OBJECT (gstplay-marshal.list:6) */
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
 
 void
-gst_play_marshal_ENUM__OBJECT_OBJECT_OBJECT (GClosure     *closure,
-                                             GValue       *return_value G_GNUC_UNUSED,
-                                             guint         n_param_values,
-                                             const GValue *param_values,
-                                             gpointer      invocation_hint G_GNUC_UNUSED,
-                                             gpointer      marshal_data)
+gst_play_marshal_ENUM__OBJECT_BOXED_OBJECT (GClosure     *closure,
+                                            GValue       *return_value G_GNUC_UNUSED,
+                                            guint         n_param_values,
+                                            const GValue *param_values,
+                                            gpointer      invocation_hint G_GNUC_UNUSED,
+                                            gpointer      marshal_data)
 {
-  typedef gint (*GMarshalFunc_ENUM__OBJECT_OBJECT_OBJECT) (gpointer     data1,
-                                                           gpointer     arg_1,
-                                                           gpointer     arg_2,
-                                                           gpointer     arg_3,
-                                                           gpointer     data2);
-  register GMarshalFunc_ENUM__OBJECT_OBJECT_OBJECT callback;
+  typedef gint (*GMarshalFunc_ENUM__OBJECT_BOXED_OBJECT) (gpointer     data1,
+                                                          gpointer     arg_1,
+                                                          gpointer     arg_2,
+                                                          gpointer     arg_3,
+                                                          gpointer     data2);
+  register GMarshalFunc_ENUM__OBJECT_BOXED_OBJECT callback;
   register GCClosure *cc = (GCClosure*) closure;
   register gpointer data1, data2;
   gint v_return;
@@ -309,36 +309,36 @@ gst_play_marshal_ENUM__OBJECT_OBJECT_OBJECT (GClosure     *closure,
       data1 = g_value_peek_pointer (param_values + 0);
       data2 = closure->data;
     }
-  callback = (GMarshalFunc_ENUM__OBJECT_OBJECT_OBJECT) (marshal_data ? marshal_data : cc->callback);
+  callback = (GMarshalFunc_ENUM__OBJECT_BOXED_OBJECT) (marshal_data ? marshal_data : cc->callback);
 
   v_return = callback (data1,
                        g_marshal_value_peek_object (param_values + 1),
-                       g_marshal_value_peek_object (param_values + 2),
+                       g_marshal_value_peek_boxed (param_values + 2),
                        g_marshal_value_peek_object (param_values + 3),
                        data2);
 
   g_value_set_enum (return_value, v_return);
 }
 
-/* BOXED:OBJECT,OBJECT,BOXED (gstplay-marshal.list:7) */
+/* BOXED:OBJECT,BOXED,BOXED (gstplay-marshal.list:7) */
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
 
 void
-gst_play_marshal_BOXED__OBJECT_OBJECT_BOXED (GClosure     *closure,
-                                             GValue       *return_value G_GNUC_UNUSED,
-                                             guint         n_param_values,
-                                             const GValue *param_values,
-                                             gpointer      invocation_hint G_GNUC_UNUSED,
-                                             gpointer      marshal_data)
+gst_play_marshal_BOXED__OBJECT_BOXED_BOXED (GClosure     *closure,
+                                            GValue       *return_value G_GNUC_UNUSED,
+                                            guint         n_param_values,
+                                            const GValue *param_values,
+                                            gpointer      invocation_hint G_GNUC_UNUSED,
+                                            gpointer      marshal_data)
 {
-  typedef gpointer (*GMarshalFunc_BOXED__OBJECT_OBJECT_BOXED) (gpointer     data1,
-                                                               gpointer     arg_1,
-                                                               gpointer     arg_2,
-                                                               gpointer     arg_3,
-                                                               gpointer     data2);
-  register GMarshalFunc_BOXED__OBJECT_OBJECT_BOXED callback;
+  typedef gpointer (*GMarshalFunc_BOXED__OBJECT_BOXED_BOXED) (gpointer     data1,
+                                                              gpointer     arg_1,
+                                                              gpointer     arg_2,
+                                                              gpointer     arg_3,
+                                                              gpointer     data2);
+  register GMarshalFunc_BOXED__OBJECT_BOXED_BOXED callback;
   register GCClosure *cc = (GCClosure*) closure;
   register gpointer data1, data2;
   gpointer v_return;
@@ -356,11 +356,11 @@ gst_play_marshal_BOXED__OBJECT_OBJECT_BOXED (GClosure     *closure,
       data1 = g_value_peek_pointer (param_values + 0);
       data2 = closure->data;
     }
-  callback = (GMarshalFunc_BOXED__OBJECT_OBJECT_BOXED) (marshal_data ? marshal_data : cc->callback);
+  callback = (GMarshalFunc_BOXED__OBJECT_BOXED_BOXED) (marshal_data ? marshal_data : cc->callback);
 
   v_return = callback (data1,
                        g_marshal_value_peek_object (param_values + 1),
-                       g_marshal_value_peek_object (param_values + 2),
+                       g_marshal_value_peek_boxed (param_values + 2),
                        g_marshal_value_peek_boxed (param_values + 3),
                        data2);
 
@@ -451,5 +451,124 @@ gst_play_marshal_OBJECT__BOXED (GClosure     *closure,
                        data2);
 
   g_value_take_object (return_value, v_return);
+}
+
+/* OBJECT:INT (gstplay-marshal.list:10) */
+#ifdef __SYMBIAN32__
+EXPORT_C
+#endif
+
+void
+gst_play_marshal_OBJECT__INT (GClosure     *closure,
+                              GValue       *return_value G_GNUC_UNUSED,
+                              guint         n_param_values,
+                              const GValue *param_values,
+                              gpointer      invocation_hint G_GNUC_UNUSED,
+                              gpointer      marshal_data)
+{
+  typedef GObject* (*GMarshalFunc_OBJECT__INT) (gpointer     data1,
+                                                gint         arg_1,
+                                                gpointer     data2);
+  register GMarshalFunc_OBJECT__INT callback;
+  register GCClosure *cc = (GCClosure*) closure;
+  register gpointer data1, data2;
+  GObject* v_return;
+
+  g_return_if_fail (return_value != NULL);
+  g_return_if_fail (n_param_values == 2);
+
+  if (G_CCLOSURE_SWAP_DATA (closure))
+    {
+      data1 = closure->data;
+      data2 = g_value_peek_pointer (param_values + 0);
+    }
+  else
+    {
+      data1 = g_value_peek_pointer (param_values + 0);
+      data2 = closure->data;
+    }
+  callback = (GMarshalFunc_OBJECT__INT) (marshal_data ? marshal_data : cc->callback);
+
+  v_return = callback (data1,
+                       g_marshal_value_peek_int (param_values + 1),
+                       data2);
+
+  g_value_take_object (return_value, v_return);
+}
+
+/* INT64:VOID (gstplay-marshal.list:11) */
+void
+gst_play_marshal_INT64__VOID (GClosure     *closure,
+                              GValue       *return_value G_GNUC_UNUSED,
+                              guint         n_param_values,
+                              const GValue *param_values,
+                              gpointer      invocation_hint G_GNUC_UNUSED,
+                              gpointer      marshal_data)
+{
+  typedef gint64 (*GMarshalFunc_INT64__VOID) (gpointer     data1,
+                                              gpointer     data2);
+  register GMarshalFunc_INT64__VOID callback;
+  register GCClosure *cc = (GCClosure*) closure;
+  register gpointer data1, data2;
+  gint64 v_return;
+
+  g_return_if_fail (return_value != NULL);
+  g_return_if_fail (n_param_values == 1);
+
+  if (G_CCLOSURE_SWAP_DATA (closure))
+    {
+      data1 = closure->data;
+      data2 = g_value_peek_pointer (param_values + 0);
+    }
+  else
+    {
+      data1 = g_value_peek_pointer (param_values + 0);
+      data2 = closure->data;
+    }
+  callback = (GMarshalFunc_INT64__VOID) (marshal_data ? marshal_data : cc->callback);
+
+  v_return = callback (data1,
+                       data2);
+
+  g_value_set_int64 (return_value, v_return);
+}
+
+/* VOID:OBJECT,INT64,INT64 (gstplay-marshal.list:12) */
+void
+gst_play_marshal_VOID__OBJECT_INT64_INT64 (GClosure     *closure,
+                                           GValue       *return_value G_GNUC_UNUSED,
+                                           guint         n_param_values,
+                                           const GValue *param_values,
+                                           gpointer      invocation_hint G_GNUC_UNUSED,
+                                           gpointer      marshal_data)
+{
+  typedef void (*GMarshalFunc_VOID__OBJECT_INT64_INT64) (gpointer     data1,
+                                                         gpointer     arg_1,
+                                                         gint64       arg_2,
+                                                         gint64       arg_3,
+                                                         gpointer     data2);
+  register GMarshalFunc_VOID__OBJECT_INT64_INT64 callback;
+  register GCClosure *cc = (GCClosure*) closure;
+  register gpointer data1, data2;
+
+  g_return_if_fail (n_param_values == 4);
+
+  if (G_CCLOSURE_SWAP_DATA (closure))
+    {
+      data1 = closure->data;
+      data2 = g_value_peek_pointer (param_values + 0);
+    }
+  else
+    {
+      data1 = g_value_peek_pointer (param_values + 0);
+      data2 = closure->data;
+    }
+  callback = (GMarshalFunc_VOID__OBJECT_INT64_INT64) (marshal_data ? marshal_data : cc->callback);
+
+  callback (data1,
+            g_marshal_value_peek_object (param_values + 1),
+            g_marshal_value_peek_int64 (param_values + 2),
+            g_marshal_value_peek_int64 (param_values + 3),
+            data2);
 }
 

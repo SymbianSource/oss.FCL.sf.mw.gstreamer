@@ -21,6 +21,7 @@
 */
 
 
+
 #ifndef _STD_LOG_FILE_H__
 #define _STD_LOG_FILE_H__
 
@@ -28,6 +29,7 @@
 #include <time.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #ifdef __SYMBIAN32__
 #include "libgstreamer_wsd_solution.h" 
 
@@ -80,20 +82,21 @@ EXPORT_C
 #endif
 void std_log(const char *filename,const int lineno,const char* aformat,...)
 {
-	va_list va;
-	if(fp_std_log==NULL)
-	{
-		fp_std_log = fopen(LOG_FILE,"a");
-	}
-	
-	va_start(va,aformat);    
-    {
-		fprintf(fp_std_log,"%s - [%d] : ",filename,lineno);
-		vfprintf(fp_std_log,aformat,va);
-		fprintf(fp_std_log,"\n");
-		fflush(fp_std_log);
-	}
-	va_end(va);
+    /* commented for helium setup memory issue , error value -4*/
+//	va_list va;
+//	if(fp_std_log==NULL)
+//	{
+//		fp_std_log = fopen(LOG_FILE,"a");
+//	}
+//	
+//	va_start(va,aformat);    
+//    {
+//		fprintf(fp_std_log,"%s - [%d] : ",filename,lineno);
+//		vfprintf(fp_std_log,aformat,va);
+//		fprintf(fp_std_log,"\n");
+//		fflush(fp_std_log);
+//	}
+//	va_end(va);
 }
 
 #ifdef __SYMBIAN32__
@@ -112,17 +115,21 @@ EXPORT_C
 #endif
 void close_log_file()
 {
-   fclose(fp_std_log);
-   fp_std_log = NULL;
+   /* commented for helium setup memory issue , error value -4*/
+  // fclose(fp_std_log);  
+  // fp_std_log = NULL;
 }
 
 // This function is used to generate the xml file used bt ATS
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
+
 void testResultXml(char *filename)
 {
-	char time_buf[50];
+    
+    /* commented for helium setup memory issue , error value -4*/
+	/*char time_buf[50];     
 
 	char result[10];
 
@@ -197,6 +204,7 @@ void testResultXml(char *filename)
 
 		fclose(fp_result);
 	}
+	*/
 }
 
 #endif

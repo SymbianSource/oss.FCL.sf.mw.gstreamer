@@ -19,61 +19,50 @@
 
 /**
  * SECTION:element-videorate
- * @short_description: retimestamps and drops/duplicates video frames to
- *  match the source pad's framerate and create a perfect stream
  *
- * <refsect2>
- * <para>
  * This element takes an incoming stream of timestamped video frames.
  * It will produce a perfect stream that matches the source pad's framerate.
  *
  * The correction is performed by dropping and duplicating frames, no fancy
  * algorithm is used to interpolate frames (yet).
- * </para>
- * <para>
+ *
  * By default the element will simply negotiate the same framerate on its
  * source and sink pad.
- * </para>
- * <para>
+ *
  * This operation is useful to link to elements that require a perfect stream.
  * Typical examples are formats that do not store timestamps for video frames,
  * but only store a framerate, like Ogg and AVI.
- * </para>
- * <para>
+ *
  * A conversion to a specific framerate can be forced by using filtered caps on
  * the source pad.
- * </para>
- * <para>
- * The properties "in", "out", "duplicate" and "drop" can be read to obtain
- * information about number of input frames, output frames, dropped frames
- * (i.e. the number of unused input frames) and duplicated frames (i.e. the
- *  number of times an input frame was duplicated, beside being used normally).
+ *
+ * The properties #GstVideoRate:in, #GstVideoRate:out, #GstVideoRate:duplicate
+ * and #GstVideoRate:drop can be read to obtain information about number of
+ * input frames, output frames, dropped frames (i.e. the number of unused input
+ * frames) and duplicated frames (i.e. the number of times an input frame was
+ * duplicated, beside being used normally).
  *
  * An input stream that needs no adjustments will thus never have dropped or
  * duplicated frames.
  *
- * When the "silent" property is set to FALSE, a GObject property notification
- * will be emitted whenever one of the "duplicate" or "drop" values changes.
+ * When the #GstVideoRate:silent property is set to FALSE, a GObject property
+ * notification will be emitted whenever one of the #GstVideoRate:duplicate or
+ * #GstVideoRate:drop values changes.
  * This can potentially cause performance degradation.
  * Note that property notification will happen from the streaming thread, so
  * applications should be prepared for this.
- * </para>
+ *
+ * <refsect2>
  * <title>Example pipelines</title>
- * <para>
- * <programlisting>
+ * |[
  * gst-launch -v filesrc location=videotestsrc.ogg ! oggdemux ! theoradec ! videorate ! video/x-raw-yuv,framerate=15/1 ! xvimagesink
- * </programlisting>
- * Decode an Ogg/Theora file and adjust the framerate to 15 fps before playing.
+ * ]| Decode an Ogg/Theora file and adjust the framerate to 15 fps before playing.
  * To create the test Ogg/Theora file refer to the documentation of theoraenc.
- * </para>
- * <para>
- * <programlisting>
+ * |[
  * gst-launch -v v4lsrc ! videorate ! video/x-raw-yuv,framerate=25/2 ! theoraenc ! oggmux ! filesink location=v4l.ogg
- * </programlisting>
- * Capture video from a V4L device, and adjust the stream to 12.5 fps before
+ * ]| Capture video from a V4L device, and adjust the stream to 12.5 fps before
  * encoding to Ogg/Theora.
- * </para>
-  * </refsect2>
+ * </refsect2>
  *
  * Last reviewed on 2006-09-02 (0.10.11)
  */
@@ -120,14 +109,14 @@ static GstStaticPadTemplate gst_video_rate_src_template =
     GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_SRC,
     GST_PAD_ALWAYS,
-    GST_STATIC_CAPS ("video/x-raw-yuv; video/x-raw-rgb")
+    GST_STATIC_CAPS ("video/x-raw-yuv; video/x-raw-rgb; image/jpeg; image/png")
     );
 
 static GstStaticPadTemplate gst_video_rate_sink_template =
     GST_STATIC_PAD_TEMPLATE ("sink",
     GST_PAD_SINK,
     GST_PAD_ALWAYS,
-    GST_STATIC_CAPS ("video/x-raw-yuv; video/x-raw-rgb")
+    GST_STATIC_CAPS ("video/x-raw-yuv; video/x-raw-rgb; image/jpeg; image/png")
     );
 
 static void gst_video_rate_swap_prev (GstVideoRate * videorate,
@@ -160,6 +149,7 @@ gst_video_rate_base_init (gpointer g_class)
   gst_element_class_add_pad_template (element_class,
       gst_static_pad_template_get (&gst_video_rate_src_template));
 }
+
 static void
 gst_video_rate_class_init (GstVideoRateClass * klass)
 {
@@ -173,24 +163,26 @@ gst_video_rate_class_init (GstVideoRateClass * klass)
 
   g_object_class_install_property (object_class, ARG_IN,
       g_param_spec_uint64 ("in", "In",
-          "Number of input frames", 0, G_MAXUINT64, 0, G_PARAM_READABLE));
+          "Number of input frames", 0, G_MAXUINT64, 0,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (object_class, ARG_OUT,
-      g_param_spec_uint64 ("out", "Out",
-          "Number of output frames", 0, G_MAXUINT64, 0, G_PARAM_READABLE));
+      g_param_spec_uint64 ("out", "Out", "Number of output frames", 0,
+          G_MAXUINT64, 0, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (object_class, ARG_DUP,
       g_param_spec_uint64 ("duplicate", "Duplicate",
-          "Number of duplicated frames", 0, G_MAXUINT64, 0, G_PARAM_READABLE));
+          "Number of duplicated frames", 0, G_MAXUINT64, 0,
+          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (object_class, ARG_DROP,
-      g_param_spec_uint64 ("drop", "Drop",
-          "Number of dropped frames", 0, G_MAXUINT64, 0, G_PARAM_READABLE));
+      g_param_spec_uint64 ("drop", "Drop", "Number of dropped frames", 0,
+          G_MAXUINT64, 0, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (object_class, ARG_SILENT,
       g_param_spec_boolean ("silent", "silent",
-          "Don't emit notify for dropped and duplicated frames",
-          DEFAULT_SILENT, G_PARAM_READWRITE));
+          "Don't emit notify for dropped and duplicated frames", DEFAULT_SILENT,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (object_class, ARG_NEW_PREF,
-      g_param_spec_double ("new_pref", "New Pref",
-          "Value indicating how much to prefer new frames (unused)",
-          0.0, 1.0, DEFAULT_NEW_PREF, G_PARAM_READWRITE));
+      g_param_spec_double ("new-pref", "New Pref",
+          "Value indicating how much to prefer new frames (unused)", 0.0, 1.0,
+          DEFAULT_NEW_PREF, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   element_class->change_state = gst_video_rate_change_state;
 }
@@ -276,6 +268,7 @@ gst_video_rate_setcaps (GstPad * pad, GstCaps * caps)
     videorate->from_rate_denominator = rate_denominator;
     otherpad = videorate->srcpad;
   }
+
   /* now try to find something for the peer */
   opeer = gst_pad_get_peer (otherpad);
   if (opeer) {
@@ -362,9 +355,12 @@ gst_video_rate_reset (GstVideoRate * videorate)
 
   videorate->in = 0;
   videorate->out = 0;
+  videorate->segment_out = 0;
   videorate->drop = 0;
   videorate->dup = 0;
   videorate->next_ts = GST_CLOCK_TIME_NONE;
+  videorate->last_ts = GST_CLOCK_TIME_NONE;
+  videorate->discont = TRUE;
   gst_video_rate_swap_prev (videorate, NULL, 0);
 
   gst_segment_init (&videorate->segment, GST_FORMAT_TIME);
@@ -417,14 +413,21 @@ gst_video_rate_flush_prev (GstVideoRate * videorate)
   GST_BUFFER_OFFSET (outbuf) = videorate->out;
   GST_BUFFER_OFFSET_END (outbuf) = videorate->out + 1;
 
+  if (videorate->discont) {
+    GST_BUFFER_FLAG_SET (outbuf, GST_BUFFER_FLAG_DISCONT);
+    videorate->discont = FALSE;
+  } else
+    GST_BUFFER_FLAG_UNSET (outbuf, GST_BUFFER_FLAG_DISCONT);
+
   /* this is the timestamp we put on the buffer */
   push_ts = videorate->next_ts;
 
   videorate->out++;
+  videorate->segment_out++;
   if (videorate->to_rate_numerator) {
     /* interpolate next expected timestamp in the segment */
     videorate->next_ts = videorate->segment.accum + videorate->segment.start +
-        gst_util_uint64_scale (videorate->out,
+        gst_util_uint64_scale (videorate->segment_out,
         videorate->to_rate_denominator * GST_SECOND,
         videorate->to_rate_numerator);
     GST_BUFFER_DURATION (outbuf) = videorate->next_ts - push_ts;
@@ -462,6 +465,7 @@ gst_video_rate_swap_prev (GstVideoRate * videorate, GstBuffer * buffer,
   videorate->prev_ts = time;
 }
 
+#define MAGIC_LIMIT  25
 static gboolean
 gst_video_rate_event (GstPad * pad, GstEvent * event)
 {
@@ -485,6 +489,38 @@ gst_video_rate_event (GstPad * pad, GstEvent * event)
         goto format_error;
 
       GST_DEBUG_OBJECT (videorate, "handle NEWSEGMENT");
+
+      /* close up the previous segment, if appropriate */
+      if (!update && videorate->prevbuf) {
+        gint count = 0;
+        GstFlowReturn res;
+
+        res = GST_FLOW_OK;
+        /* fill up to the end of current segment,
+         * or only send out the stored buffer if there is no specific stop.
+         * regardless, prevent going loopy in strange cases */
+        while (res == GST_FLOW_OK && count <= MAGIC_LIMIT &&
+            ((GST_CLOCK_TIME_IS_VALID (videorate->segment.stop) &&
+                    videorate->next_ts - videorate->segment.accum
+                    < videorate->segment.stop)
+                || count < 1)) {
+          gst_video_rate_flush_prev (videorate);
+          count++;
+        }
+        if (count > 1) {
+          videorate->dup += count - 1;
+          if (!videorate->silent)
+            g_object_notify (G_OBJECT (videorate), "duplicate");
+        } else if (count == 0) {
+          videorate->drop++;
+          if (!videorate->silent)
+            g_object_notify (G_OBJECT (videorate), "drop");
+        }
+        /* clean up for the new one; _chain will resume from the new start */
+        videorate->segment_out = 0;
+        gst_video_rate_swap_prev (videorate, NULL, 0);
+        videorate->next_ts = GST_CLOCK_TIME_NONE;
+      }
 
       /* We just want to update the accumulated stream_time  */
       gst_segment_set_newsegment_full (&videorate->segment, update, rate, arate,
@@ -550,11 +586,17 @@ gst_video_rate_query (GstPad * pad, GstQuery * query)
               GST_TIME_FORMAT " max %" GST_TIME_FORMAT,
               GST_TIME_ARGS (min), GST_TIME_ARGS (max));
 
-          /* add latency. We don't really know since we hold on to the frames
-           * until we get a next frame, which can be anything. We assume
-           * however that this will take from_rate time. */
-          latency = gst_util_uint64_scale (GST_SECOND,
-              videorate->from_rate_denominator, videorate->from_rate_numerator);
+          if (videorate->from_rate_numerator != 0) {
+            /* add latency. We don't really know since we hold on to the frames
+             * until we get a next frame, which can be anything. We assume
+             * however that this will take from_rate time. */
+            latency = gst_util_uint64_scale (GST_SECOND,
+                videorate->from_rate_denominator,
+                videorate->from_rate_numerator);
+          } else {
+            /* no input framerate, we don't know */
+            latency = 0;
+          }
 
           GST_DEBUG_OBJECT (videorate, "Our latency: %"
               GST_TIME_FORMAT, GST_TIME_ARGS (latency));
@@ -587,7 +629,7 @@ gst_video_rate_chain (GstPad * pad, GstBuffer * buffer)
 {
   GstVideoRate *videorate;
   GstFlowReturn res = GST_FLOW_OK;
-  GstClockTime intime, in_ts;
+  GstClockTime intime, in_ts, in_dur;
 
   videorate = GST_VIDEO_RATE (GST_PAD_PARENT (pad));
 
@@ -597,9 +639,19 @@ gst_video_rate_chain (GstPad * pad, GstBuffer * buffer)
     goto not_negotiated;
 
   in_ts = GST_BUFFER_TIMESTAMP (buffer);
+  in_dur = GST_BUFFER_DURATION (buffer);
 
-  if (G_UNLIKELY (in_ts == GST_CLOCK_TIME_NONE))
-    goto invalid_buffer;
+  if (G_UNLIKELY (in_ts == GST_CLOCK_TIME_NONE)) {
+    in_ts = videorate->last_ts;
+    if (G_UNLIKELY (in_ts == GST_CLOCK_TIME_NONE))
+      goto invalid_buffer;
+  }
+
+  /* get the time of the next expected buffer timestamp, we use this when the
+   * next buffer has -1 as a timestamp */
+  videorate->last_ts = in_ts;
+  if (in_dur != GST_CLOCK_TIME_NONE)
+    videorate->last_ts += in_dur;
 
   GST_DEBUG_OBJECT (videorate, "got buffer with timestamp %" GST_TIME_FORMAT,
       GST_TIME_ARGS (in_ts));
@@ -615,7 +667,7 @@ gst_video_rate_chain (GstPad * pad, GstBuffer * buffer)
     if (!GST_CLOCK_TIME_IS_VALID (videorate->next_ts)) {
       /* new buffer, we expect to output a buffer that matches the first
        * timestamp in the segment */
-      videorate->next_ts = videorate->segment.start;
+      videorate->next_ts = videorate->segment.start + videorate->segment.accum;
     }
   } else {
     GstClockTime prevtime;
@@ -664,7 +716,7 @@ gst_video_rate_chain (GstPad * pad, GstBuffer * buffer)
           GST_TIME_ARGS (videorate->next_ts));
 
       /* output first one when its the best */
-      if (diff1 < diff2) {
+      if (diff1 <= diff2) {
         count++;
 
         /* on error the _flush function posted a warning already */
@@ -673,7 +725,8 @@ gst_video_rate_chain (GstPad * pad, GstBuffer * buffer)
           goto done;
         }
       }
-      /* continue while the first one was the best */
+      /* continue while the first one was the best, if they were equal avoid
+       * going into an infinite loop */
     }
     while (diff1 < diff2);
 
@@ -784,6 +837,10 @@ gst_video_rate_change_state (GstElement * element, GstStateChange transition)
   videorate = GST_VIDEO_RATE (element);
 
   switch (transition) {
+    case GST_STATE_CHANGE_READY_TO_PAUSED:
+      videorate->discont = TRUE;
+      videorate->last_ts = -1;
+      break;
     default:
       break;
   }

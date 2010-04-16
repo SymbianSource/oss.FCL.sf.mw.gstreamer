@@ -24,11 +24,8 @@
 
 
 #include <gst/gst.h>
-#include <gst/gst_global.h>
-#include <gst/riff/riff-read.h>
-#include <gst/riff/riff-ids.h>
-#include <gst/riff/riff-media.h>
-
+#include "gst/riff/riff-ids.h"
+#include "gst/riff/riff-read.h"
 #include <gst/base/gstadapter.h>
 
 G_BEGIN_DECLS
@@ -47,7 +44,7 @@ G_BEGIN_DECLS
 typedef enum {
   GST_WAVPARSE_START,
   GST_WAVPARSE_HEADER,
-  GST_WAVPARSE_DATA,
+  GST_WAVPARSE_DATA
 } GstWavParseState;
 
 typedef struct _GstWavParse GstWavParse;
@@ -69,7 +66,8 @@ struct _GstWavParse {
    * the format for sure */
   GstCaps     *caps;
   GstTagList  *tags;
-  GstEvent    *newsegment;
+  GstEvent    *close_segment;
+  GstEvent    *start_segment;
 
   /* WAVE decoding state */
   GstWavParseState state;
@@ -79,11 +77,16 @@ struct _GstWavParse {
 
   /* useful audio data */
   guint16 depth;
-  gint rate;
+  guint32 rate;
   guint16 channels;
   guint16 blockalign;
   guint16 width;
+  guint32 av_bps;
+  guint32 fact;
+
+  /* real bps used or 0 when no bitrate is known */
   guint32 bps;
+  gboolean vbr;
 
   guint bytes_per_sample;
 
@@ -94,7 +97,9 @@ struct _GstWavParse {
   /* offset/length of data part */
   guint64 	datastart;
   guint64 	datasize;
-  
+  /* duration in time */
+  guint64 	duration;
+
   /* pending seek */
   GstEvent *seek_event;
 
@@ -106,9 +111,11 @@ struct _GstWavParse {
   /* configured segment, start/stop expressed in time */
   GstSegment segment;
   gboolean segment_running;
-  
+
   /* for late pad configuration */
   gboolean first;
+  /* discont after seek */
+  gboolean discont;
 };
 
 struct _GstWavParseClass {

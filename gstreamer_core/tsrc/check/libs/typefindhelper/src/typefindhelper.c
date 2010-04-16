@@ -155,11 +155,20 @@ foobar_typefind (GstTypeFind * tf, gpointer unused)
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 /* make sure the entire data in the buffer is available for peeking */

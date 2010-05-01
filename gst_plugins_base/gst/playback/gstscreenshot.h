@@ -24,6 +24,9 @@
 
 G_BEGIN_DECLS
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GstBuffer *     gst_play_frame_conv_convert  (GstBuffer *buf, GstCaps   *to);
 
 G_END_DECLS

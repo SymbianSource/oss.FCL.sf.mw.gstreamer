@@ -130,6 +130,9 @@ void 		gst_trace_text_flush		(GstTrace *trace);
  * Retrieve the remaining size in the @trace buffer.
  */
 #define 	gst_trace_get_remaining(trace) 	((trace)->bufsize - (trace)->bufoffset)
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 void 		gst_trace_set_default		(GstTrace *trace);
 #ifdef __SYMBIAN32__
 IMPORT_C

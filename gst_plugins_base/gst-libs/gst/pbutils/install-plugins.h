@@ -148,7 +148,9 @@ GstInstallPluginsReturn  gst_install_plugins_async (gchar                    ** 
                                                     GstInstallPluginsContext  * ctx,
                                                     GstInstallPluginsResultFunc func,
                                                     gpointer                    user_data);
-
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GstInstallPluginsReturn  gst_install_plugins_sync  (gchar                    ** details,
                                                     GstInstallPluginsContext  * ctx);
 #ifdef __SYMBIAN32__

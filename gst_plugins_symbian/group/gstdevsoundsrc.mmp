@@ -63,6 +63,7 @@ LIBRARY         libgstreamer.lib
 LIBRARY         libgstbase.lib
 LIBRARY         libgthread.lib
 LIBRARY         mmfdevsound.lib
+LIBRARY         AudioInputRouting.lib
 LIBRARY         G711EncoderIntfc.lib
 LIBRARY         SpeechEncoderConfig.lib
 LIBRARY         G729EncoderIntfc.lib

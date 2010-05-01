@@ -18,6 +18,9 @@ typedef struct _GstAviSubtitleClass GstAviSubtitleClass;
 #define GST_IS_AVI_SUBTITLE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), GST_TYPE_AVI_SUBTITLE))
 #define GST_AVI_SUBTITLE_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), GST_TYPE_AVI_SUBTITLE, GstAviSubtitleClass))
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GType gst_avi_subtitle_get_type (void);
 
 struct _GstAviSubtitle

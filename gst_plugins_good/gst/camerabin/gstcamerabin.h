@@ -161,6 +161,9 @@ typedef enum
   MODE_VIDEO
 } GstCameraBinMode;
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GType gst_camerabin_get_type (void);
 
 G_END_DECLS

@@ -73,6 +73,7 @@
 #include <gst/gstutils.h>
 #include <gst/gstvalue.h>
 #include <gst/gstxml.h>
+#include <gst/gst_global.h>
 
 #include <gst/gstparse.h>
 
@@ -80,7 +81,9 @@
 #include <gst/gstcompat.h>
 
 G_BEGIN_DECLS
-
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 void		gst_init			(int *argc, char **argv[]);
 #ifdef __SYMBIAN32__
 IMPORT_C

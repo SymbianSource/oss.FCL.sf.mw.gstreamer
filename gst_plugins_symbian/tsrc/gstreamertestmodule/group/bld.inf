@@ -26,6 +26,7 @@ PRJ_PLATFORMS
 DEFAULT
 
 PRJ_TESTEXPORTS
+#ifdef FF_GSTREAMER
 /epoc32/release/winscw/udeb/libgstcoreelements.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgstcoreelements.dll
 /epoc32/release/winscw/udeb/libgstcoreindexers.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgstcoreindexers.dll
 /epoc32/release/winscw/udeb/libgstwavparse.dll	/epoc32/release/winscw/udeb/z/sys/bin/plugins/libgstwavparse.dll
@@ -45,10 +46,11 @@ PRJ_TESTEXPORTS
 
 ../conf/GStreamerTestClass.cfg   /epoc32/winscw/c/TestFramework/GStreamerTestClass.cfg
 ../init/GStreamerTestClass.ini   /epoc32/winscw/c/TestFramework/GStreamerTestClass.ini
-
+#endif
 
 PRJ_TESTMMPFILES
+#ifdef FF_GSTREAMER
 GStreamerTestClass.mmp
-
+#endif
 
 //  End of File

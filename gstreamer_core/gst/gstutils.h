@@ -31,6 +31,9 @@
 
 G_BEGIN_DECLS
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 void		gst_util_set_value_from_string	(GValue *value, const gchar *value_str);
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -79,6 +82,9 @@ gdouble         gst_util_guint64_to_gdouble     (guint64 value)  G_GNUC_PURE;
 #define         gst_guint64_to_gdouble(value)   ((gdouble) (value))
 #endif
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 guint64		gst_util_uint64_scale		(guint64 val, guint64 num, guint64 denom) G_GNUC_PURE;
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -167,7 +173,7 @@ type_as_function ## _class_init_trampoline (gpointer g_class,		\
   type_as_function ## _class_init ((type ## Class *)g_class);		\
 }									\
 									\
-GType type_as_function ## _get_type (void);				\
+__declspec(dllimport) GType type_as_function ## _get_type (void);				\
 									\
 __declspec(dllexport) GType									\
 type_as_function ## _get_type (void)					\
@@ -1031,6 +1037,9 @@ GST_WRITE_DOUBLE_BE(guint8 *data, gdouble num)
  */
 #define GST_ROUND_DOWN_64(num) ((num)&(~63))
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 void			gst_object_default_error	(GstObject * source,
 							 GError * error, gchar * debug);
 
@@ -1248,6 +1257,9 @@ IMPORT_C
 
 GstPad *                gst_bin_find_unlinked_pad       (GstBin *bin, GstPadDirection direction);
 #ifndef GST_DISABLE_DEPRECATED
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GstPad *                gst_bin_find_unconnected_pad    (GstBin *bin, GstPadDirection direction);
 #endif
 

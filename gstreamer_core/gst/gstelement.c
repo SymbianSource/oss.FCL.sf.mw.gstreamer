@@ -112,8 +112,9 @@ enum
       /* FILL ME */
 };
 
-extern void __gst_element_details_clear (GstElementDetails * dp);
-extern void __gst_element_details_copy (GstElementDetails * dest,
+IMPORT_C extern void __gst_element_details_clear (GstElementDetails * dp);
+
+IMPORT_C extern void __gst_element_details_copy (GstElementDetails * dest,
     const GstElementDetails * src);
 
 static void gst_element_class_init (GstElementClass * klass);

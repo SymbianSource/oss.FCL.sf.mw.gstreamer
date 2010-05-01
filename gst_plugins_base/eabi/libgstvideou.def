@@ -9,19 +9,19 @@ EXPORTS
 	gst_video_format_get_pixel_stride @ 8 NONAME
 	gst_video_format_get_row_stride @ 9 NONAME
 	gst_video_format_get_size @ 10 NONAME
-	gst_video_format_has_alpha @ 11 NONAME
-	gst_video_format_is_rgb @ 12 NONAME
-	gst_video_format_is_yuv @ 13 NONAME
-	gst_video_format_new_caps @ 14 NONAME
-	gst_video_format_parse_caps @ 15 NONAME
-	gst_video_format_to_fourcc @ 16 NONAME
-	gst_video_frame_rate @ 17 NONAME
-	gst_video_get_size @ 18 NONAME
-	gst_video_parse_caps_framerate @ 19 NONAME
-	gst_video_parse_caps_pixel_aspect_ratio @ 20 NONAME
-	gst_video_sink_center_rect @ 21 NONAME
-	gst_video_sink_get_type @ 22 NONAME
-	gst_video_format_get_type @ 23 NONAME
-	gst_video_format_new_caps_interlaced @ 24 NONAME
-	gst_video_format_parse_caps_interlaced @ 25 NONAME
+	gst_video_format_get_type @ 11 NONAME
+	gst_video_format_has_alpha @ 12 NONAME
+	gst_video_format_is_rgb @ 13 NONAME
+	gst_video_format_is_yuv @ 14 NONAME
+	gst_video_format_new_caps @ 15 NONAME
+	gst_video_format_new_caps_interlaced @ 16 NONAME
+	gst_video_format_parse_caps @ 17 NONAME
+	gst_video_format_parse_caps_interlaced @ 18 NONAME
+	gst_video_format_to_fourcc @ 19 NONAME
+	gst_video_frame_rate @ 20 NONAME
+	gst_video_get_size @ 21 NONAME
+	gst_video_parse_caps_framerate @ 22 NONAME
+	gst_video_parse_caps_pixel_aspect_ratio @ 23 NONAME
+	gst_video_sink_center_rect @ 24 NONAME
+	gst_video_sink_get_type @ 25 NONAME
 

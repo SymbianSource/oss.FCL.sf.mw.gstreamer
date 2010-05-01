@@ -21,6 +21,9 @@
 #include <gst/gstversion.h>
 #include <gst/gstplugin.h>
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 extern gboolean gst_mem_index_plugin_init (GstPlugin * plugin);
 
 #ifndef GST_DISABLE_LOADSAVE

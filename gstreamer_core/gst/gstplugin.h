@@ -320,9 +320,15 @@ IMPORT_C
 GType                   gst_plugin_get_type             (void);
 
 #ifndef GST_DISABLE_DEPRECATED
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 void			_gst_plugin_register_static	(GstPluginDesc *desc);
 #endif
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 gboolean		gst_plugin_register_static	(gint major_version,
                                                          gint minor_version,
                                                          const gchar *name,

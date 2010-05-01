@@ -130,8 +130,15 @@ IMPORT_C
 void vs_image_scale_linear_RGB555 (const VSImage *dest, const VSImage *src,
     uint8_t *tmpbuf);
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 void vs_image_scale_nearest_Y16 (const VSImage *dest, const VSImage *src,
     uint8_t *tmpbuf);
+
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 void vs_image_scale_linear_Y16 (const VSImage *dest, const VSImage *src,
     uint8_t *tmpbuf);
 

@@ -1209,7 +1209,47 @@ struct _GstSignalObjectClass
 #endif
 };
 
+
+//deviation for EXPORT_C issue Start
+#ifndef __SYMBIAN32__
+
 G_DEFINE_TYPE (GstSignalObject, gst_signal_object, G_TYPE_OBJECT);
+
+#else
+
+static void     gst_signal_object_init              (GstSignalObject        *self);
+static void     gst_signal_object_class_init        (GstSignalObjectClass *klass);
+static gpointer gst_signal_object_parent_class = NULL;
+static void     gst_signal_object_class_intern_init (gpointer klass)
+{
+  gst_signal_object_parent_class = g_type_class_peek_parent (klass);
+  gst_signal_object_class_init ((GstSignalObjectClass*) klass);
+}
+
+static GType
+gst_signal_object_get_type (void)
+{
+  static volatile gsize g_define_type_id__volatile = 0;
+  if (g_once_init_enter (&g_define_type_id__volatile)) 
+    {
+      GType g_define_type_id =
+        g_type_register_static_simple (G_TYPE_OBJECT,
+                                       g_intern_static_string ("GstSignalObject"),
+                                       sizeof (GstSignalObjectClass),
+                                       (GClassInitFunc) gst_signal_object_class_intern_init,
+                                       sizeof (GstSignalObject),
+                                       (GInstanceInitFunc) gst_signal_object_init,
+                                       (GTypeFlags) 0);
+      { /* custom code follows */
+      	//no code
+      }
+				
+      g_once_init_leave (&g_define_type_id__volatile, g_define_type_id); 
+    }					
+  return g_define_type_id__volatile;	
+} /* closes gst_signal_object_get_type() */
+
+#endif //deviation for EXPORT_C issue end
 
 static void
 gst_signal_object_class_init (GstSignalObjectClass * klass)

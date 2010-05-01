@@ -36,6 +36,7 @@
 #include <e32cons.h>
 #include <e32std.h>
 #include <e32debug.h>
+#include <AudioInput.h>
 #include <gst/gstbuffer.h>
 #include <gst/gst.h>
 
@@ -102,6 +103,7 @@ public:
     CG711EncoderIntfc*    iG711EncoderIntfc;
     CG729EncoderIntfc*    iG729EncoderIntfc;
     CIlbcEncoderIntfc*    iIlbcEncoderIntfc;
+    CAudioInput*          iAudoInputRecord;
 
 public:
 	DevSoundWrapperSrc();

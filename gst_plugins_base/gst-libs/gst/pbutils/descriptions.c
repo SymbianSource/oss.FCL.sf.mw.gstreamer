@@ -41,7 +41,7 @@
 #endif
 
 #ifdef __SYMBIAN32__
-#include <gst_global.h>
+#include <gst/gst_global.h>
 #endif
 
 #include "gst/gst-i18n-plugin.h"

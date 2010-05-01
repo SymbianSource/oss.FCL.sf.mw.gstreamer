@@ -239,7 +239,9 @@ typedef enum
  * call.  To be used as the debug argument in #GST_ELEMENT_ERROR.
  */
 #define GST_ERROR_SYSTEM    ("system error: %s", g_strerror (errno))
-
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GType gst_g_error_get_type (void);
 #ifdef __SYMBIAN32__
 IMPORT_C

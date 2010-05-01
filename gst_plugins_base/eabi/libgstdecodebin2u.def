@@ -1,21 +1,21 @@
 EXPORTS
 	_GST_PLUGIN_DESC @ 1 NONAME
 	gst_autoplug_select_result_get_type @ 2 NONAME
-	gst_factory_list_debug @ 3 NONAME
-	gst_factory_list_filter @ 4 NONAME
-	gst_factory_list_get_elements @ 5 NONAME
-	gst_factory_list_is_type @ 6 NONAME
-	gst_play_flags_get_type @ 7 NONAME
-	gst_decode_bin_plugin_init @ 8 NONAME
-	gst_decode_pad_get_type @ 9 NONAME
-	gst_play_marshal_BOOLEAN__OBJECT_BOXED @ 10 NONAME
-	gst_play_marshal_BOOLEAN__OBJECT_OBJECT_OBJECT @ 11 NONAME
-	gst_play_marshal_BOXED__INT @ 12 NONAME
-	gst_play_marshal_BOXED__OBJECT_BOXED @ 13 NONAME
-	gst_play_marshal_BOXED__OBJECT_BOXED_BOXED @ 14 NONAME
-	gst_play_marshal_ENUM__OBJECT_BOXED_OBJECT @ 15 NONAME
-	gst_play_marshal_ENUM__OBJECT_OBJECT_BOXED @ 16 NONAME
-	gst_play_marshal_OBJECT__BOXED @ 17 NONAME
-	gst_play_marshal_OBJECT__INT @ 18 NONAME
-	gst_play_marshal_VOID__OBJECT_BOOLEAN @ 19 NONAME
+	gst_decode_bin_plugin_init @ 3 NONAME
+	gst_factory_list_debug @ 4 NONAME
+	gst_factory_list_filter @ 5 NONAME
+	gst_factory_list_get_elements @ 6 NONAME
+	gst_factory_list_is_type @ 7 NONAME
+	gst_play_flags_get_type @ 8 NONAME
+	gst_play_marshal_BOOLEAN__OBJECT_BOXED @ 9 NONAME
+	gst_play_marshal_BOOLEAN__OBJECT_OBJECT_OBJECT @ 10 NONAME
+	gst_play_marshal_BOXED__INT @ 11 NONAME
+	gst_play_marshal_BOXED__OBJECT_BOXED @ 12 NONAME
+	gst_play_marshal_BOXED__OBJECT_BOXED_BOXED @ 13 NONAME
+	gst_play_marshal_ENUM__OBJECT_BOXED_OBJECT @ 14 NONAME
+	gst_play_marshal_ENUM__OBJECT_OBJECT_BOXED @ 15 NONAME
+	gst_play_marshal_OBJECT__BOXED @ 16 NONAME
+	gst_play_marshal_OBJECT__INT @ 17 NONAME
+	gst_play_marshal_VOID__OBJECT_BOOLEAN @ 18 NONAME
+	gst_decode_pad_get_type @ 19 NONAME
 

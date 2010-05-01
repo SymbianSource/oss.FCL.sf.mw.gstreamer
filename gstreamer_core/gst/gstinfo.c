@@ -132,42 +132,42 @@
 /* disabled by default, as soon as some threshold is set > NONE,
  * it becomes enabled. */
 gboolean __gst_debug_enabled = FALSE;
-GstDebugLevel __gst_debug_min = GST_LEVEL_NONE;
+EXPORT_C GstDebugLevel __gst_debug_min ;// = GST_LEVEL_NONE;
 
-GstDebugCategory *GST_CAT_DEFAULT = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_DEFAULT ;// = NULL;
 
-GstDebugCategory *GST_CAT_GST_INIT = NULL;
-GstDebugCategory *GST_CAT_AUTOPLUG = NULL;
-GstDebugCategory *GST_CAT_AUTOPLUG_ATTEMPT = NULL;
-GstDebugCategory *GST_CAT_PARENTAGE = NULL;
-GstDebugCategory *GST_CAT_STATES = NULL;
-GstDebugCategory *GST_CAT_SCHEDULING = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_GST_INIT ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_AUTOPLUG ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_AUTOPLUG_ATTEMPT ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_PARENTAGE ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_STATES ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_SCHEDULING ;// = NULL;
 
-GstDebugCategory *GST_CAT_BUFFER = NULL;
-GstDebugCategory *GST_CAT_BUFFER_LIST = NULL;
-GstDebugCategory *GST_CAT_BUS = NULL;
-GstDebugCategory *GST_CAT_CAPS = NULL;
-GstDebugCategory *GST_CAT_CLOCK = NULL;
-GstDebugCategory *GST_CAT_ELEMENT_PADS = NULL;
-GstDebugCategory *GST_CAT_PADS = NULL;
-GstDebugCategory *GST_CAT_PERFORMANCE = NULL;
-GstDebugCategory *GST_CAT_PIPELINE = NULL;
-GstDebugCategory *GST_CAT_PLUGIN_LOADING = NULL;
-GstDebugCategory *GST_CAT_PLUGIN_INFO = NULL;
-GstDebugCategory *GST_CAT_PROPERTIES = NULL;
-GstDebugCategory *GST_CAT_TYPES = NULL;
-GstDebugCategory *GST_CAT_XML = NULL;
-GstDebugCategory *GST_CAT_NEGOTIATION = NULL;
-GstDebugCategory *GST_CAT_REFCOUNTING = NULL;
-GstDebugCategory *GST_CAT_ERROR_SYSTEM = NULL;
-GstDebugCategory *GST_CAT_EVENT = NULL;
-GstDebugCategory *GST_CAT_MESSAGE = NULL;
-GstDebugCategory *GST_CAT_PARAMS = NULL;
-GstDebugCategory *GST_CAT_CALL_TRACE = NULL;
-GstDebugCategory *GST_CAT_SIGNAL = NULL;
-GstDebugCategory *GST_CAT_PROBE = NULL;
-GstDebugCategory *GST_CAT_REGISTRY = NULL;
-GstDebugCategory *GST_CAT_QOS = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_BUFFER ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_BUFFER_LIST ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_BUS ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_CAPS ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_CLOCK ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_ELEMENT_PADS ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_PADS ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_PERFORMANCE ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_PIPELINE ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_PLUGIN_LOADING ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_PLUGIN_INFO ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_PROPERTIES ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_TYPES ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_XML ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_NEGOTIATION ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_REFCOUNTING ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_ERROR_SYSTEM ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_EVENT ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_MESSAGE ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_PARAMS ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_CALL_TRACE ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_SIGNAL ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_PROBE ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_REGISTRY ;// = NULL;
+EXPORT_C GstDebugCategory *GST_CAT_QOS ;// = NULL;
 
 #endif /* !defined(GST_DISABLE_GST_DEBUG) || !defined(GST_REMOVE_DISABLED) */
 

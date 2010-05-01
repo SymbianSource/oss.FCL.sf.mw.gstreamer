@@ -27,6 +27,9 @@
 
 G_BEGIN_DECLS
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GQuark gst_parse_error_quark (void);
 /**
  * GST_PARSE_ERROR:

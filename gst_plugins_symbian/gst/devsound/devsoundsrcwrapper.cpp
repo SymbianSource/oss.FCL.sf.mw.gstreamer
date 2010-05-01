@@ -283,6 +283,13 @@ int open_device(DevSoundWrapperSrc **handle)
         {
         retcode = KErrNoMemory;
         }
+    
+    TRAP(retcode ,(*handle)->iAudoInputRecord = CAudioInput::NewL(*(*handle)->dev_sound));
+    RArray<CAudioInput::TAudioInputPreference> inputArray;
+    inputArray.Append( CAudioInput::EDefaultMic );
+    // Set Audio Input
+    (*handle)->iAudoInputRecord->SetAudioInputL( inputArray.Array( ) );
+    inputArray.Close();
 
     TRACE_PRN_FN_EXT;
 
@@ -300,7 +307,8 @@ int close_devsound(GstDevsoundSrc *ds)
 
     g_list_foreach(ds->fmt, (GFunc) g_free, NULL);
     g_list_free(ds->fmt);
-
+    
+    delete (STATIC_CAST(DevSoundWrapperSrc*, ds->handle))->iAudoInputRecord;
     delete ds->handle;
     TRACE_PRN_FN_EXT;
     return 0;

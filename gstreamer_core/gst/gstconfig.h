@@ -200,7 +200,11 @@
 #else /* not _MSC_VER */
 #define GST_PLUGIN_EXPORT
 #ifdef __SYMBIAN32__
+#ifdef __WINSCW__
 #define GST_EXPORT __declspec(dllexport) extern
+#else
+#define GST_EXPORT __declspec(dllimport) extern
+#endif
 #else
 #define GST_EXPORT extern
 #endif

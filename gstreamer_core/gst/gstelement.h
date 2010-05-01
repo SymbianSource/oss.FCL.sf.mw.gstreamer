@@ -709,6 +709,9 @@ IMPORT_C
 void			gst_element_no_more_pads	(GstElement *element);
 
 #ifndef GST_DISABLE_DEPRECATED
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GstPad*			gst_element_get_pad		(GstElement *element, const gchar *name);
 #endif /* GST_DISABLE_DEPRECATED */
 #ifdef __SYMBIAN32__
@@ -779,11 +782,11 @@ gboolean		gst_element_post_message	(GstElement * element, GstMessage * message);
 /* error handling */
 /* gcc versions < 3.3 warn about NULL being passed as format to printf */
 #if (defined(GST_USING_PRINTF_EXTENSION) || !defined(__GNUC__) || (__GNUC__ < 3) || (__GNUC__ == 3 && __GNUC_MINOR__ < 3))
-gchar *			_gst_element_error_printf	(const gchar *format, ...);
+IMPORT_C gchar *			_gst_element_error_printf	(const gchar *format, ...);
 #else
-gchar *			_gst_element_error_printf	(const gchar *format, ...) G_GNUC_PRINTF (1, 2);
+IMPORT_C gchar *			_gst_element_error_printf	(const gchar *format, ...) G_GNUC_PRINTF (1, 2);
 #endif
-void			gst_element_message_full	(GstElement * element, GstMessageType type,
+IMPORT_C void			gst_element_message_full	(GstElement * element, GstMessageType type,
 							 GQuark domain, gint code, gchar * text,
 							 gchar * debug, const gchar * file,
 							 const gchar * function, gint line);

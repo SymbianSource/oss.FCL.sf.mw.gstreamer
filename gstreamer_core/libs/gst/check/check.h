@@ -23,6 +23,7 @@
 #define CHECK_H
 
 #include <stddef.h>
+#include <stdio.h>
 
 
 /* Check: a unit test framework for C
@@ -63,7 +64,24 @@ CK_CPPSTART
 #endif
 
 #include <sys/types.h>
+#include "libgstreamer_wsd_solution.h"
 
+#if !EMULATOR
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+FILE** get_fp_std_log();
+
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+int* get_assert_failed();
+
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+char** get_xmlfile();
+#endif//EMULATOR
 
 
 /* Fail the test case unless expr is true */
@@ -107,6 +125,10 @@ IMPORT_C
 
 void _fail_unless (int result, const char *file,
                    int line, const char *expr, ...);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+void send_failure_info(const char* msg, const char* file, int line);
 
 #ifdef __cplusplus 
 #define CK_CPPEND }

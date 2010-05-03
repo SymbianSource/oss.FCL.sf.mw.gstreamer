@@ -68,7 +68,6 @@ SOURCEPATH  ../src
 
 SOURCE      audio-example.c
 
-STATICLIBRARY	libcrt0.lib
 
 LIBRARY			euser.lib
 LIBRARY         libc.lib
@@ -84,5 +83,7 @@ LIBRARY         libz.lib
 LIBRARY         libgstreamer.lib
 LIBRARY			libgstbase.lib
 LIBRARY			libgstcontroller.lib
+
+STATICLIBRARY	libcrt0.lib
 //VENDORID VID_DEFAULT 
 SMPSAFE

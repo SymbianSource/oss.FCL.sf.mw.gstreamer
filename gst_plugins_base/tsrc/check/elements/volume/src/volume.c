@@ -46,7 +46,7 @@ static GstPad *mysrcpad, *mysinkpad;
 GET_GLOBAL_VAR_FROM_TLS(buffers,gstcheck,GList*)
 #define buffers (*GET_GSTREAMER_WSD_VAR_NAME(buffers,gstcheck,g)())
 #else 
-extern GList *buffers;
+IMPORT_C extern GList *buffers;
 #endif
 
 void create_xml(int result)

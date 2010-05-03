@@ -3,7 +3,7 @@
 ;  Part of     : Gstreamer project
 ;  Description : Package file for all gstreamer test binaries
 ;
-;  Version     : %version: 2 %
+;  Version     : %version: bh1mmcf#3 %
 ;
 ;  Copyright Â© 2002-2006 Nokia.  All rights reserved.
 ;  This material, including documentation and any related computer
@@ -185,7 +185,7 @@
 "\epoc32\release\armv5\urel\clock-selection.exe"-"!:\sys\bin\clock-selection.exe"
 "\epoc32\release\armv5\urel\states.exe"-"!:\sys\bin\states.exe"
 "\epoc32\release\armv5\urel\fft.exe"-"!:\sys\bin\fft.exe"
-;"\epoc32\release\armv5\urel\gstnetbuffer.exe"-"!:\sys\bin\gstnetbuffer.exe"
+"\epoc32\release\armv5\urel\gstnetbuffer.exe"-"!:\sys\bin\gstnetbuffer.exe"
 "\epoc32\release\armv5\urel\pbutils.exe"-"!:\sys\bin\pbutils.exe"
 "\epoc32\release\armv5\urel\gst_plugin_rtp.exe"-"!:\sys\bin\gst_plugin_rtp.exe"
 "\epoc32\release\armv5\urel\gst_plugin_tag.exe"-"!:\sys\bin\gst_plugin_tag.exe"

@@ -59,9 +59,10 @@ SOURCEPATH	../src
 
 SOURCE             gstplugin.c
 
-LIBRARY			libgstreamer.lib
+
 LIBRARY			euser.lib
 LIBRARY 		libc.lib
+LIBRARY			libgstreamer.lib
 LIBRARY 		libpthread.lib
 LIBRARY			libdl.lib
 LIBRARY			libglib.lib

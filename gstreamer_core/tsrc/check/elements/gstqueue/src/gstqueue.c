@@ -55,7 +55,7 @@ void create_xml(int result)
 static GET_GLOBAL_VAR_FROM_TLS(buffers,gstcheck,GList*)
 #define buffers (*GET_GSTREAMER_WSD_VAR_NAME(buffers,gstcheck,g)())
 #else 
-extern GList *buffers;
+IMPORT_C extern GList *buffers;
 #endif
 
 
@@ -63,7 +63,7 @@ extern GList *buffers;
 GET_GLOBAL_VAR_FROM_TLS(check_mutex,gstcheck,GMutex *)
 #define check_mutex (*GET_GSTREAMER_WSD_VAR_NAME(check_mutex,gstcheck,g)())
 #else 
-extern GMutex *check_mutex;
+IMPORT_C extern GMutex *check_mutex;
 #endif
 
 
@@ -71,7 +71,7 @@ extern GMutex *check_mutex;
 GET_GLOBAL_VAR_FROM_TLS(check_cond,gstcheck,GCond *)
 #define check_cond (*GET_GSTREAMER_WSD_VAR_NAME(check_cond,gstcheck,g)())
 #else 
-extern GCond *check_cond;
+IMPORT_C extern GCond *check_cond;
 #endif
 
 //GList *buffers = NULL;

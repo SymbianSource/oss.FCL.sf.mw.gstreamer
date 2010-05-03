@@ -23,8 +23,8 @@
 #include <platform_paths.hrh>                    
 
 TARGET          testgstadapter.exe
-TARGETTYPE      STDEXE
-UID             0x20004c45 0x055311B5
+TARGETTYPE      EXE
+UID             0 0x055311B5
 
 EPOCHEAPSIZE 0x10000 50000000
 #ifdef EKA2
@@ -85,4 +85,6 @@ LIBRARY         libz.lib
 LIBRARY         libgstreamer.lib
 LIBRARY			libgstbase.lib
 //VENDORID VID_DEFAULT 
+
+STATICLIBRARY  libcrt0.lib
 SMPSAFE

@@ -28,3 +28,5 @@ PRJ_MMPFILES
 gstdevsoundext.mmp
 gstdevsoundsink.mmp
 gstdevsoundsrc.mmp
+gstamrmux.mmp
+#include "../gst/AudioRecordBin/group/bld.inf"

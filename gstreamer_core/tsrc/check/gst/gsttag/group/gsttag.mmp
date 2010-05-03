@@ -9,7 +9,7 @@
 #include <platform_paths.hrh>                                                                                                    
 
 TARGET		  gsttag.exe
-TARGETTYPE	  STDEXE
+TARGETTYPE	  EXE
 UID			 0 0xE8A116FB
 
 CAPABILITY All -TCB
@@ -37,8 +37,8 @@ SOURCEPATH	  ../src
 SOURCE		  gsttag.c
 
 
-
-LIBRARY		 euser.lib libgstreamer.lib libgstbase.lib libgstcontroller.lib libgstcoreelements.lib
+STATICLIBRARY	libcrt0.lib
+LIBRARY		 euser.lib libc.lib libgstreamer.lib libgstbase.lib libgstcontroller.lib libgstcoreelements.lib
 LIBRARY		 libglib.lib libgmodule.lib libgobject.lib
 
 

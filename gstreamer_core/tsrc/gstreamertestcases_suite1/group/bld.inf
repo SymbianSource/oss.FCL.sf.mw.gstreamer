@@ -31,17 +31,17 @@ PRJ_TESTEXPORTS
 // NOTE: If using ARS requirements all export operations should be done under this.
 // 'abld test export'
 
-
+../conf/gstreamertestcases_suite1.cfg   /epoc32/winscw/c/TestFramework/gstreamertestcases_suite1.cfg
+../init/gstreamertestcases_suite1.ini   /epoc32/winscw/c/TestFramework/gstreamertestcases_suite1.ini
+../init/testframework.ini               /epoc32/winscw/c/TestFramework/testframework.ini
 
 PRJ_EXPORTS
 // Specify the source file followed by its destination here
 // copy will be used to copy the source file to its destination
 // If there's no destination then the source file will be copied
-// to the same name in \epoc32\include
+// to the same name in /epoc32/include
 // Example: 
-/*
-\agnmodel\inc\AGMCOMON.H
-*/
+
 
 PRJ_TESTMMPFILES
 GstreamerTestCases_suite1.mmp
@@ -58,11 +58,6 @@ PRJ_MMPFILES
 // released. Specify "ignore" if the MMP file exists but should be
 // ignored.
 // Example:
-/*
-\agnmodel\group\agnmodel.mmp
-#if defined(MARM)
-\agnmodel\group\agsvexe.mmp
-#endif
-*/
+
 
 //  End of File

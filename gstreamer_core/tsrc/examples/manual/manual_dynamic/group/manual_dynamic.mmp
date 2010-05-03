@@ -10,7 +10,7 @@
 #include <platform_paths.hrh>                    
 
 TARGET		  manual_dynamic.exe
-TARGETTYPE	  STDEXE
+TARGETTYPE	  EXE
 UID			 0 0xEAA6DF74
 
 CAPABILITY All -Tcb
@@ -38,9 +38,9 @@ SOURCEPATH ../src
 SOURCE manual_dynamic.c
 
 
-
+STATICLIBRARY libcrt0.lib
 LIBRARY		 euser.lib libgstreamer.lib libgstbase.lib libgstcontroller.lib libgstcoreelements.lib
-LIBRARY		 libglib.lib libgmodule.lib libgobject.lib
+LIBRARY		 libglib.lib libgmodule.lib libgobject.lib libc.lib
 
 #ifdef ENABLE_ABIV2_MODE
 DEBUGGABLE

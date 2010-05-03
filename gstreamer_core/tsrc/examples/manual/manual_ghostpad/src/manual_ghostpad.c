@@ -3,7 +3,7 @@
 
 #include <gst/gst_global.h>
 #include <gst/gst.h>
-
+#include <stdio.h>
 #define LOG_FILE "c:\\logs\\ghostpad_logs.txt" 
 #include "std_log_result.h" 
 #define LOG_FILENAME_LINE __FILE__, __LINE__

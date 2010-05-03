@@ -23,8 +23,8 @@
 #include <platform_paths.hrh>                    
 
 TARGET          helloworld.exe
-TARGETTYPE      STDEXE
-UID             0x1000008d 0x0AB229EC
+TARGETTYPE      EXE
+UID             0 0x0AB229EC
 
 EPOCHEAPSIZE 0x10000 0x100000
 #ifdef EKA2
@@ -69,7 +69,8 @@ SOURCEPATH  ../src
 
 SOURCE      helloworld.c
 
-LIBRARY         libc.lib
+
+LIBRARY		 euser.lib libc.lib 
 LIBRARY         libpthread.lib
 LIBRARY         libdl.lib
 LIBRARY         libglib.lib
@@ -83,5 +84,6 @@ LIBRARY         libgstreamer.lib
 LIBRARY			libgstbase.lib
 LIBRARY			libgstcontroller.lib
 
+STATICLIBRARY	libcrt0.lib
 //VENDORID VID_DEFAULT 
 SMPSAFE

@@ -1,9 +1,0 @@
-PRJ_PLATFORMS
-DEFAULT
-
-PRJ_EXPORTS
-
-PRJ_MMPFILES
-#ifndef WINSCW
-gstaacenc.mmp
-#endif

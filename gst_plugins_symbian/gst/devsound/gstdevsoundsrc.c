@@ -36,6 +36,10 @@
 #include "string.h"
 
 GST_DEBUG_CATEGORY_EXTERN (devsoundsrc_debug);
+#ifdef GST_CAT_DEFAULT
+#undef GST_CAT_DEFAULT
+#endif
+
 #define GST_CAT_DEFAULT devsoundsrc_debug
 
 /* elementfactory information */
@@ -284,7 +288,7 @@ GType gst_devsound_src_get_type(void)
 
     devsoundsrc_type =
     g_type_register_static (GST_TYPE_PUSH_SRC, "GstDevsoundSrc",
-            &devsoundsrc_info, 0);
+            &devsoundsrc_info, (GTypeFlags)0);
 
     g_type_add_interface_static (devsoundsrc_type, GST_TYPE_SPEECH_ENCODER_CONFIG,
             &speech_encoder_config_info);
@@ -331,11 +335,11 @@ static void gst_devsound_src_class_init(GstDevsoundSrcClass * klass)
     
     g_object_class_install_property(gobject_class, PROP_DEVICE,
             g_param_spec_string("device", "Device", "Devsound device ",
-                    DEFAULT_DEVICE, G_PARAM_READWRITE));
+                    DEFAULT_DEVICE, (GParamFlags)G_PARAM_READWRITE));
 
     g_object_class_install_property(gobject_class, GAIN, g_param_spec_int(
             "gain", "Gain", "Devsound src gain", -1, G_MAXINT, -1,
-            G_PARAM_READWRITE));
+            (GParamFlags)G_PARAM_READWRITE));
 
     g_object_class_install_property(gobject_class, MAXGAIN, g_param_spec_int(
             "maxgain", "MaxGain", "Devsound src max gain", -1, G_MAXINT, -1,
@@ -343,11 +347,11 @@ static void gst_devsound_src_class_init(GstDevsoundSrcClass * klass)
 
     g_object_class_install_property(gobject_class, LEFTBALANCE,
             g_param_spec_int("leftbalance", "Left Balance", "Left Balance",
-                    -1, G_MAXINT, -1, G_PARAM_READWRITE));
+                    -1, G_MAXINT, -1, (GParamFlags)G_PARAM_READWRITE));
 
     g_object_class_install_property(gobject_class, RIGHTBALANCE,
             g_param_spec_int("rightbalance", "Right Balance",
-                    "Right Balance", -1, G_MAXINT, -1, G_PARAM_READWRITE));
+                    "Right Balance", -1, G_MAXINT, -1, (GParamFlags)G_PARAM_READWRITE));
 
     g_object_class_install_property(gobject_class, SAMPLESRECORDED,
             g_param_spec_int("samplesrecorded", "Samples Recorded",
@@ -356,22 +360,22 @@ static void gst_devsound_src_class_init(GstDevsoundSrcClass * klass)
     g_object_class_install_property(gobject_class, PRIORITY,
             g_param_spec_int("priority", "Priority", "Priority ", -1,
             G_MAXINT, -1,
-            G_PARAM_READWRITE));
+            (GParamFlags)G_PARAM_READWRITE));
 
     g_object_class_install_property(gobject_class, PREFERENCE,
             g_param_spec_int("preference", "Preference", "Preference ", -1,
             G_MAXINT, -1,
-            G_PARAM_READWRITE));
+            (GParamFlags)G_PARAM_READWRITE));
 
     g_object_class_install_property(gobject_class, RATE,
             g_param_spec_int("rate", "Rate", "Rate ", -1,
                     G_MAXINT, -1,
-                    G_PARAM_READWRITE));
+                    (GParamFlags)G_PARAM_READWRITE));
 
     g_object_class_install_property(gobject_class, CHANNELS,
             g_param_spec_int("channels", "Channels", "Channels ", -1,
                     G_MAXINT, -1,
-                    G_PARAM_READWRITE));
+                    (GParamFlags)G_PARAM_READWRITE));
     
     gstbasesrc_class->start = GST_DEBUG_FUNCPTR (gst_devsound_src_start);
     gstbasesrc_class->stop = GST_DEBUG_FUNCPTR (gst_devsound_src_stop);
@@ -390,8 +394,9 @@ static void gst_devsound_src_init(GstDevsoundSrc * devsoundsrc)
     devsoundsrc->handle=NULL;
     devsoundsrc->preference = 0; //default=>EMdaPriorityPreferenceNone;
     devsoundsrc->priority = 0;   //default=>EMdaPriorityNormal;
-    pthread_mutex_init(&create_mutex1, NULL);
-    pthread_cond_init(&create_condition1, NULL);
+    devsoundsrc->firstimecreatecalled = 0;
+//    pthread_mutex_init(&create_mutex1, NULL);
+//    pthread_cond_init(&create_condition1, NULL);
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) devsoundsrc, "gst_devsound_src_init EXIT ",NULL);
     }
 
@@ -495,6 +500,7 @@ static void *StartDevSoundThread(void *threadarg)
                 pthread_mutex_unlock(&(create_mutex1));
                 // TODO obtain mutex here
                 consumer_thread_state = CONSUMER_THREAD_UNINITIALIZED;
+                devsoundsrc->firstimecreatecalled = 0;
                 pthread_exit(NULL);
                 }
                 break;
@@ -684,7 +690,9 @@ static gboolean gst_devsound_src_start(GstBaseSrc * bsrc)
     GstBuffer *tmp_gstbuffer=NULL;	
     GstDevsoundSrc *src= GST_DEVSOUND_SRC(bsrc);
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) src, "gst_devsound_src_start ENTER ",NULL);
-
+    pthread_mutex_init(&create_mutex1, NULL);
+    pthread_cond_init(&create_condition1, NULL);
+    
     if(dataqueue)
         {
         while (g_queue_get_length(dataqueue))
@@ -763,6 +771,7 @@ static gboolean gst_devsound_src_stop(GstBaseSrc * bsrc)
     pthread_cond_destroy(&(create_condition1));
 
     g_free(src->device);
+    src->device = NULL;
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) src, "gst_devsound_src_stop EXIT ");
     return TRUE;
     }
@@ -904,6 +913,11 @@ static GstFlowReturn gst_devsound_src_create(GstBaseSrc *src, guint64 offset,
                 gst_buffer_unref(popBuffer);
                 popBuffer = NULL;
                 }
+            }
+            if( dsrc->firstimecreatecalled < 2 )
+            {/// nitin changes
+                ++dsrc->firstimecreatecalled;
+                return GST_FLOW_OK;
             }
         }
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) dsrc, "gst_devsound_src_create EXIT ",NULL);

@@ -173,7 +173,7 @@ type_as_function ## _class_init_trampoline (gpointer g_class,		\
   type_as_function ## _class_init ((type ## Class *)g_class);		\
 }									\
 									\
-__declspec(dllimport) GType type_as_function ## _get_type (void);				\
+GType type_as_function ## _get_type (void);				\
 									\
 __declspec(dllexport) GType									\
 type_as_function ## _get_type (void)					\

@@ -57,6 +57,9 @@ struct _GstRtpXQTDepayClass
   GstBaseRTPDepayloadClass parent_class;
 };
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GType gst_rtp_xqt_depay_get_type (void);
 
 G_END_DECLS

@@ -55,7 +55,7 @@ EXPORT_C GType gst_ilbc_decoder_get_type(void)
 
   
     ilbc_decoder_type = g_type_register_static (G_TYPE_INTERFACE, "GstIlbcDecoderInterface",
-        &ilbc_decoder_info, 0);
+        &ilbc_decoder_info, (GTypeFlags)0);
   
   }
 

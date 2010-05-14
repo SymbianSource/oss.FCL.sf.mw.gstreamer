@@ -86,6 +86,7 @@ struct _GstDevsoundSrc {
   gboolean g729vadmode;
   gint ilbcencodemode;
   gboolean ilbcvadmode;
+  gint firstimecreatecalled; 
 
   
 };

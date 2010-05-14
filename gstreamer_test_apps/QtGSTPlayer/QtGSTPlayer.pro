@@ -7,7 +7,7 @@
 #  Name        : QtGSTPlayer.pro
 #  Part of     : LibHb / gstplayer
 #  Description : Project definition file for simple gstplayer
-#  Version     : %version: 1 %
+#  Version     : %version: 2 %
 #
 #  Copyright ? 2008 Nokia.  All rights reserved.
 #  This material, including documentation and any related computer
@@ -21,13 +21,35 @@
 #
 
 TEMPLATE = app
-TARGET = 
+TARGET = QtGSTPlayer
 DEPENDPATH += .
-INCLUDEPATH += .
-
-# Input
+HEADERS += folderview.h record_play.h views.h
+    
 SOURCES += main.cpp folderview.cpp views.cpp record_play.c
-HEADERS += folderview.h views.h
 
 RESOURCES += QtGSTPlayer.qrc
+DEFINES += HB_GESTURE_FW HB_EFFECTS
+
+INCLUDEPATH += /epoc32/include/mw/hb/hbcore \
+	/epoc32/include/mw/hb/hbfeedback \
+	/epoc32/include/mw/hb/hbinput \
+	/epoc32/include/mw/hb/hbutils \
+	/epoc32/include/mw/hb/hbwidgets \
+	MW_LAYER_SYSTEMINCLUDE \
+	OS_LAYER_LIBC_SYSTEMINCLUDE \
+	OS_LAYER_GLIB_SYSTEMINCLUDE \
+	MW_LAYER_GSTREAMER_SYSTEMINCLUDE
+
+#UNIX style Lib inclusion	
+LIBS += -lhbcore -lhbwidgets -llibglib -llibgobject -llibgthread \
+	-llibgstreamer -llibgstbase -llibgstcontroller		
+
+
+symbian {
+		TARGET.UID2 = 0x2002c391
+		TARGET.UID3 = 0x2002c392
+		TARGET.EPOCHEAPSIZE = 0x100000 0x10000000
+		TARGET.CAPABILITY += All -Tcb
+		}
+		
 

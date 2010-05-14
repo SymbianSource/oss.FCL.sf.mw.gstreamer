@@ -101,6 +101,9 @@ struct _GstQTDemuxClass {
   GstElementClass parent_class;
 };
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GType gst_qtdemux_get_type (void);
 
 G_END_DECLS

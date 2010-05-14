@@ -4797,7 +4797,10 @@ qtdemux_tag_add_keywords (GstQTDemux * qtdemux, const char *tag,
 
   /* re-route to normal string tag if not 3GP */
   if (!qtdemux_is_string_3gp (qtdemux, FOURCC_kywd))
-    return qtdemux_tag_add_str (qtdemux, tag, dummy, node);
+    {
+    	qtdemux_tag_add_str (qtdemux, tag, dummy, node);
+    	return ;
+    }
 
   GST_DEBUG_OBJECT (qtdemux, "found 3gpp keyword tag");
 
@@ -5013,7 +5016,10 @@ qtdemux_tag_add_gnre (GstQTDemux * qtdemux, const char *tag, const char *dummy,
 
   /* re-route to normal string tag if 3GP */
   if (qtdemux_is_string_3gp (qtdemux, FOURCC_gnre))
-    return qtdemux_tag_add_str (qtdemux, tag, dummy, node);
+	{
+		qtdemux_tag_add_str (qtdemux, tag, dummy, node);
+		return;
+	}
 
   data = qtdemux_tree_get_child_by_type (node, FOURCC_data);
   if (data) {

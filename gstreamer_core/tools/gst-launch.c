@@ -40,6 +40,8 @@
 #endif
 #include <locale.h>             /* for LC_ALL */
 #include "tools.h"
+#include <glib.h>
+#include "../gst/gst-i18n-app.h"
 
 /* FIXME: This is just a temporary hack.  We should have a better
  * check for siginfo handling. */
@@ -47,7 +49,7 @@
 #define USE_SIGINFO
 #endif
 
-extern volatile gboolean glib_on_error_halt;
+//extern volatile gboolean glib_on_error_halt;
 
 #ifndef DISABLE_FAULT_HANDLER
 static void fault_restore (void);
@@ -581,11 +583,11 @@ int
 main (int argc, char *argv[])
 {
   /* options */
-  gboolean verbose = FALSE;
-  gboolean no_fault = FALSE;
-  gboolean trace = FALSE;
+  static gboolean verbose = FALSE;
+  static gboolean no_fault = FALSE;
+  static gboolean trace = FALSE;
   gchar *savefile = NULL;
-  gchar *exclude_args = NULL;
+  static gchar *exclude_args = NULL;
   GOptionEntry options[] = {
     {"tags", 't', 0, G_OPTION_ARG_NONE, &tags,
         N_("Output tags (also known as metadata)"), NULL},

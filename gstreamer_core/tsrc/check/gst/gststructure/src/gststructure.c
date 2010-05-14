@@ -36,9 +36,6 @@
 #define xmlfile *(get_xmlfile())
 #endif
 
-
-
-
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(raised_critical,gstcheck,gboolean)
 #define _gst_check_raised_critical (*GET_GSTREAMER_WSD_VAR_NAME(raised_critical,gstcheck,g)())

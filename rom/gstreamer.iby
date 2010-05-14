@@ -29,6 +29,7 @@
 #define GSTREAMER_IBY
 
 #include <bldvariant.hrh>
+#include <liboil.iby>
 
 #ifdef FF_GSTREAMER
 
@@ -77,11 +78,13 @@ file=ABI_DIR\BUILD_DIR\libgstsubparse.dll           SHARED_LIB_DIR\libgstsubpars
 file=ABI_DIR\BUILD_DIR\libgstrtp.dll                SHARED_LIB_DIR\libgstrtp.dll
 file=ABI_DIR\BUILD_DIR\libgstgdp.dll                SHARED_LIB_DIR\libgstgdp.dll
 file=ABI_DIR\BUILD_DIR\libgstvolume.dll             SHARED_LIB_DIR\libgstvolume.dll
+file=ABI_DIR\BUILD_DIR\libgstmpegaudioparse.dll     SHARED_LIB_DIR\libgstmpegaudioparse.dll
+file=ABI_DIR\BUILD_DIR\libgstnokiaaacdec.dll        SHARED_LIB_DIR\libgstnokiaaacdec.dll
+file=ABI_DIR\BUILD_DIR\libgstqtdemux.dll            SHARED_LIB_DIR\libgstqtdemux.dll
 file=ABI_DIR\BUILD_DIR\libgstamrmux.dll             SHARED_LIB_DIR\libgstamrmux.dll
-file=ABI_DIR\BUILD_DIR\libgstnokiaaacenc.dll        SHARED_LIB_DIR\libgstnokiaaacenc.dll
 file=ABI_DIR\BUILD_DIR\gstqtmux.dll                 SHARED_LIB_DIR\gstqtmux.dll
+file=ABI_DIR\BUILD_DIR\libgstnokiaaacenc.dll        SHARED_LIB_DIR\libgstnokiaaacenc.dll
 file=ABI_DIR\BUILD_DIR\GstAudioRecordBin.dll        SHARED_LIB_DIR\GstAudioRecordBin.dll
-//file=ABI_DIR\BUILD_DIR\liboil.dll                   SHARED_LIB_DIR\liboil.dll
 
 //GStreamer_Stub
 data=ZSYSTEM\install\gstreamer_stub.sis             System\Install\gstreamer_stub.sis

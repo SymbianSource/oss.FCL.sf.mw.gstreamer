@@ -160,6 +160,9 @@ typedef enum {
  */
 #define GST_FLOW_IS_SUCCESS(ret) ((ret) >= GST_FLOW_OK)
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 G_CONST_RETURN gchar*	gst_flow_get_name	(GstFlowReturn ret);
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -805,7 +808,9 @@ struct _GstPadClass {
 
 /* FIXME: this awful circular dependency need to be resolved properly (see padtemplate.h) */
 #include <gst/gstpadtemplate.h>
-
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GType			gst_pad_get_type			(void);
 
 /* creating pads */
@@ -847,6 +852,9 @@ GstPad*			gst_pad_new_from_static_template	(GstStaticPadTemplate *templ, const g
  */
 #define gst_pad_get_parent(pad) gst_object_get_parent (GST_OBJECT_CAST (pad))
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GstPadDirection		gst_pad_get_direction			(GstPad *pad);
 #ifdef __SYMBIAN32__
 IMPORT_C

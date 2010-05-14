@@ -137,9 +137,7 @@ static GstStateChangeReturn gst_audio_rate_change_state (GstElement * element,
 static GstElementClass *parent_class = NULL;
 
 /*static guint gst_audio_rate_signals[LAST_SIGNAL] = { 0 }; */
-#ifdef __SYMBIAN32__
-EXPORT_C
-#endif
+
 
 static GType
 gst_audio_rate_get_type (void)

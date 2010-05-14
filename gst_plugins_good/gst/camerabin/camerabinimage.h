@@ -72,6 +72,9 @@ struct _GstCameraBinImageClass
   GstBinClass parent_class;
 };
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GType gst_camerabin_image_get_type (void);
 
 void

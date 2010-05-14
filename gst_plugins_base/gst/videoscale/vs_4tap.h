@@ -32,6 +32,9 @@
 
 #include <liboil/liboil.h>
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 void vs_4tap_init (void);
 #ifdef __SYMBIAN32__
 IMPORT_C

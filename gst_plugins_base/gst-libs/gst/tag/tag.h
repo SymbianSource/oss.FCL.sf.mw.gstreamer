@@ -178,8 +178,12 @@ typedef enum {
   GST_TAG_IMAGE_TYPE_PUBLISHER_STUDIO_LOGO
 } GstTagImageType;
 
-#define GST_TYPE_TAG_IMAGE_TYPE  (gst_tag_image_type_get_type ())
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GType   gst_tag_image_type_get_type (void);
+#define GST_TYPE_TAG_IMAGE_TYPE  (gst_tag_image_type_get_type ())
+
 
 
 /* functions for vorbis comment manipulation */

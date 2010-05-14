@@ -553,7 +553,9 @@ GstDebugCategory *_gst_debug_get_category (const gchar *name);
 }G_STMT_END
 #endif
 
-
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 gchar * gst_debug_construct_term_color	(guint colorinfo);
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -568,14 +570,17 @@ gint    gst_debug_construct_win_color (guint colorinfo);
  * Default gstreamer core debug log category. Please define your own.
  */
 GST_EXPORT GstDebugCategory *	GST_CAT_DEFAULT;
+GST_EXPORT GstDebugLevel            __gst_debug_min; 
+
 /* this symbol may not be used */
 extern gboolean			__gst_debug_enabled;
 
 /* since 0.10.7, the min debug level, used for quickly discarding debug
  * messages that fall under the threshold. */
-GST_EXPORT GstDebugLevel            __gst_debug_min; 
-
 #ifdef __SYMBIAN32__
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GstDebugCategory ** _GST_CAT_DEFAULT();
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -586,11 +591,6 @@ gboolean*	gst_debug_enabled();
 IMPORT_C
 #endif
 GstDebugCategory** _GST_CAT_QOS();
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-GstDebugCategory ** _GST_CAT_DEFAULT();
 
 #ifdef __SYMBIAN32__
 IMPORT_C

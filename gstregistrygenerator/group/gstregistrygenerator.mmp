@@ -60,7 +60,7 @@ USERINCLUDE		../../include/gstreamer/gst/net
 
 
 SOURCEPATH	  ../src
-SOURCE		  GSTRegistryGenerator.cpp
+SOURCE		  gstregistrygenerator.cpp
 
 STATICLIBRARY    libcrt0.lib
 

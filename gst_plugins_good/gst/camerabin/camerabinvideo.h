@@ -93,6 +93,9 @@ struct _GstCameraBinVideoClass
   GstBinClass parent_class;
 };
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GType gst_camerabin_video_get_type (void);
 
 /*

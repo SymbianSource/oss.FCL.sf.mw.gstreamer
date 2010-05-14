@@ -280,6 +280,9 @@ gboolean 		gst_registry_xml_write_cache 	(GstRegistry * registry, const char *lo
 #define gst_default_registry_feature_filter(filter,first,user_data) \
   gst_registry_feature_filter (gst_registry_get_default(),filter,first,user_data)
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 gboolean                gst_default_registry_check_feature_version (const gchar *feature_name,
                                                                     guint        min_major,
                                                                     guint        min_minor,

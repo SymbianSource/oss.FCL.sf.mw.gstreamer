@@ -39,6 +39,10 @@ typedef enum {
 } GstAutoplugSelectResult;
 
 #define GST_TYPE_AUTOPLUG_SELECT_RESULT (gst_autoplug_select_result_get_type())
+
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GType gst_autoplug_select_result_get_type (void);
 
 /**
@@ -70,6 +74,10 @@ typedef enum {
 } GstPlayFlags;
 
 #define GST_TYPE_PLAY_FLAGS (gst_play_flags_get_type())
+
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GType gst_play_flags_get_type (void);
 
 G_END_DECLS

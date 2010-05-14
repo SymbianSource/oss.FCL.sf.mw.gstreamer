@@ -46,8 +46,9 @@ file=ABI_DIR\BUILD_DIR\libgstpbutils.dll            SHARED_LIB_DIR\libgstpbutils
 file=ABI_DIR\BUILD_DIR\libgstreamer.dll             SHARED_LIB_DIR\libgstreamer.dll
 file=ABI_DIR\BUILD_DIR\libgstriff.dll               SHARED_LIB_DIR\libgstriff.dll
 file=ABI_DIR\BUILD_DIR\libgsttag.dll                SHARED_LIB_DIR\libgsttag.dll
-//file=ABI_DIR\BUILD_DIR\libgstvideo.dll              SHARED_LIB_DIR\libgstvideo.dll
-//file=ABI_DIR\BUILD_DIR\libgstvideorate.dll          SHARED_LIB_DIR\libgstvideorate.dll
+file=ABI_DIR\BUILD_DIR\libgstvideo.dll              SHARED_LIB_DIR\libgstvideo.dll
+file=ABI_DIR\BUILD_DIR\libgstphotography.dll        SHARED_LIB_DIR\libgstphotography.dll
+//file=ABI_DIR\BUILD_DIR\libgstvideorate.dll        SHARED_LIB_DIR\libgstvideorate.dll
 //file=ABI_DIR\BUILD_DIR\libgstvideoscale.dll       SHARED_LIB_DIR\libgstvideoscale.dll
 //file=ABI_DIR\BUILD_DIR\libgstvideotestsrc.dll     SHARED_LIB_DIR\libgstvideotestsrc.dll
 file=ABI_DIR\BUILD_DIR\libgstdevsoundext.dll        SHARED_LIB_DIR\libgstdevsoundext.dll
@@ -76,6 +77,11 @@ file=ABI_DIR\BUILD_DIR\libgstsubparse.dll           SHARED_LIB_DIR\libgstsubpars
 file=ABI_DIR\BUILD_DIR\libgstrtp.dll                SHARED_LIB_DIR\libgstrtp.dll
 file=ABI_DIR\BUILD_DIR\libgstgdp.dll                SHARED_LIB_DIR\libgstgdp.dll
 file=ABI_DIR\BUILD_DIR\libgstvolume.dll             SHARED_LIB_DIR\libgstvolume.dll
+file=ABI_DIR\BUILD_DIR\libgstamrmux.dll             SHARED_LIB_DIR\libgstamrmux.dll
+file=ABI_DIR\BUILD_DIR\libgstnokiaaacenc.dll        SHARED_LIB_DIR\libgstnokiaaacenc.dll
+file=ABI_DIR\BUILD_DIR\gstqtmux.dll                 SHARED_LIB_DIR\gstqtmux.dll
+file=ABI_DIR\BUILD_DIR\GstAudioRecordBin.dll        SHARED_LIB_DIR\GstAudioRecordBin.dll
+//file=ABI_DIR\BUILD_DIR\liboil.dll                   SHARED_LIB_DIR\liboil.dll
 
 //GStreamer_Stub
 data=ZSYSTEM\install\gstreamer_stub.sis             System\Install\gstreamer_stub.sis

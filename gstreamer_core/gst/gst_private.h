@@ -163,6 +163,9 @@ void _priv_gst_registry_cleanup (void);
 /* used in both gststructure.c and gstcaps.c; numbers are completely made up */
 #define STRUCTURE_ESTIMATED_STRING_LEN(s) (16 + (s)->fields->len * 22)
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 gboolean  priv_gst_structure_append_to_gstring (const GstStructure * structure,
                                                 GString            * s);
 

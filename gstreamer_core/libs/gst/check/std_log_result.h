@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #ifdef __SYMBIAN32__
 #include "libgstreamer_wsd_solution.h" 
+#include <check.h>
 
 #ifndef EMULATOR
 #define assert_failed *(get_assert_failed())
@@ -52,7 +53,7 @@
 static	GET_GLOBAL_VAR_FROM_TLS(fp_std_log,std_log_result,FILE *)
 #define fp_std_log (*GET_GSTREAMER_WSD_VAR_NAME(fp_std_log,std_log_result,g)())
 #else 
-extern FILE *fp_std_log;
+IMPORT_C extern FILE *fp_std_log;
 #endif
 
 //int assert_failed = 0;
@@ -60,14 +61,14 @@ extern FILE *fp_std_log;
 static GET_GLOBAL_VAR_FROM_TLS(assert_failed,std_log_result,int)
 #define assert_failed (*GET_GSTREAMER_WSD_VAR_NAME(assert_failed,std_log_result,g)())
 #else 
-extern int assert_failed;
+IMPORT_C extern int assert_failed;
 #endif
 
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(xmlfile,std_log_result,char*)
 #define xmlfile (*GET_GSTREAMER_WSD_VAR_NAME(xmlfile,std_log_result,g)())
 #else 
-extern char* xmlfile;
+IMPORT_C extern char* xmlfile;
 #endif
 
 #ifdef __SYMBIAN32__
@@ -76,6 +77,11 @@ EXPORT_C
 int gnutest = 1;
 
 # define VERIFY(fn) gnutest &= (fn)
+
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+void std_log(const char *filename,const int lineno,const char* aformat,...);
 
 #ifdef __SYMBIAN32__
 EXPORT_C
@@ -98,6 +104,10 @@ void std_log(const char *filename,const int lineno,const char* aformat,...)
 //	}
 //	va_end(va);
 }
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+void init_log_file();
 
 #ifdef __SYMBIAN32__
 EXPORT_C
@@ -111,6 +121,11 @@ void init_log_file()
 }
 
 #ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+void close_log_file();
+
+#ifdef __SYMBIAN32__
 EXPORT_C
 #endif
 void close_log_file()
@@ -121,6 +136,13 @@ void close_log_file()
 }
 
 // This function is used to generate the xml file used bt ATS
+
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void testResultXml(char *filename);
+
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif

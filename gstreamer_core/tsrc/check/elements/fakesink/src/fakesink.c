@@ -25,6 +25,7 @@
 #include <gst/check/check.h>
 #include <gst/check/gstcheck.h>
 
+
 #define LOG_FILE "c:\\logs\\fakesink_log1.txt"
 #include "std_log_result.h"
 #define LOG_FILENAME_LINE __FILE__, __LINE__

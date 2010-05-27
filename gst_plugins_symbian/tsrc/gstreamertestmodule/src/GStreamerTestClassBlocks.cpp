@@ -281,6 +281,7 @@ TInt CGStreamerTestClass::RunMethodL(
         ENTRY( "CheckProperties", CGStreamerTestClass::CheckProperties ),
         ENTRY( "GstReliabilitytestPlaypause", CGStreamerTestClass::GstReliabilitytestPlaypause ),
         ENTRY( "GstReliabilitytestRecording", CGStreamerTestClass::GstReliabilitytestRecording ),
+        ENTRY( "PlayBack", CGStreamerTestClass::PlayBack ),  
         };
 
     const TInt count = sizeof( KFunctions ) / 
@@ -592,6 +593,142 @@ TInt CGStreamerTestClass::InitGStreamer( CStifItemParser& /*aItem*/ )
     iLog->Log(_L("<<CGStreamerTestClass::InitGStreamer"));
     return KErrNone;
     }
+
+/*** block b  from ../../../docs/manual/highlevel-components.xml ***/
+static gboolean
+my_bus_callback (GstBus     *bus,
+         GstMessage *message,
+         gpointer    data)
+{
+      
+  GMainLoop *loop = ( GMainLoop * )data;
+
+  switch (GST_MESSAGE_TYPE (message)) {
+    case GST_MESSAGE_ERROR: {
+      GError *err;
+      gchar *debug;
+
+      gst_message_parse_error (message, &err, &debug);
+      g_print ("Error: %s\n", err->message);
+      g_error_free (err);
+      g_free (debug);
+
+      g_main_loop_quit (loop);
+      break;
+    }
+    case GST_MESSAGE_EOS:
+        
+       /* end-of-stream */
+      g_main_loop_quit (loop);
+      break;
+    default:
+      /* unhandled message */
+      break;
+  }
+
+  /* remove message from the queue */
+  return TRUE;
+}
+
+/*** block c  from ../../../docs/manual/highlevel-components.xml ***/
+GstElement *pipeline;
+GstPad* devsoundsinkpad = NULL;
+
+static void
+cb_newpad (GstElement *decodebin,
+       GstPad     *pad,
+       gboolean    last,
+       gpointer    data)
+{
+    GstCaps *caps;
+      GstStructure *str;
+      GstPadLinkReturn linkret= GST_PAD_LINK_OK ;
+
+      /* check media type */
+      caps = gst_pad_get_caps (pad);
+      str = gst_caps_get_structure (caps, 0);
+      if (!g_strrstr (gst_structure_get_name (str), "audio")) {
+        gst_caps_unref (caps);
+        return;
+      }
+      gst_caps_unref (caps);
+
+      /* link'n'play */
+      linkret = gst_pad_link (pad, devsoundsinkpad);
+}
+
+
+gboolean  cb_autoplug( GstBin * *bin,
+                        GstPad        *pad,
+                        GstCaps       *caps,
+                        gpointer       user_data)
+{
+    
+    GstCaps* sinkcaps = NULL;    
+    gboolean supported = FALSE; 
+    
+    sinkcaps = gst_pad_get_caps( devsoundsinkpad );
+        
+    supported = gst_caps_is_subset( caps, sinkcaps );
+    
+    if( supported )
+    {
+      return FALSE;
+    }
+   
+    return TRUE;
+
+}
+
+
+
+TInt CGStreamerTestClass::PlayBack( CStifItemParser& aItem )
+{
+      GMainLoop *loop;
+      GstElement *src, *dec, *sink;
+      GstBus *bus;            
+      
+      FTRACE(FPrint(_L("CGStreamerTestClass::PlayBack")));     
+      
+      iLog->Log(_L(">>filesrc creation "));
+
+      src = gst_element_factory_make ("filesrc", "source");
+      
+      iLog->Log(_L("<<filesrc creation "));
+      
+      TPtrC location;
+      TFileName filename;
+      
+      char carray[1024];
+      aItem.GetNextString(location);
+      filename.Copy(location);
+      wcstombs(carray, (const wchar_t *)filename.PtrZ(), 1024);
+                      
+      g_object_set (G_OBJECT (src), "location", carray, NULL);
+      
+     // gst_bin_add_many(GST_BIN (iObjects->iPipeline),src, NULL);
+      
+      iLog->Log(_L(">>decodebin2 creation "));
+      dec = gst_element_factory_make ("decodebin2", "decoder");
+      iLog->Log(_L("<<decodebin2 creation "));       
+
+      /* create audio output */     
+      sink = gst_element_factory_make ("devsoundsink", "sink");
+            
+      gst_bin_add_many (GST_BIN (iObjects->iPipeline), src, dec, sink, NULL);
+      
+      devsoundsinkpad = gst_element_get_pad( sink, "sink");          
+      
+      g_signal_connect (dec, "new-decoded-pad", G_CALLBACK (cb_newpad), NULL);
+      g_signal_connect (dec, "autoplug-continue", G_CALLBACK (cb_autoplug), NULL);
+      
+      gst_element_link (src, dec);        
+           
+      iLog->Log(_L("<<Setting pipeline to Play"));
+            
+      return KErrNone;   
+    
+}
 
 // -----------------------------------------------------------------------------
 // CGStreamerTestClass::CreatePipeLine

@@ -39,3 +39,5 @@ libgstaudiofx.dll
 libgstmulaw.dll
 libgstalaw.dll
 libgstamrmux.dll
+libgstmpegaudioparse.dll
+libgstnokiaaacdec.dll

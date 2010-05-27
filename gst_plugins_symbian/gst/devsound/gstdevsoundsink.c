@@ -38,6 +38,10 @@
 
 
 GST_DEBUG_CATEGORY_EXTERN (devsound_debug);
+#ifdef GST_CAT_DEFAULT
+#undef GST_CAT_DEFAULT
+#endif
+
 #define GST_CAT_DEFAULT devsound_debug
 
 /* elementfactory information */
@@ -81,7 +85,7 @@ static void *StartDevSoundThread(void *threadid);
 //Error concealment interface impl
 static void gst_error_concealment_handler_init (gpointer g_iface,
     gpointer iface_data);
-static gint gst_ConcealErrorForNextBuffer();
+static gint gst_ConcealErrorForNextBuffer(void);
 static gint gst_SetFrameMode(gboolean aFrameMode);
 static gint gst_FrameModeRqrdForEC(gboolean* aFrameModeRqrd);
 static void gst_Apply_ErrorConcealment_Update(GstDevsoundSink* dssink);
@@ -99,7 +103,7 @@ static void gst_Apply_G711_Decoder_Update(GstDevsoundSink* dssink );
 //G729 interface impl
 static void gst_g729_decoder_handler_init (gpointer g_iface,
     gpointer iface_data);
-static gint gst_BadLsfNextBuffer();
+static gint gst_BadLsfNextBuffer(void);
 static void gst_Apply_G729_Decoder_Update(GstDevsoundSink* dssink );
 
 //Ilbc interface impl
@@ -207,7 +211,7 @@ static GstStaticPadTemplate devsoundsink_sink_factory=
                 "audio/AMR, " "rate = (int) 8000, " "channels = (int) 1 ; "
                 "audio/x-alaw, " "rate = (int) [ 8000, 48000 ], " "channels = (int) [ 1, 2 ]; "
                 "audio/g729, " "rate = (int) [ 8000, 48000 ], " "channels = (int) [ 1, 2 ]; "
-                "audio/mp3, " "rate = (int) [ 8000, 48000 ], " "channels = (int) [ 1, 2 ]; "                
+                "audio/mpeg, mpegversion = (int) 1, layer = (int) [ 1, 3 ], rate = (int) [ 8000, 48000 ], channels = (int) [ 1, 2 ]; "                
                 "audio/ilbc, " "rate = (int) [ 8000, 48000 ], " "channels = (int) [ 1, 2 ]; "
                 "audio/x-mulaw, " "rate = (int) [ 8000, 48000 ], " "channels = (int) [ 1, 2 ]")
                 );
@@ -260,7 +264,7 @@ GType gst_devsound_sink_get_type(void)
 
         devsoundsink_type =
         g_type_register_static (GST_TYPE_BASE_SINK, "GstDevsoundSink",
-            &devsoundsink_info, 0);
+            &devsoundsink_info, (GTypeFlags)0);
 
 
         g_type_add_interface_static (devsoundsink_type, GST_TYPE_ERROR_CONCEALMENT,
@@ -334,15 +338,15 @@ static void gst_devsound_sink_class_init(GstDevsoundSinkClass * klass)
     
     g_object_class_install_property(gobject_class, PROP_DEVICE,
             g_param_spec_string("device", "Device", "Devsound device ",
-            DEFAULT_DEVICE, G_PARAM_READWRITE));
+            DEFAULT_DEVICE, (GParamFlags)G_PARAM_READWRITE));
 
     g_object_class_install_property(gobject_class, VOLUME,
                 g_param_spec_int("volume", "Volume", "Devsound volume",
-                        -1, G_MAXINT, -1, G_PARAM_READWRITE));
+                        -1, G_MAXINT, -1, (GParamFlags)G_PARAM_READWRITE));
 
     g_object_class_install_property(gobject_class, VOLUMERAMP,
               g_param_spec_int("volumeramp", "VolumeRamp", "Devsound volume ramp",
-                      -1, G_MAXINT, -1, G_PARAM_READWRITE));
+                      -1, G_MAXINT, -1, (GParamFlags)G_PARAM_READWRITE));
 
     g_object_class_install_property(gobject_class, MAXVOLUME,
             g_param_spec_int("maxvolume", "MaxVolume", "Devsound max volume",
@@ -350,11 +354,11 @@ static void gst_devsound_sink_class_init(GstDevsoundSinkClass * klass)
 
     g_object_class_install_property(gobject_class, LEFTBALANCE,
                   g_param_spec_int("leftbalance", "Left Balance", "Left Balance",
-                          -1, G_MAXINT, -1, G_PARAM_READWRITE));
+                          -1, G_MAXINT, -1, (GParamFlags)G_PARAM_READWRITE));
 
     g_object_class_install_property(gobject_class, RIGHTBALANCE,
                    g_param_spec_int("rightbalance", "Right Balance", "Right Balance",
-                           -1, G_MAXINT, -1, G_PARAM_READWRITE));
+                           -1, G_MAXINT, -1, (GParamFlags)G_PARAM_READWRITE));
 /*
     g_object_class_install_property(gobject_class, SAMPLESPLAYED,
                       g_param_spec_int("samplesplayed", "Samples Played", "Samples Played",
@@ -363,12 +367,12 @@ static void gst_devsound_sink_class_init(GstDevsoundSinkClass * klass)
     g_object_class_install_property(gobject_class, PRIORITY,
             g_param_spec_int("priority", "Priority", "Priority ", -1,
                     G_MAXINT, -1,
-                    G_PARAM_READWRITE));
+                    (GParamFlags)G_PARAM_READWRITE));
 
     g_object_class_install_property(gobject_class, PREFERENCE,
             g_param_spec_int("preference", "Preference", "Preference ", -1,
                     G_MAXINT, -1,
-                    G_PARAM_READWRITE));
+                    (GParamFlags)G_PARAM_READWRITE));
 /*
     g_object_class_install_property(gobject_class, RATE,
             g_param_spec_int("rate", "Rate", "Rate ", -1,
@@ -383,7 +387,7 @@ static void gst_devsound_sink_class_init(GstDevsoundSinkClass * klass)
     g_object_class_install_property(gobject_class, OUTPUTDEVICE,
              g_param_spec_int("outputdevice", "Output Device", "Output Device ", -1,
                      G_MAXINT, -1,
-                     G_PARAM_READWRITE));
+                     (GParamFlags)G_PARAM_READWRITE));
     
 #ifdef AV_SYNC
     gstelement_class->provide_clock = GST_DEBUG_FUNCPTR (gst_devsound_sink_provide_clock);
@@ -821,7 +825,7 @@ static gboolean gst_devsound_sink_setcaps(GstBaseSink *bsink, GstCaps *caps)
         {
         devsoundsink->fourcc = 0x39323747; //KMccFourCCIdG729   
         }
-    else if (!strncmp(mimetype, "audio/mp3", 9))
+    else if (!strncmp(mimetype, "audio/mpeg", 10))
         {
         devsoundsink->fourcc = 0x33504d20; //KMMFFourCCCodeMP3    
         }
@@ -1221,6 +1225,7 @@ static void gst_g729_decoder_handler_init (gpointer g_iface,
 static gint gst_BadLsfNextBuffer()
     {
     customInfaceUpdate.g729badlsfnextbufferupdate = TRUE;
+    return 0;
     }
 
 static void gst_Apply_G729_Decoder_Update(GstDevsoundSink* dssink )

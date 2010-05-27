@@ -97,7 +97,7 @@ gst_amrmux_get_type (void)
 
     gst_amrmux_type =
         g_type_register_static (GST_TYPE_ELEMENT, "GstAmrMux",
-        &amrmux_info, 0);
+        &amrmux_info, (GTypeFlags)0);
   }
   return gst_amrmux_type;
 }
@@ -138,7 +138,7 @@ gst_amrmux_class_init ( GstAmrMuxClass * klass )
   
   g_object_class_install_property (G_OBJECT_CLASS (klass), ARG_HEADER,
         g_param_spec_boolean ("header", "header",
-            "For writing AMR header", TRUE, G_PARAM_READWRITE));
+            "For writing AMR header", TRUE, (GParamFlags)G_PARAM_READWRITE));
   
  
  }

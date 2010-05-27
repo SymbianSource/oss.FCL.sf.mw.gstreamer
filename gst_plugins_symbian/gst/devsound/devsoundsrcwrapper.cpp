@@ -307,7 +307,7 @@ int close_devsound(GstDevsoundSrc *ds)
 
     g_list_foreach(ds->fmt, (GFunc) g_free, NULL);
     g_list_free(ds->fmt);
-    
+    ds->fmt = NULL;
     delete (STATIC_CAST(DevSoundWrapperSrc*, ds->handle))->iAudoInputRecord;
     delete ds->handle;
     TRACE_PRN_FN_EXT;

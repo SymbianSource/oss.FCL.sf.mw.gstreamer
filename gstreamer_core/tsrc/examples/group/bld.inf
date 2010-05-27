@@ -20,7 +20,7 @@
 *
 */
 
-
+#include "../gstseek/group/bld.inf"
 #include "../helloworld/group/bld.inf"
 #include "../controller/group/bld.inf"
 #include "../adapter/group/bld.inf"				

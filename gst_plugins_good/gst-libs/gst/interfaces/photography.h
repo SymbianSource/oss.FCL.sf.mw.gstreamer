@@ -25,7 +25,7 @@
 #define __GST_PHOTOGRAPHY_H__
 
 #include <gst/gst.h>
-#include "photography-enumtypes.h"
+#include <gst/interfaces/photography-enumtypes.h>
 
 G_BEGIN_DECLS
 

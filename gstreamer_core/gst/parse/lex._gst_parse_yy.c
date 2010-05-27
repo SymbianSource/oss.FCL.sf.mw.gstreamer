@@ -1,6 +1,6 @@
 #ifdef HAVE_CONFIG_H
 #ifdef __SYMBIAN32__
-#include "config.h"
+#include <config.h>
 #else
 #include <config.h>
 #endif

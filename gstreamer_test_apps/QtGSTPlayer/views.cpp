@@ -18,14 +18,5 @@ namespace Views {
     	// 0 since folderView was added first to the main window
         return win->viewAt(0);
     }
-
-/*!
-  Returns the pointer to settings view.
-*/
-  /*  HbFormView *settingsView()
-    {
-	    // 1 since settingsView was the second view added
-        return static_cast<HbFormView *>(win->viewAt(1));
-    }
-    */
+    
 }

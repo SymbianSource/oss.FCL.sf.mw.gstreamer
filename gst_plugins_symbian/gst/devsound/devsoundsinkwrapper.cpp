@@ -42,6 +42,7 @@ DevSoundWrapper::DevSoundWrapper()
     iIlbcDecoderIntfc = NULL;
     iCallbackError = KErrNone;
     iAudioOutput = NULL;
+    iIsBufferToBeFilledDone = TRUE;
     }
 
 /*********************************************************/
@@ -78,6 +79,7 @@ void DevSoundWrapper::BufferToBeFilled(CMMFBuffer* aBuffer)
         {
         User::RequestComplete(stat, KErrNone);
         iCallbackError = KErrNone;
+        iIsBufferToBeFilledDone = FALSE;
         }
     else
         {
@@ -613,15 +615,19 @@ gboolean  is_timeplayed_supported(DevSoundWrapper *handle)
 int playinit(DevSoundWrapper *handle)
     {
     TRACE_PRN_FN_ENT;
+    handle->iCallbackError = KErrNone;
+    if( handle->iIsBufferToBeFilledDone )
+    {
+        ((handle)->AL)->InitialiseActiveListener();
+        handle->eosReceived = false;
+    
+        TRAP(handle->iCallbackError,(handle->dev_sound)->PlayInitL());
+        if (handle->iCallbackError == KErrNone)
+            {
+            ((handle)->AL)->StartActiveScheduler();
+            }    
+    }
 
-    ((handle)->AL)->InitialiseActiveListener();
-    handle->eosReceived = false;
-
-    TRAP(handle->iCallbackError,(handle->dev_sound)->PlayInitL());
-    if (handle->iCallbackError == KErrNone)
-        {
-        ((handle)->AL)->StartActiveScheduler();
-        }
 
     TRACE_PRN_IF_ERR(handle->iCallbackError);
     TRACE_PRN_FN_EXT;
@@ -679,7 +685,7 @@ int play_data(DevSoundWrapper *handle)
     (handle->dev_sound)->PlayData();
 
     ((handle)->AL)->StartActiveScheduler();
-
+    handle->iIsBufferToBeFilledDone = TRUE;
     TRACE_PRN_FN_EXT;
     return KErrNone;
     }

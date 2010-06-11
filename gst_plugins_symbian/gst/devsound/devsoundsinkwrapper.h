@@ -105,7 +105,7 @@ public:
     CG729DecoderIntfc*      iG729DecoderIntfc;
     CIlbcDecoderIntfc*      iIlbcDecoderIntfc;
     CAudioOutput*           iAudioOutput;
-
+    bool iIsBufferToBeFilledDone;
 
 public:
 	void InitializeComplete(TInt aError);

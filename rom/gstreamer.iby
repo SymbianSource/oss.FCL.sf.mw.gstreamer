@@ -48,7 +48,6 @@ file=ABI_DIR\BUILD_DIR\libgstreamer.dll             SHARED_LIB_DIR\libgstreamer.
 file=ABI_DIR\BUILD_DIR\libgstriff.dll               SHARED_LIB_DIR\libgstriff.dll
 file=ABI_DIR\BUILD_DIR\libgsttag.dll                SHARED_LIB_DIR\libgsttag.dll
 file=ABI_DIR\BUILD_DIR\libgstvideo.dll              SHARED_LIB_DIR\libgstvideo.dll
-file=ABI_DIR\BUILD_DIR\libgstphotography.dll        SHARED_LIB_DIR\libgstphotography.dll
 //file=ABI_DIR\BUILD_DIR\libgstvideorate.dll        SHARED_LIB_DIR\libgstvideorate.dll
 //file=ABI_DIR\BUILD_DIR\libgstvideoscale.dll       SHARED_LIB_DIR\libgstvideoscale.dll
 //file=ABI_DIR\BUILD_DIR\libgstvideotestsrc.dll     SHARED_LIB_DIR\libgstvideotestsrc.dll

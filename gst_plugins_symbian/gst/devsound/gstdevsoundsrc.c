@@ -394,7 +394,7 @@ static void gst_devsound_src_init(GstDevsoundSrc * devsoundsrc)
     devsoundsrc->handle=NULL;
     devsoundsrc->preference = 0; //default=>EMdaPriorityPreferenceNone;
     devsoundsrc->priority = 0;   //default=>EMdaPriorityNormal;
-    devsoundsrc->firstimecreatecalled = 0;
+    devsoundsrc->firstTimeInit = kUnInitialized;
 //    pthread_mutex_init(&create_mutex1, NULL);
 //    pthread_cond_init(&create_condition1, NULL);
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) devsoundsrc, "gst_devsound_src_init EXIT ",NULL);
@@ -500,7 +500,6 @@ static void *StartDevSoundThread(void *threadarg)
                 pthread_mutex_unlock(&(create_mutex1));
                 // TODO obtain mutex here
                 consumer_thread_state = CONSUMER_THREAD_UNINITIALIZED;
-                devsoundsrc->firstimecreatecalled = 0;
                 pthread_exit(NULL);
                 }
                 break;
@@ -772,6 +771,7 @@ static gboolean gst_devsound_src_stop(GstBaseSrc * bsrc)
 
     g_free(src->device);
     src->device = NULL;
+    src->firstTimeInit = kUnInitialized;
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) src, "gst_devsound_src_stop EXIT ");
     return TRUE;
     }
@@ -882,8 +882,14 @@ static GstFlowReturn gst_devsound_src_create(GstBaseSrc *src, guint64 offset,
             GST_OBJECT_UNLOCK(dsrc);
             //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) dsrc, "AFTER POP in CREATE ",NULL);
             if(!popBuffer)
-                {
-                return GST_FLOW_UNEXPECTED;
+            	{
+              	return GST_FLOW_UNEXPECTED;
+            	}
+            if(dsrc->firstTimeInit != kPlayed)
+                {        
+                dsrc->prevbuffersize = gst_base_src_get_blocksize(src);
+                gst_base_src_set_blocksize (src, GST_BUFFER_SIZE(popBuffer));
+                (*buf)->size = GST_BUFFER_SIZE(popBuffer);
                 }
             // copy the data from the popped buffer based on how much of the incoming
             //buffer size is left to fill. we might have filled the fresh buffer somewhat
@@ -914,12 +920,19 @@ static GstFlowReturn gst_devsound_src_create(GstBaseSrc *src, guint64 offset,
                 popBuffer = NULL;
                 }
             }
-            if( dsrc->firstimecreatecalled < 2 )
-            {/// nitin changes
-                ++dsrc->firstimecreatecalled;
-                return GST_FLOW_OK;
+        if (dsrc->firstTimeInit == kPlayBufferPreRoll)
+            {
+            gst_base_src_set_blocksize (src, dsrc->prevbuffersize);
+            dsrc->firstTimeInit = kPlayed;
+            return GST_FLOW_OK;
             }
-        }
+        
+        if (dsrc->firstTimeInit == kPausedToPlaying)
+            {
+            dsrc->firstTimeInit = kPlayBufferPreRoll;
+            return GST_FLOW_OK;
+            }
+       }
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) dsrc, "gst_devsound_src_create EXIT ",NULL);
     return GST_FLOW_OK;
     }
@@ -930,10 +943,12 @@ static GstStateChangeReturn gst_devsound_src_change_state (GstElement * element,
     {
     GstStateChangeReturn ret = GST_STATE_CHANGE_SUCCESS;
     GstDevsoundSrc *src= GST_DEVSOUND_SRC (element);
-    
+ 
     switch (transition) {
         
         case GST_STATE_CHANGE_PAUSED_TO_PLAYING:
+            if (src->firstTimeInit != kPlayed)
+            src->firstTimeInit = kPausedToPlaying;
             if(cmd == PAUSE)
                 {
                 cmd = RESUME;

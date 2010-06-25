@@ -4,166 +4,166 @@ DEFAULT
 PRJ_EXPORTS
 
 // interfaces
-../gst-libs/gst/interfaces/colorbalance.h			/epoc32/include/platform/mw/gstreamer/gst/interfaces/colorbalance.h
-../gst-libs/gst/interfaces/colorbalancechannel.h		/epoc32/include/platform/mw/gstreamer/gst/interfaces/colorbalancechannel.h
-../gst-libs/gst/interfaces/mixer.h				/epoc32/include/platform/mw/gstreamer/gst/interfaces/mixer.h
-../gst-libs/gst/interfaces/mixeroptions.h			/epoc32/include/platform/mw/gstreamer/gst/interfaces/mixeroptions.h
-../gst-libs/gst/interfaces/mixertrack.h				/epoc32/include/platform/mw/gstreamer/gst/interfaces/mixertrack.h
-../gst-libs/gst/interfaces/navigation.h				/epoc32/include/platform/mw/gstreamer/gst/interfaces/navigation.h
-../gst-libs/gst/interfaces/propertyprobe.h			/epoc32/include/platform/mw/gstreamer/gst/interfaces/propertyprobe.h
-../gst-libs/gst/interfaces/tuner.h				/epoc32/include/platform/mw/gstreamer/gst/interfaces/tuner.h
-../gst-libs/gst/interfaces/tunernorm.h				/epoc32/include/platform/mw/gstreamer/gst/interfaces/tunernorm.h
-../gst-libs/gst/interfaces/tunerchannel.h			/epoc32/include/platform/mw/gstreamer/gst/interfaces/tunerchannel.h
-../gst-libs/gst/interfaces/xoverlay.h				/epoc32/include/platform/mw/gstreamer/gst/interfaces/xoverlay.h
-../gst-libs/gst/interfaces/interfaces-enumtypes.h		/epoc32/include/platform/mw/gstreamer/gst/interfaces/interfaces-enumtypes.h
+../gst-libs/gst/interfaces/colorbalance.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/interfaces/colorbalance.h)
+../gst-libs/gst/interfaces/colorbalancechannel.h		MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/interfaces/colorbalancechannel.h)
+../gst-libs/gst/interfaces/mixer.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/interfaces/mixer.h)
+../gst-libs/gst/interfaces/mixeroptions.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/interfaces/mixeroptions.h)
+../gst-libs/gst/interfaces/mixertrack.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/interfaces/mixertrack.h)
+../gst-libs/gst/interfaces/navigation.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/interfaces/navigation.h)
+../gst-libs/gst/interfaces/propertyprobe.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/interfaces/propertyprobe.h)
+../gst-libs/gst/interfaces/tuner.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/interfaces/tuner.h)
+../gst-libs/gst/interfaces/tunernorm.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/interfaces/tunernorm.h)
+../gst-libs/gst/interfaces/tunerchannel.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/interfaces/tunerchannel.h)
+../gst-libs/gst/interfaces/xoverlay.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/interfaces/xoverlay.h)
+../gst-libs/gst/interfaces/interfaces-enumtypes.h		MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/interfaces/interfaces-enumtypes.h)
 
 // audio
-../gst-libs/gst/audio/audio.h					/epoc32/include/platform/mw/gstreamer/gst/audio/audio.h
-../gst-libs/gst/audio/gstaudioclock.h				/epoc32/include/platform/mw/gstreamer/gst/audio/gstaudioclock.h
-../gst-libs/gst/audio/gstaudiofilter.h				/epoc32/include/platform/mw/gstreamer/gst/audio/gstaudiofilter.h
-../gst-libs/gst/audio/gstaudiosink.h				/epoc32/include/platform/mw/gstreamer/gst/audio/gstaudiosink.h
-../gst-libs/gst/audio/gstaudiosrc.h				/epoc32/include/platform/mw/gstreamer/gst/audio/gstaudiosrc.h
-../gst-libs/gst/audio/gstbaseaudiosink.h			/epoc32/include/platform/mw/gstreamer/gst/audio/gstbaseaudiosink.h
-../gst-libs/gst/audio/gstbaseaudiosrc.h				/epoc32/include/platform/mw/gstreamer/gst/audio/gstbaseaudiosrc.h
-../gst-libs/gst/audio/gstringbuffer.h				/epoc32/include/platform/mw/gstreamer/gst/audio/gstringbuffer.h
-../gst-libs/gst/audio/mixerutils.h				/epoc32/include/platform/mw/gstreamer/gst/audio/mixerutils.h
-../gst-libs/gst/audio/multichannel.h				/epoc32/include/platform/mw/gstreamer/gst/audio/multichannel.h
-../gst-libs/gst/audio/audio-enumtypes.h			/epoc32/include/platform/mw/gstreamer/gst/audio/audio-enumtypes.h
+../gst-libs/gst/audio/audio.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audio/audio.h)
+../gst-libs/gst/audio/gstaudioclock.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audio/gstaudioclock.h)
+../gst-libs/gst/audio/gstaudiofilter.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audio/gstaudiofilter.h)
+../gst-libs/gst/audio/gstaudiosink.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audio/gstaudiosink.h)
+../gst-libs/gst/audio/gstaudiosrc.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audio/gstaudiosrc.h)
+../gst-libs/gst/audio/gstbaseaudiosink.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audio/gstbaseaudiosink.h)
+../gst-libs/gst/audio/gstbaseaudiosrc.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audio/gstbaseaudiosrc.h)
+../gst-libs/gst/audio/gstringbuffer.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audio/gstringbuffer.h)
+../gst-libs/gst/audio/mixerutils.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audio/mixerutils.h)
+../gst-libs/gst/audio/multichannel.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audio/multichannel.h)
+../gst-libs/gst/audio/audio-enumtypes.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audio/audio-enumtypes.h)
 
 // cdda
-//../gst-libs/gst/cdda/base64.h					/epoc32/include/platform/mw/gstreamer/gst/cdda/base64.h
-../gst-libs/gst/cdda/gstcddabasesrc.h				/epoc32/include/platform/mw/gstreamer/gst/cdda/gstcddabasesrc.h
+//../gst-libs/gst/cdda/base64.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/cdda/base64.h)
+../gst-libs/gst/cdda/gstcddabasesrc.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/cdda/gstcddabasesrc.h)
 
 // floatcast
-../gst-libs/gst/floatcast/floatcast.h				/epoc32/include/platform/mw/gstreamer/gst/floatcast/floatcast.h
+../gst-libs/gst/floatcast/floatcast.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/floatcast/floatcast.h)
 
 // riff
-../gst-libs/gst/riff/riff-ids.h					/epoc32/include/platform/mw/gstreamer/gst/riff/riff-ids.h
-../gst-libs/gst/riff/riff-media.h				/epoc32/include/platform/mw/gstreamer/gst/riff/riff-media.h
-../gst-libs/gst/riff/riff-read.h				/epoc32/include/platform/mw/gstreamer/gst/riff/riff-read.h
+../gst-libs/gst/riff/riff-ids.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/riff/riff-ids.h)
+../gst-libs/gst/riff/riff-media.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/riff/riff-media.h)
+../gst-libs/gst/riff/riff-read.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/riff/riff-read.h)
 
 //app
-../gst-libs/gst/app/gstappbuffer.h				/epoc32/include/platform/mw/gstreamer/gst/app/gstappbuffer.h
-../gst-libs/gst/app/gstappsink.h				/epoc32/include/platform/mw/gstreamer/gst/app/gstappsink.h
-../gst-libs/gst/app/gstappsrc.h					/epoc32/include/platform/mw/gstreamer/gst/app/gstappsrc.h
+../gst-libs/gst/app/gstappbuffer.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/app/gstappbuffer.h)
+../gst-libs/gst/app/gstappsink.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/app/gstappsink.h)
+../gst-libs/gst/app/gstappsrc.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/app/gstappsrc.h)
 // rtp
-../gst-libs/gst/rtp/gstbasertpdepayload.h			/epoc32/include/platform/mw/gstreamer/gst/rtp/gstbasertpdepayload.h
-../gst-libs/gst/rtp/gstbasertppayload.h				/epoc32/include/platform/mw/gstreamer/gst/rtp/gstbasertppayload.h
-../gst-libs/gst/rtp/gstrtpbuffer.h				/epoc32/include/platform/mw/gstreamer/gst/rtp/gstrtpbuffer.h
-../gst-libs/gst/rtp/gstbasertpaudiopayload.h			/epoc32/include/platform/mw/gstreamer/gst/rtp/gstbasertpaudiopayload.h
-../gst-libs/gst/rtp/gstrtcpbuffer.h				/epoc32/include/platform/mw/gstreamer/gst/rtp/gstrtcpbuffer.h
-../gst-libs/gst/rtp/gstrtppayloads.h				/epoc32/include/platform/mw/gstreamer/gst/rtp/gstrtppayloads.h
+../gst-libs/gst/rtp/gstbasertpdepayload.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/rtp/gstbasertpdepayload.h)
+../gst-libs/gst/rtp/gstbasertppayload.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/rtp/gstbasertppayload.h)
+../gst-libs/gst/rtp/gstrtpbuffer.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/rtp/gstrtpbuffer.h)
+../gst-libs/gst/rtp/gstbasertpaudiopayload.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/rtp/gstbasertpaudiopayload.h)
+../gst-libs/gst/rtp/gstrtcpbuffer.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/rtp/gstrtcpbuffer.h)
+../gst-libs/gst/rtp/gstrtppayloads.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/rtp/gstrtppayloads.h)
 
 // tag
-//../gst-libs/gst/tag/gsttageditingprivate.h			/epoc32/include/platform/mw/gstreamer/gst/tag/gsttageditingprivate.h
-../gst-libs/gst/tag/tag.h					/epoc32/include/platform/mw/gstreamer/gst/tag/tag.h
+//../gst-libs/gst/tag/gsttageditingprivate.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/tag/gsttageditingprivate.h)
+../gst-libs/gst/tag/tag.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/tag/tag.h)
 
 // netbuffer
-../gst-libs/gst/netbuffer/gstnetbuffer.h			/epoc32/include/platform/mw/gstreamer/gst/netbuffer/gstnetbuffer.h
+../gst-libs/gst/netbuffer/gstnetbuffer.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/netbuffer/gstnetbuffer.h)
 
 // video
-../gst-libs/gst/video/gstvideofilter.h				/epoc32/include/platform/mw/gstreamer/gst/video/gstvideofilter.h
-../gst-libs/gst/video/gstvideosink.h				/epoc32/include/platform/mw/gstreamer/gst/video/gstvideosink.h
-../gst-libs/gst/video/video.h					/epoc32/include/platform/mw/gstreamer/gst/video/video.h
-../gst-libs/gst/video/video-enumtypes.h					/epoc32/include/platform/mw/gstreamer/gst/video/video-enumtypes.h
+../gst-libs/gst/video/gstvideofilter.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/video/gstvideofilter.h)
+../gst-libs/gst/video/gstvideosink.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/video/gstvideosink.h)
+../gst-libs/gst/video/video.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/video/video.h)
+../gst-libs/gst/video/video-enumtypes.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/video/video-enumtypes.h)
 
 // adder
-//../gst/adder/gstadder.h						/epoc32/include/platform/mw/gstreamer/gst/adder/gstadder.h
+//../gst/adder/gstadder.h						MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/adder/gstadder.h)
 
 // audioconvert
-//../gst/audioconvert/audioconvert.h				/epoc32/include/platform/mw/gstreamer/gst/audioconvert/audioconvert.h
-//../gst/audioconvert/gstaudioconvert.h				/epoc32/include/platform/mw/gstreamer/gst/audioconvert/gstaudioconvert.h
-//../gst/audioconvert/gstchannelmix.h				/epoc32/include/platform/mw/gstreamer/gst/audioconvert/gstchannelmix.h
-//../gst/audioconvert/plugin.h					/epoc32/include/platform/mw/gstreamer/gst/audioconvert/plugin.h
+//../gst/audioconvert/audioconvert.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audioconvert/audioconvert.h)
+//../gst/audioconvert/gstaudioconvert.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audioconvert/gstaudioconvert.h)
+//../gst/audioconvert/gstchannelmix.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audioconvert/gstchannelmix.h)
+//../gst/audioconvert/plugin.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audioconvert/plugin.h)
 
 // audioresample
-//../gst/audioresample/buffer.h					/epoc32/include/platform/mw/gstreamer/gst/audioresample/buffer.h
-//../gst/audioresample/debug.h					/epoc32/include/platform/mw/gstreamer/gst/audioresample/debug.h
-//../gst/audioresample/functable.h				/epoc32/include/platform/mw/gstreamer/gst/audioresample/functable.h
-//../gst/audioresample/gstaudioresample.h				/epoc32/include/platform/mw/gstreamer/gst/audioresample/gstaudioresample.h
-//../gst/audioresample/resample.h					/epoc32/include/platform/mw/gstreamer/gst/audioresample/resample.h
+//../gst/audioresample/buffer.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audioresample/buffer.h)
+//../gst/audioresample/debug.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audioresample/debug.h)
+//../gst/audioresample/functable.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audioresample/functable.h)
+//../gst/audioresample/gstaudioresample.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audioresample/gstaudioresample.h)
+//../gst/audioresample/resample.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audioresample/resample.h)
 
 // audiotestsrc
-//../gst/audiotestsrc/gstaudiotestsrc.h				/epoc32/include/platform/mw/gstreamer/gst/audiotestsrc/gstaudiotestsrc.h
+//../gst/audiotestsrc/gstaudiotestsrc.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/audiotestsrc/gstaudiotestsrc.h)
 
 // ffmpegcolorspace
-//../gst/ffmpegcolorspace/avcodec.h				/epoc32/include/platform/mw/gstreamer/gst/ffmpegcolorspace/avcodec.h
-//../gst/ffmpegcolorspace/dsputil.h				/epoc32/include/platform/mw/gstreamer/gst/ffmpegcolorspace/dsputil.h
-//../gst/ffmpegcolorspace/gstffmpegcodecmap.h			/epoc32/include/platform/mw/gstreamer/gst/ffmpegcolorspace/gstffmpegcodecmap.h
-//../gst/ffmpegcolorspace/gstffmpegcolorspace.h			/epoc32/include/platform/mw/gstreamer/gst/ffmpegcolorspace/gstffmpegcolorspace.h
-//../gst/ffmpegcolorspace/imgconvert_template.h			/epoc32/include/platform/mw/gstreamer/gst/ffmpegcolorspace/imgconvert_template.h
+//../gst/ffmpegcolorspace/avcodec.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/ffmpegcolorspace/avcodec.h)
+//../gst/ffmpegcolorspace/dsputil.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/ffmpegcolorspace/dsputil.h)
+//../gst/ffmpegcolorspace/gstffmpegcodecmap.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/ffmpegcolorspace/gstffmpegcodecmap.h)
+//../gst/ffmpegcolorspace/gstffmpegcolorspace.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/ffmpegcolorspace/gstffmpegcolorspace.h)
+//../gst/ffmpegcolorspace/imgconvert_template.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/ffmpegcolorspace/imgconvert_template.h)
 
 // playback
-//../gst/playback/gstplay-marshal.h				/epoc32/include/platform/mw/gstreamer/gst/playback/gstplay-marshal.h
-//../gst/playback/gstplaybasebin.h				/epoc32/include/platform/mw/gstreamer/gst/playback/gstplaybasebin.h
-//../gst/playback/gststreaminfo.h					/epoc32/include/platform/mw/gstreamer/gst/playback/gststreaminfo.h
-//../gst/playback/gststreamselector.h				/epoc32/include/platform/mw/gstreamer/gst/playback/gststreamselector.h
+//../gst/playback/gstplay-marshal.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/playback/gstplay-marshal.h)
+//../gst/playback/gstplaybasebin.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/playback/gstplaybasebin.h)
+//../gst/playback/gststreaminfo.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/playback/gststreaminfo.h)
+//../gst/playback/gststreamselector.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/playback/gststreamselector.h)
 
 //pbutils
-../gst-libs/gst/pbutils/pbutils.h				/epoc32/include/platform/mw/gstreamer/gst/pbutils/pbutils.h
-../gst-libs/gst/pbutils/descriptions.h				/epoc32/include/platform/mw/gstreamer/gst/pbutils/descriptions.h
-../gst-libs/gst/pbutils/install-plugins.h			/epoc32/include/platform/mw/gstreamer/gst/pbutils/install-plugins.h
-../gst-libs/gst/pbutils/missing-plugins.h			/epoc32/include/platform/mw/gstreamer/gst/pbutils/missing-plugins.h
-../gst-libs/gst/pbutils/pbutils-enumtypes.h			/epoc32/include/platform/mw/gstreamer/gst/pbutils/pbutils-enumtypes.h
+../gst-libs/gst/pbutils/pbutils.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/pbutils/pbutils.h)
+../gst-libs/gst/pbutils/descriptions.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/pbutils/descriptions.h)
+../gst-libs/gst/pbutils/install-plugins.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/pbutils/install-plugins.h)
+../gst-libs/gst/pbutils/missing-plugins.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/pbutils/missing-plugins.h)
+../gst-libs/gst/pbutils/pbutils-enumtypes.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/pbutils/pbutils-enumtypes.h)
 
 // subparse
-//../gst/subparse/gstssaparse.h					/epoc32/include/platform/mw/gstreamer/gst/subparse/gstssaparse.h
-//../gst/subparse/gstsubparse.h					/epoc32/include/platform/mw/gstreamer/gst/subparse/gstsubparse.h
-//../gst/subparse/samiparse.h					/epoc32/include/platform/mw/gstreamer/gst/subparse/samiparse.h
+//../gst/subparse/gstssaparse.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/subparse/gstssaparse.h)
+//../gst/subparse/gstsubparse.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/subparse/gstsubparse.h)
+//../gst/subparse/samiparse.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/subparse/samiparse.h)
 
 // tcp
-//../gst/tcp/gstmultifdsink.h					/epoc32/include/platform/mw/gstreamer/gst/tcp/gstmultifdsink.h
-//../gst/tcp/gsttcp-enumtypes.h					/epoc32/include/platform/mw/gstreamer/gst/tcp/gsttcp-enumtypes.h
-//../gst/tcp/gsttcp-marshal.h					/epoc32/include/platform/mw/gstreamer/gst/tcp/gsttcp-marshal.h
-//../gst/tcp/gsttcp.h						/epoc32/include/platform/mw/gstreamer/gst/tcp/gsttcp.h
-//../gst/tcp/gsttcpclientsink.h					/epoc32/include/platform/mw/gstreamer/gst/tcp/gsttcpclientsink.h
-//../gst/tcp/gsttcpclientsrc.h					/epoc32/include/platform/mw/gstreamer/gst/tcp/gsttcpclientsrc.h
-//../gst/tcp/gsttcpplugin.h					/epoc32/include/platform/mw/gstreamer/gst/tcp/gsttcpplugin.h
-//../gst/tcp/gsttcpserversink.h					/epoc32/include/platform/mw/gstreamer/gst/tcp/gsttcpserversink.h
-//../gst/tcp/gsttcpserversrc.h					/epoc32/include/platform/mw/gstreamer/gst/tcp/gsttcpserversrc.h
+//../gst/tcp/gstmultifdsink.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/tcp/gstmultifdsink.h)
+//../gst/tcp/gsttcp-enumtypes.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/tcp/gsttcp-enumtypes.h)
+//../gst/tcp/gsttcp-marshal.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/tcp/gsttcp-marshal.h)
+//../gst/tcp/gsttcp.h						MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/tcp/gsttcp.h)
+//../gst/tcp/gsttcpclientsink.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/tcp/gsttcpclientsink.h)
+//../gst/tcp/gsttcpclientsrc.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/tcp/gsttcpclientsrc.h)
+//../gst/tcp/gsttcpplugin.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/tcp/gsttcpplugin.h)
+//../gst/tcp/gsttcpserversink.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/tcp/gsttcpserversink.h)
+//../gst/tcp/gsttcpserversrc.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/tcp/gsttcpserversrc.h)
 
 // videorate
-//../gst/videorate/gstvideorate.h					/epoc32/include/platform/mw/gstreamer/gst/videorate/gstvideorate.h
+//../gst/videorate/gstvideorate.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/videorate/gstvideorate.h)
 
 // videoscale
-//../gst/videoscale/gstvideoscale.h				/epoc32/include/platform/mw/gstreamer/gst/videoscale/gstvideoscale.h
-//../gst/videoscale/vs_image.h					/epoc32/include/platform/mw/gstreamer/gst/videoscale/vs_image.h
-//../gst/videoscale/vs_scanline.h					/epoc32/include/platform/mw/gstreamer/gst/videoscale/vs_scanline.h
+//../gst/videoscale/gstvideoscale.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/videoscale/gstvideoscale.h)
+//../gst/videoscale/vs_image.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/videoscale/vs_image.h)
+//../gst/videoscale/vs_scanline.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/videoscale/vs_scanline.h)
 
 // videotestsrc
-//../gst/videotestsrc/gstvideotestsrc.h				/epoc32/include/platform/mw/gstreamer/gst/videotestsrc/gstvideotestsrc.h
-//../gst/videotestsrc/videotestsrc.h				/epoc32/include/platform/mw/gstreamer/gst/videotestsrc/videotestsrc.h
+//../gst/videotestsrc/gstvideotestsrc.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/videotestsrc/gstvideotestsrc.h)
+//../gst/videotestsrc/videotestsrc.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/videotestsrc/videotestsrc.h)
 
 // volume
-//../gst/volume/gstvolume.h					/epoc32/include/platform/mw/gstreamer/gst/volume/gstvolume.h
+//../gst/volume/gstvolume.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/volume/gstvolume.h)
 
 //liboil   - Since liboil port is available, No need to use liboil stub.
-//../gst/oil/liboil.h       															/epoc32/include/platform/mw/gstreamer/gst/liboil.h
+//../gst/oil/liboil.h       															MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/liboil.h)
 
 // fft
-//../gst-libs/gst/fft/_kiss_fft_guts_f32.h			/epoc32/include/platform/mw/gstreamer/gst/fft/_kiss_fft_guts_f32.h
-//../gst-libs/gst/fft/_kiss_fft_guts_f64.h			/epoc32/include/platform/mw/gstreamer/gst/fft/_kiss_fft_guts_f64.h
-//../gst-libs/gst/fft/_kiss_fft_guts_s16.h			/epoc32/include/platform/mw/gstreamer/gst/fft/_kiss_fft_guts_s16.h
-//../gst-libs/gst/fft/_kiss_fft_guts_s32.h			/epoc32/include/platform/mw/gstreamer/gst/fft/_kiss_fft_guts_s32.h
-../gst-libs/gst/fft/gstfft.h					/epoc32/include/platform/mw/gstreamer/gst/fft/gstfft.h
-../gst-libs/gst/fft/gstfftf32.h					/epoc32/include/platform/mw/gstreamer/gst/fft/gstfftf32.h
-../gst-libs/gst/fft/gstfftf64.h					/epoc32/include/platform/mw/gstreamer/gst/fft/gstfftf64.h
-../gst-libs/gst/fft/gstffts16.h					/epoc32/include/platform/mw/gstreamer/gst/fft/gstffts16.h
-../gst-libs/gst/fft/gstffts32.h					/epoc32/include/platform/mw/gstreamer/gst/fft/gstffts32.h
-//../gst-libs/gst/fft/kiss_fft_f32.h				/epoc32/include/platform/mw/gstreamer/gst/fft/kiss_fft_f32.h
-//../gst-libs/gst/fft/kiss_fft_f64.h				/epoc32/include/platform/mw/gstreamer/gst/fft/kiss_fft_f64.h
-//../gst-libs/gst/fft/kiss_fft_s16.h				/epoc32/include/platform/mw/gstreamer/gst/fft/kiss_fft_s16.h
-//../gst-libs/gst/fft/kiss_fft_s32.h				/epoc32/include/platform/mw/gstreamer/gst/fft/kiss_fft_s32.h
-//../gst-libs/gst/fft/kiss_fftr_f32.h				/epoc32/include/platform/mw/gstreamer/gst/fft/kiss_fftr_f32.h
-//../gst-libs/gst/fft/kiss_fftr_f64.h				/epoc32/include/platform/mw/gstreamer/gst/fft/kiss_fftr_f64.h
-//../gst-libs/gst/fft/kiss_fftr_s16.h													/epoc32/include/platform/mw/gstreamer/gst/fft/kiss_fftr_s16.h
-//../gst-libs/gst/fft/kiss_fftr_s32.h				/epoc32/include/platform/mw/gstreamer/gst/fft/kiss_fftr_s32.h
+//../gst-libs/gst/fft/_kiss_fft_guts_f32.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/fft/_kiss_fft_guts_f32.h)
+//../gst-libs/gst/fft/_kiss_fft_guts_f64.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/fft/_kiss_fft_guts_f64.h)
+//../gst-libs/gst/fft/_kiss_fft_guts_s16.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/fft/_kiss_fft_guts_s16.h)
+//../gst-libs/gst/fft/_kiss_fft_guts_s32.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/fft/_kiss_fft_guts_s32.h)
+../gst-libs/gst/fft/gstfft.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/fft/gstfft.h)
+../gst-libs/gst/fft/gstfftf32.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/fft/gstfftf32.h)
+../gst-libs/gst/fft/gstfftf64.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/fft/gstfftf64.h)
+../gst-libs/gst/fft/gstffts16.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/fft/gstffts16.h)
+../gst-libs/gst/fft/gstffts32.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/fft/gstffts32.h)
+//../gst-libs/gst/fft/kiss_fft_f32.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/fft/kiss_fft_f32.h)
+//../gst-libs/gst/fft/kiss_fft_f64.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/fft/kiss_fft_f64.h)
+//../gst-libs/gst/fft/kiss_fft_s16.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/fft/kiss_fft_s16.h)
+//../gst-libs/gst/fft/kiss_fft_s32.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/fft/kiss_fft_s32.h)
+//../gst-libs/gst/fft/kiss_fftr_f32.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/fft/kiss_fftr_f32.h)
+//../gst-libs/gst/fft/kiss_fftr_f64.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/fft/kiss_fftr_f64.h)
+//../gst-libs/gst/fft/kiss_fftr_s16.h													MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/fft/kiss_fftr_s16.h)
+//../gst-libs/gst/fft/kiss_fftr_s32.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/fft/kiss_fftr_s32.h)
 
 //internationalization macros
-//../gst-libs/gst/gst-i18n-plugin.h  				/epoc32/include/platform/mw/gstreamer/gst/gst-i18n-plugin.h
+//../gst-libs/gst/gst-i18n-plugin.h  				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gst-i18n-plugin.h)
 
 //avcodec
-//../gst/ffmpegcolorspace/avcodec.h  				/epoc32/include/platform/mw/gstreamer/gst/avcodec.h
+//../gst/ffmpegcolorspace/avcodec.h  				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/avcodec.h)
 
 
 PRJ_MMPFILES

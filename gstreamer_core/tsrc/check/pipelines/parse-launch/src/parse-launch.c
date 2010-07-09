@@ -457,6 +457,7 @@ run_delayed_test (const gchar * pipe_str, const gchar * peer,
 
 void delayed_link()
 {
+    GstElement* pa;
    xmlfile = "delayed_link";
    std_log(LOG_FILENAME_LINE, "Test Started delayed_link");
    fail_unless (gst_element_register (NULL, "parsetestelement",
@@ -466,6 +467,10 @@ void delayed_link()
    * a test element based on bin, which contains a fakesrc and a sometimes 
    * pad-template, and trying to link to a fakesink. When the bin transitions
    * to paused it adds a pad, which should get linked to the fakesink */
+   
+   pa = gst_element_factory_make ("parsetestelement", NULL);
+   gst_object_unref (pa);
+   //g_free (pa);
   run_delayed_test
       ("parsetestelement name=src ! fakesink silent=true name=sink", "sink",
       TRUE);

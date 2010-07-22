@@ -29,10 +29,10 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "check.h"
+
 
 #include "libgstreamer_wsd_solution.h" 
-
+#include <check.h>
 #include <gst/gst.h>
 
 G_BEGIN_DECLS

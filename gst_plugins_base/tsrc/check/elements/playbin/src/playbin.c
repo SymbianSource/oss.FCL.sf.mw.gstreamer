@@ -879,6 +879,7 @@ gst_codec_src_init_type (GType type)
 typedef GstPushSrc GstCodecSrc;
 typedef GstPushSrcClass GstCodecSrcClass;
 
+
 GST_BOILERPLATE_FULL (GstCodecSrc, gst_codec_src, GstPushSrc,
     GST_TYPE_PUSH_SRC, gst_codec_src_init_type);
 

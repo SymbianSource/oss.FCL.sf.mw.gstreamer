@@ -921,7 +921,9 @@ gst_registry_scan_path_level (GstRegistry * registry, const gchar * path,
     
     arglist++;
     /// get the full path of DLL 
-    filename = libgstreamer_get_dll_path( filename );    
+    filename = libgstreamer_get_dll_path( filename );   
+    if( !filename ) 
+    	continue;
 #endif    
     if (g_stat (filename, &file_status) < 0) {
       /* Plugin will be removed from cache after the scan completes if it

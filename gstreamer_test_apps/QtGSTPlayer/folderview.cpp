@@ -118,11 +118,6 @@ void FolderView::folderViewTriggered()
     mainWindow()->setCurrentView(Views::folderView());
 }
 
-/*void FolderView::settingsViewTriggered()
-{
-    mainWindow()->setCurrentView(Views::settingsView());
-}*/
-
 void FolderView::showNote(const int err)
 {
     if(err)

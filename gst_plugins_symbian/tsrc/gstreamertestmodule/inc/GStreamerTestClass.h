@@ -468,6 +468,7 @@ NONSHARABLE_CLASS(CGStreamerTestClass) : public CScriptBase,
 		TInt SetMainLoopRun( CStifItemParser& aItem );
 		TInt GetConfigureData();
 		TInt SetConfigureData();
+		TInt PlayBack( CStifItemParser& aItem );
 
 
     

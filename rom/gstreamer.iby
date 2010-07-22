@@ -29,6 +29,7 @@
 #define GSTREAMER_IBY
 
 #include <bldvariant.hrh>
+#include <liboil.iby>
 
 #ifdef FF_GSTREAMER
 
@@ -47,7 +48,6 @@ file=ABI_DIR\BUILD_DIR\libgstreamer.dll             SHARED_LIB_DIR\libgstreamer.
 file=ABI_DIR\BUILD_DIR\libgstriff.dll               SHARED_LIB_DIR\libgstriff.dll
 file=ABI_DIR\BUILD_DIR\libgsttag.dll                SHARED_LIB_DIR\libgsttag.dll
 file=ABI_DIR\BUILD_DIR\libgstvideo.dll              SHARED_LIB_DIR\libgstvideo.dll
-file=ABI_DIR\BUILD_DIR\libgstphotography.dll        SHARED_LIB_DIR\libgstphotography.dll
 //file=ABI_DIR\BUILD_DIR\libgstvideorate.dll        SHARED_LIB_DIR\libgstvideorate.dll
 //file=ABI_DIR\BUILD_DIR\libgstvideoscale.dll       SHARED_LIB_DIR\libgstvideoscale.dll
 //file=ABI_DIR\BUILD_DIR\libgstvideotestsrc.dll     SHARED_LIB_DIR\libgstvideotestsrc.dll
@@ -77,11 +77,13 @@ file=ABI_DIR\BUILD_DIR\libgstsubparse.dll           SHARED_LIB_DIR\libgstsubpars
 file=ABI_DIR\BUILD_DIR\libgstrtp.dll                SHARED_LIB_DIR\libgstrtp.dll
 file=ABI_DIR\BUILD_DIR\libgstgdp.dll                SHARED_LIB_DIR\libgstgdp.dll
 file=ABI_DIR\BUILD_DIR\libgstvolume.dll             SHARED_LIB_DIR\libgstvolume.dll
+file=ABI_DIR\BUILD_DIR\libgstmpegaudioparse.dll     SHARED_LIB_DIR\libgstmpegaudioparse.dll
+file=ABI_DIR\BUILD_DIR\libgstnokiaaacdec.dll        SHARED_LIB_DIR\libgstnokiaaacdec.dll
+file=ABI_DIR\BUILD_DIR\libgstqtdemux.dll            SHARED_LIB_DIR\libgstqtdemux.dll
 file=ABI_DIR\BUILD_DIR\libgstamrmux.dll             SHARED_LIB_DIR\libgstamrmux.dll
-file=ABI_DIR\BUILD_DIR\libgstnokiaaacenc.dll        SHARED_LIB_DIR\libgstnokiaaacenc.dll
 file=ABI_DIR\BUILD_DIR\gstqtmux.dll                 SHARED_LIB_DIR\gstqtmux.dll
+file=ABI_DIR\BUILD_DIR\libgstnokiaaacenc.dll        SHARED_LIB_DIR\libgstnokiaaacenc.dll
 file=ABI_DIR\BUILD_DIR\GstAudioRecordBin.dll        SHARED_LIB_DIR\GstAudioRecordBin.dll
-//file=ABI_DIR\BUILD_DIR\liboil.dll                   SHARED_LIB_DIR\liboil.dll
 
 //GStreamer_Stub
 data=ZSYSTEM\install\gstreamer_stub.sis             System\Install\gstreamer_stub.sis

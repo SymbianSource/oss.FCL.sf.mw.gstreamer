@@ -44,7 +44,7 @@
 #include <glib-object.h>
 #include <gst/gst.h>
 
-#include "gstcontrolsource.h"
+#include "gst/controller/gstcontrolsource.h"
 
 #define GST_CAT_DEFAULT controller_debug
 GST_DEBUG_CATEGORY_EXTERN (GST_CAT_DEFAULT);

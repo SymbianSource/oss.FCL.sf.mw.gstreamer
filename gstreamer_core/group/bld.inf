@@ -25,93 +25,93 @@ PRJ_PLATFORMS
 DEFAULT
 
 PRJ_EXPORTS
-../gst/glib-compat.h					/sf/mw/gstreamer/include/gstreamer/gst/glib-compat.h
-../gst/gstbin.h						/sf/mw/gstreamer/include/gstreamer/gst/gstbin.h
-../gst/gstbuffer.h					/sf/mw/gstreamer/include/gstreamer/gst/gstbuffer.h
-../gst/gstbus.h						/sf/mw/gstreamer/include/gstreamer/gst/gstbus.h
-../gst/gstcaps.h					/sf/mw/gstreamer/include/gstreamer/gst/gstcaps.h
-../gst/gstchildproxy.h					/sf/mw/gstreamer/include/gstreamer/gst/gstchildproxy.h
-../gst/gstclock.h					/sf/mw/gstreamer/include/gstreamer/gst/gstclock.h
-../gst/gstcompat.h					/sf/mw/gstreamer/include/gstreamer/gst/gstcompat.h
-../gst/gstconfig.h					/sf/mw/gstreamer/include/gstreamer/gst/gstconfig.h
-../gst/gstelementfactory.h 				/sf/mw/gstreamer/include/gstreamer/gst/gstelementfactory.h
-../gst/gstelement.h					/sf/mw/gstreamer/include/gstreamer/gst/gstelement.h
-../gst/gstenumtypes.h					/sf/mw/gstreamer/include/gstreamer/gst/gstenumtypes.h
-../gst/gsterror.h					/sf/mw/gstreamer/include/gstreamer/gst/gsterror.h
-../gst/gstevent.h					/sf/mw/gstreamer/include/gstreamer/gst/gstevent.h
-../gst/gstfilter.h					/sf/mw/gstreamer/include/gstreamer/gst/gstfilter.h
-../gst/gstformat.h					/sf/mw/gstreamer/include/gstreamer/gst/gstformat.h
-../gst/gstghostpad.h					/sf/mw/gstreamer/include/gstreamer/gst/gstghostpad.h
-../gst/gst.h						/sf/mw/gstreamer/include/gstreamer/gst/gst.h
-../gst/gstindexfactory.h   				/sf/mw/gstreamer/include/gstreamer/gst/gstindexfactory.h
-../gst/gstindex.h					/sf/mw/gstreamer/include/gstreamer/gst/gstindex.h
-../gst/gst_private.h					/sf/mw/gstreamer/include/gstreamer/gst/gst_private.h
-../gst/gst-i18n-lib.h					/sf/mw/gstreamer/include/gstreamer/gst/gst-i18n-lib.h
-../gst/gstinfo.h					/sf/mw/gstreamer/include/gstreamer/gst/gstinfo.h
-../gst/gstinterface.h					/sf/mw/gstreamer/include/gstreamer/gst/gstinterface.h
-../gst/gstiterator.h					/sf/mw/gstreamer/include/gstreamer/gst/gstiterator.h
-../gst/gstmacros.h					/sf/mw/gstreamer/include/gstreamer/gst/gstmacros.h
-../gst/gstmarshal.h					/sf/mw/gstreamer/include/gstreamer/gst/gstmarshal.h
-../gst/gstmessage.h					/sf/mw/gstreamer/include/gstreamer/gst/gstmessage.h
-../gst/gstminiobject.h					/sf/mw/gstreamer/include/gstreamer/gst/gstminiobject.h
-../gst/gstobject.h					/sf/mw/gstreamer/include/gstreamer/gst/gstobject.h
-../gst/gstpad.h						/sf/mw/gstreamer/include/gstreamer/gst/gstpad.h
-../gst/gstpadtemplate.h					/sf/mw/gstreamer/include/gstreamer/gst/gstpadtemplate.h
-../gst/gstparse.h					/sf/mw/gstreamer/include/gstreamer/gst/gstparse.h
-../gst/gstpipeline.h					/sf/mw/gstreamer/include/gstreamer/gst/gstpipeline.h
-../gst/gstpluginfeature.h  				/sf/mw/gstreamer/include/gstreamer/gst/gstpluginfeature.h
-../gst/gstplugin.h					/sf/mw/gstreamer/include/gstreamer/gst/gstplugin.h
-../gst/gstquery.h					/sf/mw/gstreamer/include/gstreamer/gst/gstquery.h
-../gst/gstregistry.h					/sf/mw/gstreamer/include/gstreamer/gst/gstregistry.h
-../gst/gstsegment.h					/sf/mw/gstreamer/include/gstreamer/gst/gstsegment.h
-../gst/gststructure.h					/sf/mw/gstreamer/include/gstreamer/gst/gststructure.h
-../gst/gstsystemclock.h					/sf/mw/gstreamer/include/gstreamer/gst/gstsystemclock.h
-../gst/gsttaglist.h					/sf/mw/gstreamer/include/gstreamer/gst/gsttaglist.h
-../gst/gsttagsetter.h					/sf/mw/gstreamer/include/gstreamer/gst/gsttagsetter.h
-../gst/gsttask.h					/sf/mw/gstreamer/include/gstreamer/gst/gsttask.h
-../gst/gsttrace.h					/sf/mw/gstreamer/include/gstreamer/gst/gsttrace.h
-../gst/gsttypefindfactory.h 				/sf/mw/gstreamer/include/gstreamer/gst/gsttypefindfactory.h
-../gst/gsttypefind.h					/sf/mw/gstreamer/include/gstreamer/gst/gsttypefind.h
-../gst/gsturi.h						/sf/mw/gstreamer/include/gstreamer/gst/gsturi.h
-../gst/gstutils.h					/sf/mw/gstreamer/include/gstreamer/gst/gstutils.h
-../gst/gstvalue.h					/sf/mw/gstreamer/include/gstreamer/gst/gstvalue.h
-../gst/gstversion.h					/sf/mw/gstreamer/include/gstreamer/gst/gstversion.h
-../gst/gstxml.h						/sf/mw/gstreamer/include/gstreamer/gst/gstxml.h
-../gst/gst_global.h					/sf/mw/gstreamer/include/gstreamer/gst/gst_global.h
+../gst/glib-compat.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/glib-compat.h)
+../gst/gstbin.h						MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstbin.h)
+../gst/gstbuffer.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstbuffer.h)
+../gst/gstbus.h						MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstbus.h)
+../gst/gstcaps.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstcaps.h)
+../gst/gstchildproxy.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstchildproxy.h)
+../gst/gstclock.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstclock.h)
+../gst/gstcompat.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstcompat.h)
+../gst/gstconfig.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstconfig.h)
+../gst/gstelementfactory.h 				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstelementfactory.h)
+../gst/gstelement.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstelement.h)
+../gst/gstenumtypes.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstenumtypes.h )
+../gst/gsterror.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gsterror.h )
+../gst/gstevent.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstevent.h )
+../gst/gstfilter.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstfilter.h )
+../gst/gstformat.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstformat.h )
+../gst/gstghostpad.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstghostpad.h )
+../gst/gst.h						MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gst.h )
+../gst/gstindexfactory.h   				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstindexfactory.h )
+../gst/gstindex.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstindex.h )
+//../gst/gst_private.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gst_private.h )
+//../gst/gst-i18n-lib.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gst-i18n-lib.h )
+../gst/gstinfo.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstinfo.h )
+../gst/gstinterface.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstinterface.h )
+../gst/gstiterator.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstiterator.h )
+../gst/gstmacros.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstmacros.h )
+../gst/gstmarshal.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstmarshal.h )
+../gst/gstmessage.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstmessage.h )
+../gst/gstminiobject.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstminiobject.h )
+../gst/gstobject.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstobject.h )
+../gst/gstpad.h						MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstpad.h )
+../gst/gstpadtemplate.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstpadtemplate.h )
+../gst/gstparse.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstparse.h )
+../gst/gstpipeline.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstpipeline.h )
+../gst/gstpluginfeature.h  				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstpluginfeature.h )
+../gst/gstplugin.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstplugin.h )
+../gst/gstquery.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstquery.h )
+../gst/gstregistry.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstregistry.h )
+../gst/gstsegment.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstsegment.h )
+../gst/gststructure.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gststructure.h )
+../gst/gstsystemclock.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstsystemclock.h )
+../gst/gsttaglist.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gsttaglist.h )
+../gst/gsttagsetter.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gsttagsetter.h )
+../gst/gsttask.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gsttask.h )
+../gst/gsttrace.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gsttrace.h )
+../gst/gsttypefindfactory.h 				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gsttypefindfactory.h )
+../gst/gsttypefind.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gsttypefind.h )
+../gst/gsturi.h						MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gsturi.h )
+../gst/gstutils.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstutils.h )
+../gst/gstvalue.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstvalue.h )
+../gst/gstversion.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstversion.h )
+../gst/gstxml.h						MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstxml.h )
+../gst/gst_global.h					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gst_global.h )
 
-../gst/gstdebugutils.h 					/sf/mw/gstreamer/include/gstreamer/gst/gstdebugutils.h
-../gst/gstparamspecs.h 					/sf/mw/gstreamer/include/gstreamer/gst/gstparamspecs.h
-../gst/gstpoll.h 					/sf/mw/gstreamer/include/gstreamer/gst/gstpoll.h
-../gst/gstregistrybinary.h 				/sf/mw/gstreamer/include/gstreamer/gst/gstregistrybinary.h
-../gst/gstpreset.h 				/sf/mw/gstreamer/include/gstreamer/gst/gstpreset.h
-../gst/gstbufferlist.h 				/sf/mw/gstreamer/include/gstreamer/gst/gstbufferlist.h
-../gst/gsttaskpool.h 				/sf/mw/gstreamer/include/gstreamer/gst/gsttaskpool.h
+../gst/gstdebugutils.h 					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstdebugutils.h )
+../gst/gstparamspecs.h 					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstparamspecs.h )
+../gst/gstpoll.h 					MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstpoll.h )
+../gst/gstregistrybinary.h 				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstregistrybinary.h )
+../gst/gstpreset.h 				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstpreset.h )
+../gst/gstbufferlist.h 				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gstbufferlist.h )
+../gst/gsttaskpool.h 				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/gsttaskpool.h )
 
 //libs
 
 //base
-../libs/gst/base/gstadapter.h				/sf/mw/gstreamer/include/gstreamer/gst/base/gstadapter.h					
-../libs/gst/base/gstbasesink.h				/sf/mw/gstreamer/include/gstreamer/gst/base/gstbasesink.h
-../libs/gst/base/gstbasesrc.h				/sf/mw/gstreamer/include/gstreamer/gst/base/gstbasesrc.h
-../libs/gst/base/gstbasetransform.h			/sf/mw/gstreamer/include/gstreamer/gst/base/gstbasetransform.h
-../libs/gst/base/gstcollectpads.h			/sf/mw/gstreamer/include/gstreamer/gst/base/gstcollectpads.h
-../libs/gst/base/gstpushsrc.h				/sf/mw/gstreamer/include/gstreamer/gst/base/gstpushsrc.h
-../libs/gst/base/gsttypefindhelper.h  			/sf/mw/gstreamer/include/gstreamer/gst/base/gsttypefindhelper.h
-../libs/gst/base/gstdataqueue.h       			/sf/mw/gstreamer/include/gstreamer/gst/base/gstdataqueue.h
+../libs/gst/base/gstadapter.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/base/gstadapter.h )					
+../libs/gst/base/gstbasesink.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/base/gstbasesink.h )
+../libs/gst/base/gstbasesrc.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/base/gstbasesrc.h )
+../libs/gst/base/gstbasetransform.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/base/gstbasetransform.h )
+../libs/gst/base/gstcollectpads.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/base/gstcollectpads.h )
+../libs/gst/base/gstpushsrc.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/base/gstpushsrc.h )
+../libs/gst/base/gsttypefindhelper.h  			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/base/gsttypefindhelper.h )
+../libs/gst/base/gstdataqueue.h       			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/base/gstdataqueue.h )
 
 //controller  rj
-../libs/gst/controller/gstcontroller.h			/sf/mw/gstreamer/include/gstreamer/gst/controller/gstcontroller.h
-../libs/gst/controller/gstcontrolsource.h		/sf/mw/gstreamer/include/gstreamer/gst/controller/gstcontrolsource.h
-../libs/gst/controller/gstinterpolationcontrolsource.h	/sf/mw/gstreamer/include/gstreamer/gst/controller/gstinterpolationcontrolsource.h
+../libs/gst/controller/gstcontroller.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/controller/gstcontroller.h )
+../libs/gst/controller/gstcontrolsource.h		MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/controller/gstcontrolsource.h )
+../libs/gst/controller/gstinterpolationcontrolsource.h	MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/controller/gstinterpolationcontrolsource.h )
 
 //dataprotocol
-../libs/gst/dataprotocol/dataprotocol.h	 		/sf/mw/gstreamer/include/gstreamer/gst/dataprotocol/dataprotocol.h
+../libs/gst/dataprotocol/dataprotocol.h	 		MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/dataprotocol/dataprotocol.h )
 
 //net
-../libs/gst/net/gstnetclientclock.h			/sf/mw/gstreamer/include/gstreamer/gst/net/gstnetclientclock.h
-../libs/gst/net/gstnet.h				/sf/mw/gstreamer/include/gstreamer/gst/net/gstnet.h
-../libs/gst/net/gstnettimepacket.h  			/sf/mw/gstreamer/include/gstreamer/gst/net/gstnettimepacket.h
-../libs/gst/net/gstnettimeprovider.h			/sf/mw/gstreamer/include/gstreamer/gst/net/gstnettimeprovider.h
+../libs/gst/net/gstnetclientclock.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/net/gstnetclientclock.h )
+../libs/gst/net/gstnet.h				MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/net/gstnet.h )
+../libs/gst/net/gstnettimepacket.h  			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/net/gstnettimepacket.h )
+../libs/gst/net/gstnettimeprovider.h			MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/net/gstnettimeprovider.h )
 
 
 
@@ -125,5 +125,6 @@ gstnet.mmp
 gstelements.mmp
 gstindexers.mmp
 
-
+// GST tools
+#include "../tools/group/bld.inf"
 					

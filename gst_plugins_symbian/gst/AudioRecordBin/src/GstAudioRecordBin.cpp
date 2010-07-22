@@ -29,6 +29,10 @@
 #include <stdlib.h>
 
 GST_DEBUG_CATEGORY_STATIC (aud_recbin_cat);     // define category (statically)
+#ifdef GST_CAT_DEFAULT
+#undef GST_CAT_DEFAULT
+#endif
+
 #define GST_CAT_DEFAULT aud_recbin_cat     // set as default
 
 /** Macro to enable weak ref monitoring, used to track
@@ -56,9 +60,10 @@ typedef struct
     /** The caps expected to be supported by a src pad */
     GstCaps* srcCaps;
 } FilterData;
-
+#ifdef ENABLE_CAPS_FILTER
 /** Create the capability filter */
 static GstElement* sCreateCapsFilter( GstCaps* encCaps);
+#endif
 
 /** Creates the element , which accepts \a sinkcaps and 
  * provides \a srccaps on the src pad */
@@ -537,6 +542,7 @@ CLEANUP:
         gst_object_unref( encbin );
     return NULL;
 }
+#ifdef ENABLE_CAPS_FILTER
 /** Create the caps filter */
 GstElement* sCreateCapsFilter( GstCaps* encCaps)
 {
@@ -552,7 +558,7 @@ GstElement* sCreateCapsFilter( GstCaps* encCaps)
 
     return audiofilter;
 }
-
+#endif
 /** Create a filter, which accepts \a encCaps on sink pad and 
  * provides \a muxCaps on the src pad */
 GstElement* sCreateCompatibleFilter(GstFactoryListType type,

@@ -2,8 +2,6 @@ PRJ_PLATFORMS
 default
 
 PRJ_EXPORTS
-../gst-libs/gst/interfaces/photography.h  /sf/mw/gstreamer/include/gstreamer/gst/interfaces/photography.h
-../gst-libs/gst/interfaces/photography-enumtypes.h  /sf/mw/gstreamer/include/gstreamer/gst/interfaces/photography-enumtypes.h
 
 PRJ_MMPFILES
 gstwavparse.mmp
@@ -11,6 +9,5 @@ gstwavenc.mmp
 gstautodetect.mmp
 gstavi.mmp
 gstqtmux.mmp
-gstphotography.mmp
-gstcamerabin.mmp
-
+gstqtdemux.mmp
+gstmpegaudioparse.mmp

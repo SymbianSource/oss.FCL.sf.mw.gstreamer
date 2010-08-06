@@ -87,7 +87,7 @@ class DevSoundWrapperSrc :public MDevSoundObserver
 public:
 	CActiveListener	*AL;
 	CActiveScheduler *as;
-	TInt init_complete;
+	//TInt init_complete;
 	CMMFBuffer *buffer;
 	CMMFDevSound    *dev_sound;
 	TMMFCapabilities caps;
@@ -99,6 +99,7 @@ public:
   	int bufferreadpos;
   	guint* supportedbitrates;
   	int iSamplesRecorded;
+  	TUint speechbitrate;
     CSpeechEncoderConfig* iSpeechEncoderConfig;
     CG711EncoderIntfc*    iG711EncoderIntfc;
     CG729EncoderIntfc*    iG729EncoderIntfc;
@@ -177,7 +178,10 @@ extern "C" {
     int set_ilbc_encoder_mode(DevSoundWrapperSrc *handle,enum TIlbcEncodeMode aEncodeMode);
     int set_ilbc_vad_mode(DevSoundWrapperSrc *handle,gboolean aVadMode);
     int get_ilbc_vad_mode(DevSoundWrapperSrc *handle,gboolean* aVadMode);
-
+    void update_devsound_speech_bitrate(DevSoundWrapperSrc *handle, TUint bitrate);
+    
+    /// getting the call back error 
+    int call_back_error(DevSoundWrapperSrc* dsPtr);
 
 #ifdef __cplusplus
 }//extern c

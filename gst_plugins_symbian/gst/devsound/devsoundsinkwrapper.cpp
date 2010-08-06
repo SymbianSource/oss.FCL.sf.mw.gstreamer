@@ -284,6 +284,10 @@ int resume_devsound(GstDevsoundSink *ds)
 int close_devsound(GstDevsoundSink *ds)
     {
     TRACE_PRN_FN_ENT;
+    CMMFDevSound    *dev_sound = 0;
+    dev_sound = (STATIC_CAST(DevSoundWrapper*, ds->handle))->dev_sound;
+    dev_sound->Stop();
+    delete dev_sound;
 
     g_list_foreach(ds->fmt, (GFunc) g_free, NULL);
     g_list_free(ds->fmt);

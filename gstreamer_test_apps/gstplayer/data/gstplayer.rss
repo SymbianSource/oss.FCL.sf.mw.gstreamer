@@ -38,9 +38,8 @@ NAME HEWB    // 4 letter ID
 //  INCLUDES
 #include <eikon.rh>
 #include <eikon.rsg>
-#include <Avkon.rsg>
-#include <Avkon.hrh>
-#include <Avkon.rh>
+#include <avkon.hrh>
+#include <avkon.rh>
 #include <avkon.loc>
 #include <avkon.mbg>
 #include <avkonsct.loc>
@@ -49,10 +48,10 @@ NAME HEWB    // 4 letter ID
 
 #include <CommonDialogs.hrh> 
 #include <CommonDialogs.rh> 
-#include <PathConfiguration.hrh>
+#include <pathconfiguration.hrh>
 
-#include "GSTPlayer.hrh"
-#include "GSTPlayer.rls"
+#include "gstplayer.hrh"
+#include "gstplayer.rls"
 
 #define KWidth 176
 #define KHeight 100

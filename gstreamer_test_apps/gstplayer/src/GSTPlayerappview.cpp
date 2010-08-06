@@ -35,7 +35,7 @@
 #include <coemain.h>
 #include <stdlib.h>
 #include <gst/gst.h>
-#include "GSTPlayerAppView.h"
+#include "gstplayerappview.h"
 #include "GlibEventHandler.h"
 
 // ============================ MEMBER FUNCTIONS ===============================

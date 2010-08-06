@@ -32,9 +32,9 @@
 * ==============================================================================
 */
 
-#include "GSTPlayer.rls"
+#include "gstplayer.rls"
 #include <appinfo.rh>
-#include <GSTPlayer.rsg>
+#include <gstplayer.rsg>
 
 UID2 KUidAppRegistrationResourceFile
 UID3 0xA000017F

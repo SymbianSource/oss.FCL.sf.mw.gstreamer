@@ -32,7 +32,7 @@ PRJ_TESTEXPORTS
 // 'abld test export'
 
 ../conf/GstreamerTestCases.cfg   /epoc32/winscw/c/TestFramework/GstreamerTestCases.cfg
-../init/GstreamerTestCases.ini   /epoc32/winscw/c/TestFramework/GstreamerTestCases.ini
+../init/gstreamertestcases.ini   /epoc32/winscw/c/TestFramework/gstreamertestcases.ini
 ../init/testframework.ini               /epoc32/winscw/c/TestFramework/testframework.ini
 
 PRJ_EXPORTS

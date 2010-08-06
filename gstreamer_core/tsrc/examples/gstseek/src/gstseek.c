@@ -62,6 +62,26 @@ bus_call (GstBus     *bus,
   return TRUE;
 }
 
+static gboolean  cb_autoplug( GstBin * *bin,
+                        GstPad        *pad,
+                        GstCaps       *caps,
+                        gpointer       user_data)
+{
+    GstCaps* sinkcaps = NULL;    
+    gboolean supported = FALSE;
+    
+    GstPad* sinkpad = gst_element_get_pad( sink, "sink");
+    sinkcaps = gst_pad_get_caps( sinkpad );
+    supported = gst_caps_is_subset( caps, sinkcaps );
+    
+    if( supported )
+    {
+        //link_with_devsoundsink = TRUE;
+        return FALSE;
+    }
+    return TRUE;
+}
+
 static void
 cb_newpad (GstElement *decodebin,
        GstPad     *pad,
@@ -191,7 +211,7 @@ int main (int argc, char *argv[])
     gst_bus_add_watch (gst_pipeline_get_bus (GST_PIPELINE (pipeline)), bus_call, loop);
     
     g_signal_connect (decoder, "new-decoded-pad", G_CALLBACK (cb_newpad), NULL);
-    //g_signal_connect (decoder, "autoplug-continue", G_CALLBACK (cb_autoplug), NULL);
+    g_signal_connect (decoder, "autoplug-continue", G_CALLBACK (cb_autoplug), NULL);
     
     g_timeout_add (1000/*in mili sec*/, (GSourceFunc) cb_get_position, NULL);
     

@@ -27,10 +27,11 @@
 
 DevSoundWrapperSrc::DevSoundWrapperSrc()
     {
-    init_complete = 0;
+    //init_complete = 0;
     dev_sound = NULL;
     buffersize = 0;
     dev_count = 0;
+    speechbitrate = 0;
     caps.iRate = EMMFSampleRate8000Hz;
     caps.iEncoding = EMMFSoundEncoding16BitPCM;
     caps.iChannels = EMMFMono;
@@ -48,15 +49,7 @@ void DevSoundWrapperSrc::InitializeComplete(TInt aError)
     TRACE_PRN_FN_ENT;
     TRequestStatus* stat = &(AL->iStatus);
 
-    if (aError == KErrNone)
-        {
-        init_complete = 1;
-        }
-    else
-        {
-        init_complete = 0;
-        }
-
+    iCallbackError = aError;
     User::RequestComplete(stat, aError);
     TRACE_PRN_FN_EXT;
     }
@@ -102,6 +95,16 @@ void DevSoundWrapperSrc::RecordError(TInt aError)
     TRACE_PRN_FN_ENT;
     TRACE_PRN_N1(_L("DevSoundWrapperSrc::RecordError %d"),aError);
     iCallbackError = aError;
+    TRequestStatus* stat = &(AL->iStatus);
+    /// need to check this, error can occure before and after calling 
+    /// the StartActiveScheduler and might and might not be waiting for 
+    /// completing the request
+    if( AL->IsActive() )
+        {
+    /// need to complete the request for coming out from blocking call.
+        User::RequestComplete(stat, aError);
+        iCallbackError = aError;    
+        }
     TRACE_PRN_FN_EXT;
     }
 /**********************************************************/
@@ -176,39 +179,36 @@ int open_devsound(DevSoundWrapperSrc **handle)
 int initialize_devsound(GstDevsoundSrc* ds)
     {
     TRACE_PRN_FN_ENT;
-    int ret = 0;
+    //int ret = 0;
     DevSoundWrapperSrc* handle = (DevSoundWrapperSrc*) ds->handle;
 
     handle->AL->InitialiseActiveListener();
 
-        TRAP(ret, handle->dev_sound->InitializeL(*handle, handle->fourcc, EMMFStateRecording));
+        TRAP(handle->iCallbackError, handle->dev_sound->InitializeL(*handle, handle->fourcc, EMMFStateRecording));
 
-    if (ret)
+    if ( handle->iCallbackError )
         {
         TRACE_PRN_FN_EXT;
-        return ret;
+        return handle->iCallbackError;
         }
 
     handle->AL->StartActiveScheduler();
 
-    if (handle->init_complete == 1)
+    if (KErrNone == handle->iCallbackError )
         {
         TMMFPrioritySettings temp;
         temp.iPref = (TMdaPriorityPreference) ds->preference;
         temp.iPriority = ds->priority;
         handle->dev_sound->SetPrioritySettings(temp);
 
-        SetConfigurations(handle);
-        ret = KErrNone;
-        }
-    else
-        {
-        ret = KErrNotFound;
+        handle->iCallbackError = SetConfigurations(handle);
+        
         }
 
-    TRACE_PRN_IF_ERR(ret);
+
+    TRACE_PRN_IF_ERR(handle->iCallbackError);
     TRACE_PRN_FN_EXT;
-    return ret;
+    return handle->iCallbackError;
     }
 /*********************************************************/
 
@@ -225,15 +225,7 @@ int pause_devsound(GstDevsoundSrc *ds)
     {
     TRACE_PRN_FN_ENT;
     DevSoundWrapperSrc* handle = (DevSoundWrapperSrc*) ds->handle;
-    if(handle->dev_sound->IsResumeSupported())
-        {
         handle->dev_sound->Pause();
-        }
-    else
-        {
-        handle->iSamplesRecorded = handle->dev_sound->SamplesRecorded();
-        handle->dev_sound->Stop();
-        }
     TRACE_PRN_FN_EXT;
     return 0;
     }
@@ -244,12 +236,13 @@ int resume_devsound(GstDevsoundSrc *ds)
     DevSoundWrapperSrc* handle = (DevSoundWrapperSrc*) ds->handle;
     if(handle->dev_sound->IsResumeSupported())
         {
-        handle->dev_sound->Resume();
+
+        handle->iCallbackError = handle->dev_sound->Resume();
         }
     else
         {
-        recordinit(handle);
-        initproperties(ds);
+        if( KErrNone == recordinit(handle) )
+            initproperties(ds);
         }
     TRACE_PRN_FN_EXT;
     return 0;
@@ -257,7 +250,7 @@ int resume_devsound(GstDevsoundSrc *ds)
 
 int open_device(DevSoundWrapperSrc **handle)
     {
-    int retcode = KErrNone;
+    (*handle)->iCallbackError = KErrNone;
     TRACE_PRN_FN_ENT;
 
     (*handle)->dev_count++;
@@ -276,24 +269,26 @@ int open_device(DevSoundWrapperSrc **handle)
     (*handle)->AL = new CActiveListener;
     ((*handle)->AL)->asw = new CActiveSchedulerWait();
 
-        TRAP( retcode,(*handle)->dev_sound = CMMFDevSound::NewL() );
+        TRAP( (*handle)->iCallbackError,(*handle)->dev_sound = CMMFDevSound::NewL() );
 
     if (!(*handle)->AL || !((*handle)->AL)->asw || !(*handle)->dev_sound
             || !(*handle)->as)
         {
-        retcode = KErrNoMemory;
+        return KErrNoMemory;
         }
     
-    TRAP(retcode ,(*handle)->iAudoInputRecord = CAudioInput::NewL(*(*handle)->dev_sound));
-    RArray<CAudioInput::TAudioInputPreference> inputArray;
+    TRAP((*handle)->iCallbackError ,(*handle)->iAudoInputRecord = CAudioInput::NewL(*(*handle)->dev_sound));
+    if ( KErrNone == (*handle)->iCallbackError )
+	{
+	RArray<CAudioInput::TAudioInputPreference> inputArray;
     inputArray.Append( CAudioInput::EDefaultMic );
     // Set Audio Input
     (*handle)->iAudoInputRecord->SetAudioInputL( inputArray.Array( ) );
     inputArray.Close();
-
+	}
     TRACE_PRN_FN_EXT;
 
-    return retcode;
+    return (*handle)->iCallbackError;
     }
 
 /*********************************************************/
@@ -301,7 +296,9 @@ int open_device(DevSoundWrapperSrc **handle)
 int close_devsound(GstDevsoundSrc *ds)
     {
     TRACE_PRN_FN_ENT;
-    (STATIC_CAST(DevSoundWrapperSrc*, ds->handle))->dev_sound->Stop();
+    CMMFDevSound    *dev_sound= 0;
+    dev_sound = (STATIC_CAST(DevSoundWrapperSrc*, ds->handle))->dev_sound;
+    dev_sound->Stop();
     g_list_foreach(ds->supportedbitrates, (GFunc) g_free, NULL);
     g_list_free(ds->supportedbitrates);
 
@@ -309,9 +306,15 @@ int close_devsound(GstDevsoundSrc *ds)
     g_list_free(ds->fmt);
     ds->fmt = NULL;
     delete (STATIC_CAST(DevSoundWrapperSrc*, ds->handle))->iAudoInputRecord;
+    delete dev_sound;
     delete ds->handle;
     TRACE_PRN_FN_EXT;
     return 0;
+    }
+/************************************************************/
+void update_devsound_speech_bitrate(DevSoundWrapperSrc *handle, TUint bitrate)
+    {
+    handle->speechbitrate = bitrate;
     }
 /************************************************************/
 
@@ -326,15 +329,7 @@ int SetConfigurations(DevSoundWrapperSrc *handle)
     handle->gain = (handle->dev_sound)->MaxGain();
     (handle->dev_sound)->SetGain(handle->gain);
     handle->caps.iBufferSize = temp_caps.iBufferSize;
-
-        TRAP(ret, (handle->dev_sound)->SetConfigL(handle->caps) );
-    if (ret)
-        {
-        return ret;
-        }
-
-    (handle->caps) = (handle->dev_sound)->Config();
-
+    
     switch (handle->fourcc)
         {
         case KMccFourCCIdG711:
@@ -373,13 +368,33 @@ int SetConfigurations(DevSoundWrapperSrc *handle)
             }
         }
 
+    if (ret)
+        return ret;
+    
     if (!handle->iSpeechEncoderConfig && handle->fourcc
             != KMMFFourCCCodePCM16)
         {
 
             TRAP(ret, handle->iSpeechEncoderConfig
                     = CSpeechEncoderConfig::NewL(*handle->dev_sound));
+        if (ret)
+            return ret;
+        
+        if(handle->speechbitrate > 0)
+            {
+            ret = set_speech_encoder_bit_rate(handle,handle->speechbitrate);
+            if(ret)
+                return ret;
+            }
         }
+    
+     TRAP(ret, (handle->dev_sound)->SetConfigL(handle->caps) );
+     if (ret)
+         {
+         return ret;
+         }
+
+     (handle->caps) = (handle->dev_sound)->Config();
 
     TRACE_PRN_FN_EXT;
     return ret;
@@ -621,27 +636,18 @@ void set_fourcc(DevSoundWrapperSrc *handle, int fourcc)
 int recordinit(DevSoundWrapperSrc *handle)
     {
     TRACE_PRN_FN_ENT;
-    int ret = 0;
+
     ((handle)->AL)->InitialiseActiveListener();
     handle->iCallbackError = KErrNone;
 
-        TRAP(ret, (handle->dev_sound)->RecordInitL() );
+        TRAP(handle->iCallbackError, (handle->dev_sound)->RecordInitL() );
 
-    if (ret)
+    if (!handle->iCallbackError)
         {
-        TRACE_PRN_FN_EXT;
-        return ret;
-        }
-    ((handle)->AL)->StartActiveScheduler();
-
-    if ((handle->iCallbackError) != KErrNone)
-        {
-        TRACE_PRN_FN_EXT;
-        return (handle->iCallbackError);
+        ((handle)->AL)->StartActiveScheduler();
         }
     TRACE_PRN_FN_EXT;
-    return KErrNone;
-
+    return handle->iCallbackError;
     }
 
 /*******************************************************************/
@@ -662,9 +668,8 @@ int record_data(DevSoundWrapperSrc *handle)
 int pre_init_setconf(GstDevsoundSrc *ds)
     {
     TRACE_PRN_FN_ENT;
-    int ret = 0;
     DevSoundWrapperSrc* dsPtr = STATIC_CAST(DevSoundWrapperSrc*, ds->handle);
-
+    dsPtr->iCallbackError = 0;
     // NOTE: it is too late for setting prio/pref here
     if (ds->pending.preferenceupdate == 1 || ds->pending.priorityupdate == 1)
         {
@@ -681,13 +686,13 @@ int pre_init_setconf(GstDevsoundSrc *ds)
             == 1)
         {
 
-            TRAP( ret, (dsPtr->dev_sound)->SetRecordBalanceL(ds->leftbalance,
+            TRAP( dsPtr->iCallbackError, (dsPtr->dev_sound)->SetRecordBalanceL(ds->leftbalance,
                             ds->rightbalance) );
         ds->pending.leftbalanceupdate = FALSE;
         ds->pending.rightbalanceupdate = FALSE;
         }
     TRACE_PRN_FN_EXT;
-    return ret;
+    return dsPtr->iCallbackError;
     }
 /*********************************************************/
 void getsupporteddatatypes(GstDevsoundSrc *ds)
@@ -742,6 +747,13 @@ void initproperties(GstDevsoundSrc* ds)
     get_g711_encoder_vad_mode(dsPtr, &ds->g711vadmode);
     get_g729_vad_mode(dsPtr, &ds->g729vadmode);
     get_ilbc_vad_mode(dsPtr, &ds->ilbcvadmode);
+    TRACE_PRN_FN_EXT;
+    }
+
+int call_back_error(DevSoundWrapperSrc* dsPtr)
+    {
+    TRACE_PRN_FN_ENT;
+    return dsPtr->iCallbackError;
     TRACE_PRN_FN_EXT;
     }
 

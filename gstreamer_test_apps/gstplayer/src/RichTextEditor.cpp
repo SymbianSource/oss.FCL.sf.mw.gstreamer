@@ -24,7 +24,7 @@
 *  Name        : RichTextEditorRTE.cpp
 *  Part of     : VoIP test application.
 *  Description : Utility for outputting formatted text to the display.
-*  Version     : %version: 1 %
+*  Version     : %version: 2 %
 * ============================================================================
 */
 
@@ -32,7 +32,7 @@
 #include <barsread.h>   // TResourceReader
 #include <eikrted.h>    // CEikRichTextEditor
 #include <txtrich.h>    // CRichText
-#include <GSTPlayer.rsg>
+#include <gstplayer.rsg>
 #include "RichTextEditor.h"
 
 

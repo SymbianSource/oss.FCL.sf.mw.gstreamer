@@ -34,18 +34,18 @@
 // INCLUDE FILES
 #include <avkon.hrh>
 #include <aknnotewrappers.h>
-#include <stringloader.h>
-#include <GSTPlayer.rsg>
+#include <StringLoader.h>
+#include <gstplayer.rsg>
 #include <CAknMemorySelectionDialog.h>
 #include <f32file.h>
 #include <s32file.h>
-#include <PathInfo.h>
+#include <pathinfo.h>
 #include <gst/gst.h>
 
-#include "GSTPlayer.pan"
-#include "GSTPlayerAppUi.h"
-#include "GSTPlayerAppView.h"
-#include "GSTPlayer.hrh"
+#include "gstplayer.pan"
+#include "gstplayerappui.h"
+#include "gstplayerappview.h"
+#include "gstplayer.hrh"
 
 #include "GlibEventHandler.h"
 #include "gstreamer.h"

@@ -33,7 +33,7 @@
 
 // INCLUDE FILES
 #include <eikstart.h>
-#include "GSTPlayerApplication.h"
+#include "gstplayerapplication.h"
  
 
 LOCAL_C CApaApplication* NewApplication()

@@ -32,8 +32,8 @@
 */
 
 // INCLUDE FILES
-#include "GSTPlayerDocument.h"
-#include "GSTPlayerApplication.h"
+#include "gstplayerdocument.h"
+#include "gstplayerapplication.h"
 
 // ============================ MEMBER FUNCTIONS ===============================
 

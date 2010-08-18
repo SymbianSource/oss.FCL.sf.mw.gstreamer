@@ -1,5 +1,0 @@
-EXPORTS
-	_GST_PLUGIN_DESC @ 1 NONAME
-	gst_mp3parse_get_type @ 2 NONAME
-	gst_xing_mux_get_type @ 3 NONAME
-

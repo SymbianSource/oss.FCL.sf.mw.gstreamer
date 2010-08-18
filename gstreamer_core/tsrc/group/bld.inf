@@ -26,6 +26,6 @@
 //#include "../gstreamertestcases_suite1/group/bld.inf"
 //#include "../gstreamertestcases_suite2/group/bld.inf"
 //#include "../gstreamertestcases_suite3/group/bld.inf"
-
+//#include "../gstreamertestcases_suite4/group/bld.inf"
 //  End of File
 										

@@ -24,8 +24,8 @@
 #include "GlibEventHandler.h"
 #include <avkon.hrh>
 #include <aknnotewrappers.h>
-#include <stringloader.h>
-#include <GSTPlayer.rsg>
+#include <StringLoader.h>
+#include <gstplayer.rsg>
 #include <CAknMemorySelectionDialog.h>
 #include <e32base.h>
 #include <stdlib.h>

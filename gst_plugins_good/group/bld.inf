@@ -6,8 +6,4 @@ PRJ_EXPORTS
 PRJ_MMPFILES
 gstwavparse.mmp
 gstwavenc.mmp
-gstautodetect.mmp
-gstavi.mmp
 gstqtmux.mmp
-gstqtdemux.mmp
-gstmpegaudioparse.mmp

@@ -42,7 +42,6 @@ CAPABILITY All -Tcb
 VENDORID        VID_DEFAULT
 
 USERINCLUDE	 ../inc
-SYSTEMINCLUDE   /epoc32/include
 
 MACRO           HAVE_CONFIG_H
 

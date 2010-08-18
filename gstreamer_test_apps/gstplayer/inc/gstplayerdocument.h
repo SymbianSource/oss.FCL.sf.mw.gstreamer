@@ -35,7 +35,7 @@
 #define __GSTPLAYERDOCUMENT_H__
 
 // INCLUDES
-#include <akndoc.h>
+#include <AknDoc.h>
 
 // FORWARD DECLARATIONS
 class CGSTPlayerAppUi;

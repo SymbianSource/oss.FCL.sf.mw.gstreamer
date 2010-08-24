@@ -1,5 +1,10 @@
 /*
-* Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+* ==============================================================================
+*  Name        : bld.inf
+*  Part of     :
+*  Description : This is a top level bld file to generate all libraries.
+*
+* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
 *
 * This library is free software; you can redistribute it and/or
 * modify it under the terms of the GNU Lesser General Public
@@ -16,19 +21,20 @@
 * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 * Boston, MA 02111-1307, USA.
 *
-* Description:
+* Description : This is a top level bld file to export the data and ROM files
 *
 */
 
-PRJ_EXPORTS
-../gst/devsound/gstspeechencoderconfig.h  MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/interfaces/gstspeechencoderconfig.h)
+
+#include <platform_paths.hrh>
 
 PRJ_PLATFORMS
 DEFAULT
 
-PRJ_MMPFILES
-gstdevsoundext.mmp
-gstdevsoundsink.mmp
-gstdevsoundsrc.mmp
-gstamrmux.mmp
-#include "../gst/AudioRecordBin/group/bld.inf"
+PRJ_EXPORTS
+#ifdef FF_GSTREAMER
+../data/gst_dll_2001F41F.txt /epoc32/winscw/c/gstreamer/plugins_list/gst_dll_2001F41F.txt
+../data/gstreamer_stub.sis /epoc32/data/z/system/install/gstreamer_stub.sis
+gstreamer.iby       CORE_MW_LAYER_IBY_EXPORT_PATH(gstreamer.iby)
+#endif
+

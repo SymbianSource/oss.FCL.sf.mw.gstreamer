@@ -3,15 +3,12 @@
   <!ENTITY layer_real_source_path "sf/mw/gstreamer" >
 ]> 
 
-<SystemDefinition name="avdomain" schema="1.4.0">
+<SystemDefinition name="gstreamer" schema="1.4.0">
 	<systemModel>
   <!-- Common file for prebuild layers-->
   	<layer name="mw_layer">
 			<module name="gstreamer">
 				<unit unitID="gstreamer" mrp="" bldFile="&layer_real_source_path;/group" name="gstreamer" />
-			</module>
-			<module name="gst_plugins_internal">
-				<unit unitID="gst_plugins_internal" mrp="" bldFile="&layer_real_source_path;/gst_plugins_internal/group" filter="!sf_build" name="gst_plugins_internal" />
 			</module>
     </layer>
     
@@ -39,9 +36,6 @@
   	<layer name="mw_gstreamer_layer">
 			<module name="gstreamer_group">
 				<unit unitID="gstreamer_group" mrp="" bldFile="&layer_real_source_path;/group" name="gstreamer_group" />
-			</module>
-			<module name="gst_plugins_internal_group">
-				<unit unitID="gst_plugins_internal_group" mrp="" bldFile="&layer_real_source_path;/gst_plugins_internal/group" filter="!sf_build" name="gst_plugins_internal_group" />
 			</module>
     </layer>
     

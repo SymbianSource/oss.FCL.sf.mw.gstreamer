@@ -129,6 +129,7 @@ static void gst_Apply_IlbcEncoder_Update(GstDevsoundSrc *devsoundsrc );
 
 static gint gst_devsound_src_get_rate(gint rate);
 
+static void post_symbian_error ( GstBaseSrc* element, int symbian_error );
 
 typedef struct _GstCustomIfaceUpdate GstCustomIfaceUpdate;
 
@@ -398,13 +399,12 @@ static void *StartDevSoundThread(void *threadarg)
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) devsoundsrc, "StartDevSoundThread ",NULL);
     int ret = open_devsound(&(devsoundsrc->handle));
     
-    if( 0 != ret )
+    if( KErrNone != ret )
         {
         pthread_mutex_lock(&(create_mutex1));
         return_error = ret;
         pthread_cond_signal(&(create_condition1));
-        pthread_mutex_unlock(&(create_mutex1));    
-        //return_error = ret;
+        pthread_mutex_unlock(&(create_mutex1));
         pthread_exit(NULL);
         }
 
@@ -437,10 +437,10 @@ static void *StartDevSoundThread(void *threadarg)
         {
         gst_update_devsound_speech_bitrate(devsoundsrc);
         ret = initialize_devsound(devsoundsrc);
-        if( 0 == ret )
+        if( KErrNone == ret )
             {
                 ret = recordinit(devsoundsrc->handle);
-                if( 0 == ret )
+                if( KErrNone == ret )
                     initproperties(devsoundsrc);
         
             }
@@ -730,7 +730,7 @@ static gboolean gst_devsound_src_start(GstBaseSrc * bsrc)
 
     consumer_thread_state = CONSUMER_THREAD_INITIALIZING;
     cmd = OPEN;
-    return_error = 0;
+    return_error = KErrNone;
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) src, "Before Thread Create ",NULL);
     pthread_create(&ds_thread, NULL, StartDevSoundThread, (void *)src);
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) src, "After Thread Create ",NULL);
@@ -744,7 +744,9 @@ static gboolean gst_devsound_src_start(GstBaseSrc * bsrc)
         }
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) src, "AFter Mutex Wait in START ",NULL);
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) src, "gst_devsound_src_start EXIT ",NULL);
-        return ret;
+    if ( return_error )
+        post_symbian_error( bsrc,return_error );
+    return ret;
     /* ERRORS */
     }
 
@@ -754,7 +756,6 @@ static gboolean gst_devsound_src_stop(GstBaseSrc * bsrc)
     GstDevsoundSrc *src= GST_DEVSOUND_SRC(bsrc);
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) src, "gst_devsound_src_stop ENTER ");
     cmd = CLOSE;
-
     pthread_mutex_lock(&(create_mutex1));
     pthread_cond_signal(&(create_condition1));
     pthread_mutex_unlock(&(create_mutex1));
@@ -822,14 +823,14 @@ static GstFlowReturn gst_devsound_src_create(GstBaseSrc *src, guint64 offset,
     {
     GstDevsoundSrc *dsrc= GST_DEVSOUND_SRC(src);
     int bufferpos=0;
-    int ret = 0;
+    int ret = KErrNone;
     
     if(!g_queue_get_length(dataqueue) && (dsrc->eosreceived == TRUE))
         {
         pthread_mutex_lock(&(create_mutex1));
         pthread_cond_signal(&(create_condition1));
         pthread_mutex_unlock(&(create_mutex1));
-        
+        post_symbian_error( src,KErrCancel );
         return GST_FLOW_UNEXPECTED;
         }
     
@@ -838,7 +839,12 @@ static GstFlowReturn gst_devsound_src_create(GstBaseSrc *src, guint64 offset,
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) dsrc, "Before Buffer Alloc in CREATE ",NULL);
     *buf = gst_buffer_try_new_and_alloc(size);
     //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) dsrc, "AFter Buffer Alloc in CREATE ",NULL);
-
+    if(*buf == NULL)
+    {
+        post_symbian_error( src,KErrNoMemory );
+        return GST_FLOW_UNEXPECTED;
+    }        
+    
     while (size > 0)
         {
         if (dataleft >= size)
@@ -883,12 +889,13 @@ static GstFlowReturn gst_devsound_src_create(GstBaseSrc *src, guint64 offset,
                 //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) dsrc, "Before WAIT in CREATE ",NULL);
                 if(dsrc->eosreceived == TRUE)
                     {
+                    post_symbian_error( src,KErrCancel );
                     return GST_FLOW_UNEXPECTED;
                     }
                 else
                     {
                     cmd = RECORDING;
-                    return_error = 0;
+                    return_error = KErrNone;
                     pthread_mutex_lock(&(create_mutex1));
                     pthread_cond_signal(&(create_condition1));
                     pthread_mutex_unlock(&(create_mutex1));
@@ -900,19 +907,10 @@ static GstFlowReturn gst_devsound_src_create(GstBaseSrc *src, guint64 offset,
                     }
                 //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) dsrc, "AFTER WAIT in CREATE ",NULL);
                 }
-            if( KErrInUse == ret || KErrDied  == ret || KErrAccessDenied == ret )
-            {
-                // post error as pre-emption
-                GST_ELEMENT_ERROR (src, RESOURCE, BUSY,
-                    (("Pre-emption error.")),
-                    ("streaming paused because higher priority app requested resource, Err(%d)", ret));
-                
+            if( ret )
+            { 
+                post_symbian_error( src,ret );
                 return GST_FLOW_UNEXPECTED;
-            }     
-            else if( KErrNone != ret )
-            {
-                // no need to post error as base src will post error. 
-                return GST_FLOW_ERROR;
             }
             //gst_debug_log(devsound_debug, GST_LEVEL_LOG, "", "", 0, (GObject *) dsrc, "Before POP in CREATE ",NULL);
             GST_OBJECT_LOCK(dsrc);
@@ -921,7 +919,8 @@ static GstFlowReturn gst_devsound_src_create(GstBaseSrc *src, guint64 offset,
            
             if(!popBuffer )
             {
-               return GST_FLOW_UNEXPECTED;
+                post_symbian_error( src,KErrNoMemory );
+                return GST_FLOW_UNEXPECTED;
             }
             if(dsrc->firstTimeInit != kPlayed)
                 {        
@@ -990,7 +989,7 @@ static GstStateChangeReturn gst_devsound_src_change_state (GstElement * element,
             if(cmd == PAUSE)
                 {
                 cmd = RESUME;
-                return_error = 0;
+                return_error = KErrNone;
                 pthread_mutex_lock(&create_mutex1);
                 pthread_cond_signal(&create_condition1);
                 pthread_mutex_unlock(&create_mutex1);
@@ -998,7 +997,10 @@ static GstStateChangeReturn gst_devsound_src_change_state (GstElement * element,
                 pthread_mutex_lock(&create_mutex1);
                 pthread_cond_wait(&create_condition1, &create_mutex1);
                 if( return_error )
+                    {
+                    post_symbian_error( GST_BASE_SRC(element),return_error );
                     ret = GST_STATE_CHANGE_FAILURE;
+                    }
                 pthread_mutex_unlock(&create_mutex1);
                 }
             break;
@@ -1014,7 +1016,7 @@ static GstStateChangeReturn gst_devsound_src_change_state (GstElement * element,
           
           case GST_STATE_CHANGE_PLAYING_TO_PAUSED:
               cmd = PAUSE;
-              return_error = 0;
+              return_error = KErrNone;
               pthread_mutex_lock(&create_mutex1);
               pthread_cond_signal(&create_condition1);
               pthread_mutex_unlock(&create_mutex1);
@@ -1022,7 +1024,10 @@ static GstStateChangeReturn gst_devsound_src_change_state (GstElement * element,
               pthread_mutex_lock(&create_mutex1);
               pthread_cond_wait(&create_condition1, &create_mutex1);
               if( return_error )
-                  ret = GST_STATE_CHANGE_FAILURE;              
+                  {
+                  post_symbian_error( GST_BASE_SRC(element),return_error );
+                  ret = GST_STATE_CHANGE_FAILURE;
+                  }            
               pthread_mutex_unlock(&create_mutex1);
               break;
           default:
@@ -1302,7 +1307,7 @@ static gboolean gst_devsound_src_event(GstBaseSrc *asrc, GstEvent *event)
             //reset_devsound(sink->handle);
             src->eosreceived = TRUE;
             cmd = STOP;
-            return_error = 0;
+            return_error = KErrNone;
             pthread_mutex_lock(&create_mutex1);
             pthread_cond_signal(&create_condition1);
             pthread_mutex_unlock(&create_mutex1);
@@ -1328,4 +1333,94 @@ static gboolean gst_devsound_src_event(GstBaseSrc *asrc, GstEvent *event)
     
     return retValue;
     }
-	
+
+static void 
+post_symbian_error ( GstBaseSrc* element, int symbian_error )
+{
+    switch (symbian_error)
+    {
+
+        case KErrNone:
+            break;
+        case KErrNotFound:
+            GST_ELEMENT_ERROR (element, RESOURCE, NOT_FOUND,
+                (("resource not found error.")),
+                ("streaming paused because resource not found, Err(%d)", symbian_error));               
+            break;
+        case KErrCancel:
+            GST_ELEMENT_ERROR (element, RESOURCE, CLOSE,
+                (("resource request canceled.")),
+                ("streaming paused because resource request canceled, Err(%d)", symbian_error));               
+            break;
+        case KErrNoMemory:
+            GST_ELEMENT_ERROR (element, RESOURCE, NO_SPACE_LEFT,
+                (("Error out of memory")),
+                ("streaming paused because of no memory, Err(%d)", symbian_error));               
+            break;
+        case KErrNotSupported:
+            GST_ELEMENT_ERROR (element, RESOURCE, READ,
+                (("resource not supported.")),
+                ("streaming paused because resource not supported, Err(%d)", symbian_error));               
+            break;
+        case KErrNotReady:
+            GST_ELEMENT_ERROR (element, RESOURCE, TOO_LAZY,
+                (("resource is not ready for request.")),
+                ("streaming paused because resource is not ready, Err(%d)", symbian_error));               
+            break;
+        case KErrPermissionDenied:
+            GST_ELEMENT_ERROR (element, RESOURCE, READ,
+                (("Permission Denied.")),
+                ("streaming paused because permission denied, Err(%d)", symbian_error));               
+            break;
+        case KErrTimedOut:
+            GST_ELEMENT_ERROR (element, RESOURCE, TOO_LAZY,
+                (("Timed Out.")),
+                ("streaming paused because timed out, Err(%d)", symbian_error));               
+            break;
+        case KErrHardwareNotAvailable:
+            GST_ELEMENT_ERROR (element, RESOURCE, NOT_FOUND,
+                (("Hardware Not Available.")),
+                ("streaming paused because hardware not available, Err(%d)", symbian_error));               
+            break;
+        case KErrCorrupt:
+            GST_ELEMENT_ERROR (element, RESOURCE, FAILED,
+                (("Corrupted data.")),
+                ("streaming paused because of corrupted data, Err(%d)", symbian_error));               
+            break;
+        case KErrUnderflow:
+            GST_ELEMENT_ERROR (element, STREAM, FAILED,
+                (("Under flow.")),
+                ("streaming paused because of under flow, Err(%d)", symbian_error));               
+            break;
+        case KErrOverflow:
+            GST_ELEMENT_ERROR (element, STREAM, FAILED,
+                (("Over flow.")),
+                ("streaming paused because of over flow, Err(%d)", symbian_error));    
+            break;
+
+        case KErrInUse:
+            GST_ELEMENT_ERROR (element, RESOURCE, BUSY,
+                (("Resource In Use.")),
+                ("streaming paused because resource in use, Err(%d)", symbian_error));            
+            break;
+            
+        case KErrDied:
+            GST_ELEMENT_ERROR (element, RESOURCE, BUSY,
+                (("Error Resource Died.")),
+                ("streaming paused because resource died., Err(%d)", symbian_error));            
+            break;
+            
+        case KErrAccessDenied:            
+            GST_ELEMENT_ERROR (element, RESOURCE, BUSY,
+                (("Resource Access Denied.")),
+                ("streaming paused because resource access denied, Err(%d)", symbian_error));            
+            break;
+            
+        default:
+            GST_ELEMENT_ERROR (element, STREAM, FAILED,
+                (("internal data flow error.")),
+                ("streaming paused because of internal data flow error., Err(%d)", symbian_error));            
+            break;
+    }
+}
+

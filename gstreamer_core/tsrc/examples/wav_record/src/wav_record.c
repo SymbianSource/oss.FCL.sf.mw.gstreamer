@@ -29,7 +29,7 @@ void create_xml(int result)
 GstElement *pipeline, *source, *wavenc,*sink;
 GstBus *bus;
 GMainLoop *loop;
-
+gint error;
 static gboolean
 bus_call (GstBus     *bus,
           GstMessage *msg,
@@ -41,7 +41,7 @@ bus_call (GstBus     *bus,
         g_main_loop_quit(loop);
         gst_object_unref (GST_OBJECT (pipeline));
         //std_log(LOG_FILENAME_LINE, "Test Successful");
-        create_xml(0); 
+        create_xml(error); 
       break;
     case GST_MESSAGE_ERROR: {
       gchar *debug;
@@ -49,9 +49,10 @@ bus_call (GstBus     *bus,
       gst_message_parse_error (msg, &err, &debug);
       g_free (debug);
       g_print ("Error: %s\n", err->message);
+      error = err->code;
       g_error_free (err);
       //std_log(LOG_FILENAME_LINE, "Test Failed");
-      create_xml(1); 
+
       break;
     }
     default:
@@ -79,6 +80,7 @@ int main (int argc, char *argv[])
     int width = 16;
     guint record_duration = 10000;
     
+    error = 0;
     if (argc > 1) {
     record_duration = (guint) atoi( argv[1] ) * 1000;
     }

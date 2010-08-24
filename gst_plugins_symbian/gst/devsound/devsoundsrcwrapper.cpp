@@ -67,7 +67,7 @@ void DevSoundWrapperSrc::PlayError(TInt /*aError*/)
 
 void DevSoundWrapperSrc::BufferToBeEmptied(CMMFBuffer* aBuffer)
     {
-//    TRACE_PRN_FN_ENT;
+    TRACE_PRN_FN_ENT;
 
     buffer = aBuffer;
     bufferreadpos = 0;
@@ -86,7 +86,7 @@ void DevSoundWrapperSrc::BufferToBeEmptied(CMMFBuffer* aBuffer)
         User::RequestComplete(stat, KErrNotFound);
         iCallbackError = KErrNotFound;
         }
-//    TRACE_PRN_FN_EXT;
+    TRACE_PRN_FN_EXT;
     }
 /********************************************************/
 
@@ -179,7 +179,6 @@ int open_devsound(DevSoundWrapperSrc **handle)
 int initialize_devsound(GstDevsoundSrc* ds)
     {
     TRACE_PRN_FN_ENT;
-    //int ret = 0;
     DevSoundWrapperSrc* handle = (DevSoundWrapperSrc*) ds->handle;
 
     handle->AL->InitialiseActiveListener();
@@ -202,9 +201,7 @@ int initialize_devsound(GstDevsoundSrc* ds)
         handle->dev_sound->SetPrioritySettings(temp);
 
         handle->iCallbackError = SetConfigurations(handle);
-        
         }
-
 
     TRACE_PRN_IF_ERR(handle->iCallbackError);
     TRACE_PRN_FN_EXT;
@@ -225,7 +222,7 @@ int pause_devsound(GstDevsoundSrc *ds)
     {
     TRACE_PRN_FN_ENT;
     DevSoundWrapperSrc* handle = (DevSoundWrapperSrc*) ds->handle;
-        handle->dev_sound->Pause();
+    handle->dev_sound->Pause();
     TRACE_PRN_FN_EXT;
     return 0;
     }
@@ -236,7 +233,6 @@ int resume_devsound(GstDevsoundSrc *ds)
     DevSoundWrapperSrc* handle = (DevSoundWrapperSrc*) ds->handle;
     if(handle->dev_sound->IsResumeSupported())
         {
-
         handle->iCallbackError = handle->dev_sound->Resume();
         }
     else
@@ -636,7 +632,6 @@ void set_fourcc(DevSoundWrapperSrc *handle, int fourcc)
 int recordinit(DevSoundWrapperSrc *handle)
     {
     TRACE_PRN_FN_ENT;
-
     ((handle)->AL)->InitialiseActiveListener();
     handle->iCallbackError = KErrNone;
 
@@ -646,6 +641,7 @@ int recordinit(DevSoundWrapperSrc *handle)
         {
         ((handle)->AL)->StartActiveScheduler();
         }
+
     TRACE_PRN_FN_EXT;
     return handle->iCallbackError;
     }
@@ -668,8 +664,9 @@ int record_data(DevSoundWrapperSrc *handle)
 int pre_init_setconf(GstDevsoundSrc *ds)
     {
     TRACE_PRN_FN_ENT;
+    
     DevSoundWrapperSrc* dsPtr = STATIC_CAST(DevSoundWrapperSrc*, ds->handle);
-    dsPtr->iCallbackError = 0;
+    dsPtr->iCallbackError = KErrNone;
     // NOTE: it is too late for setting prio/pref here
     if (ds->pending.preferenceupdate == 1 || ds->pending.priorityupdate == 1)
         {

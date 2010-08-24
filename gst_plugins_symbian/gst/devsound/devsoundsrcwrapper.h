@@ -87,7 +87,6 @@ class DevSoundWrapperSrc :public MDevSoundObserver
 public:
 	CActiveListener	*AL;
 	CActiveScheduler *as;
-	//TInt init_complete;
 	CMMFBuffer *buffer;
 	CMMFDevSound    *dev_sound;
 	TMMFCapabilities caps;

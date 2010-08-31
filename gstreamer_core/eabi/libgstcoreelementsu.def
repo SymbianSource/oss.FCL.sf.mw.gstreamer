@@ -9,7 +9,8 @@ EXPORTS
 	gst_file_src_get_type @ 8 NONAME
 	gst_identity_get_type @ 9 NONAME
 	gst_multi_queue_get_type @ 10 NONAME
-	gst_queue_get_type @ 11 NONAME
-	gst_tee_get_type @ 12 NONAME
-	gst_type_find_element_get_type @ 13 NONAME
+	gst_open @ 11 NONAME
+	gst_queue_get_type @ 12 NONAME
+	gst_tee_get_type @ 13 NONAME
+	gst_type_find_element_get_type @ 14 NONAME
 

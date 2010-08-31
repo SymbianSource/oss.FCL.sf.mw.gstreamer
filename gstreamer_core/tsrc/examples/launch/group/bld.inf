@@ -23,7 +23,8 @@
 PRJ_PLATFORMS
 DEFAULT
 
-PRJ_EXPORTS
+PRJ_TESTEXPORTS
+../data/Crnival.mp3	/epoc32/winscw/c/data/gstreamer/Crnival.mp3
 										
 PRJ_TESTMMPFILES							
 launch.mmp

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SystemDefinition schema="3.0.0">
+  <package id="gstreamer" name="GStreamer" levels="plugin core api">
+      	<meta rel="config">
+      		<defined condition="FF_GSTREAMER"/>
+      	</meta>
+	<!-- structure matches planned directory layout -->
+    <collection id="gstreamerfw" name="GStreamer Framework" level="core">
+      <component id="gstreamer_core" name="GStreamer Core" introduced="^3" filter="s60">
+        <unit bldFile="gstreamer_core/group"/>
+      </component>
+    </collection>
+    <collection id="gst_plugins" name="GStreamer Plugins" level="plugin">
+      <component id="gst_plugins_base" name="GStreamer Base Plugins" introduced="^3" filter="s60">
+        <unit bldFile="gst_plugins_base/group"/>
+      </component>
+      <component id="gst_plugins_good" name="GStreamer Good Plugins" introduced="^3" filter="s60">
+        <unit bldFile="gst_plugins_good/group"/>
+      </component>
+      <component id="gst_plugins_symbian" filter="s60" name="GStreamer Sybmian Plugins" introduced="^3">
+        <unit bldFile="gst_plugins_symbian/group" filter="!test"/>
+        <unit bldFile="gst_plugins_symbian/tsrc/gstreamertestmodule/group" filter="test,pref_test,TA_GSTREAMER"/>
+      </component>
+    </collection>
+    <collection id="gstregistrygenerator" name="GStreamer Registry Generator" level="core">
+    	<!-- collection is really a component. Move down an directory  -->
+      <component id="gstregistrygenerator_build" filter="s60" name="GStreamer Registry Generator Build" introduced="^3">
+         <unit bldFile="gstregistrygenerator/group"/>
+      </component>
+    </collection>
+    <collection id="gstreamer_info" name="GStreamer Info" level="api">
+      <component id="gstreamer_rom" filter="s60" name="GStreamer ROM" introduced="^3" class="config">
+        <unit bldFile="rom"/>
+      </component>
+    </collection>
+  </package>
+</SystemDefinition>

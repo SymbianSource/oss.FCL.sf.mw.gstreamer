@@ -29,6 +29,7 @@
 #define GSTREAMER_IBY
 
 #include <bldvariant.hrh>
+#include <liboil.iby>
 
 #ifdef FF_GSTREAMER
 
@@ -47,7 +48,7 @@ file=ABI_DIR\BUILD_DIR\libgstreamer.dll             SHARED_LIB_DIR\libgstreamer.
 file=ABI_DIR\BUILD_DIR\libgstriff.dll               SHARED_LIB_DIR\libgstriff.dll
 file=ABI_DIR\BUILD_DIR\libgsttag.dll                SHARED_LIB_DIR\libgsttag.dll
 file=ABI_DIR\BUILD_DIR\libgstvideo.dll              SHARED_LIB_DIR\libgstvideo.dll
-file=ABI_DIR\BUILD_DIR\libgstvideorate.dll          SHARED_LIB_DIR\libgstvideorate.dll
+//file=ABI_DIR\BUILD_DIR\libgstvideorate.dll        SHARED_LIB_DIR\libgstvideorate.dll
 //file=ABI_DIR\BUILD_DIR\libgstvideoscale.dll       SHARED_LIB_DIR\libgstvideoscale.dll
 //file=ABI_DIR\BUILD_DIR\libgstvideotestsrc.dll     SHARED_LIB_DIR\libgstvideotestsrc.dll
 file=ABI_DIR\BUILD_DIR\libgstdevsoundext.dll        SHARED_LIB_DIR\libgstdevsoundext.dll
@@ -68,7 +69,6 @@ file=ABI_DIR\BUILD_DIR\libgstwavparse.dll           SHARED_LIB_DIR\libgstwavpars
 file=ABI_DIR\BUILD_DIR\libgstwavenc.dll             SHARED_LIB_DIR\libgstwavenc.dll
 file=ABI_DIR\BUILD_DIR\libgstaudioconvert.dll       SHARED_LIB_DIR\libgstaudioconvert.dll
 file=ABI_DIR\BUILD_DIR\libgstqueue2.dll             SHARED_LIB_DIR\libgstqueue2.dll
-file=ABI_DIR\BUILD_DIR\libgstautodetect.dll         SHARED_LIB_DIR\libgstautodetect.dll
 file=ABI_DIR\BUILD_DIR\libgstapp.dll                SHARED_LIB_DIR\libgstapp.dll
 file=ABI_DIR\BUILD_DIR\libgstadder.dll              SHARED_LIB_DIR\libgstadder.dll
 file=ABI_DIR\BUILD_DIR\libgsttcp.dll                SHARED_LIB_DIR\libgsttcp.dll
@@ -76,12 +76,15 @@ file=ABI_DIR\BUILD_DIR\libgstsubparse.dll           SHARED_LIB_DIR\libgstsubpars
 file=ABI_DIR\BUILD_DIR\libgstrtp.dll                SHARED_LIB_DIR\libgstrtp.dll
 file=ABI_DIR\BUILD_DIR\libgstgdp.dll                SHARED_LIB_DIR\libgstgdp.dll
 file=ABI_DIR\BUILD_DIR\libgstvolume.dll             SHARED_LIB_DIR\libgstvolume.dll
-file=ABI_DIR\BUILD_DIR\liboil.dll                   SHARED_LIB_DIR\liboil.dll
+file=ABI_DIR\BUILD_DIR\libgstamrmux.dll             SHARED_LIB_DIR\libgstamrmux.dll
+file=ABI_DIR\BUILD_DIR\gstqtmux.dll                 SHARED_LIB_DIR\gstqtmux.dll
+file=ABI_DIR\BUILD_DIR\libgstnokiaaacenc.dll        SHARED_LIB_DIR\libgstnokiaaacenc.dll
+file=ABI_DIR\BUILD_DIR\GstAudioRecordBin.dll        SHARED_LIB_DIR\GstAudioRecordBin.dll
 
 //GStreamer_Stub
 data=ZSYSTEM\install\gstreamer_stub.sis             System\Install\gstreamer_stub.sis
 data=\epoc32\winscw\c\gstreamer\plugins_list\gst_dll_2001F41F.txt             gstreamer\plugins_list\gst_dll_2001F41F.txt
-data=\epoc32\winscw\c\gstreamer\.gstreamer-0.10\registry.i686.bin           gstreamer\.gstreamer-0.10\registry.i686.bin
+//data=\epoc32\winscw\c\gstreamer\.gstreamer-0.10\registry.i686.bin           gstreamer\.gstreamer-0.10\registry.i686.bin
 
 #endif // end of FF_GSTREAMER
 

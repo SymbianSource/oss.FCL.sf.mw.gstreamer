@@ -1,10 +1,13 @@
 EXPORTS
 	gst_netaddress_equal @ 1 NONAME
-	gst_netaddress_get_ip4_address @ 2 NONAME
-	gst_netaddress_get_ip6_address @ 3 NONAME
-	gst_netaddress_get_net_type @ 4 NONAME
-	gst_netaddress_set_ip4_address @ 5 NONAME
-	gst_netaddress_set_ip6_address @ 6 NONAME
-	gst_netbuffer_get_type @ 7 NONAME
-	gst_netbuffer_new @ 8 NONAME
+	gst_netaddress_get_address_bytes @ 2 NONAME
+	gst_netaddress_get_ip4_address @ 3 NONAME
+	gst_netaddress_get_ip6_address @ 4 NONAME
+	gst_netaddress_get_net_type @ 5 NONAME
+	gst_netaddress_set_address_bytes @ 6 NONAME
+	gst_netaddress_set_ip4_address @ 7 NONAME
+	gst_netaddress_set_ip6_address @ 8 NONAME
+	gst_netaddress_to_string @ 9 NONAME
+	gst_netbuffer_get_type @ 10 NONAME
+	gst_netbuffer_new @ 11 NONAME
 

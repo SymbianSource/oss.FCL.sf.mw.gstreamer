@@ -29,8 +29,9 @@
  */
 
 #include "gstbufferstraw.h"
+#ifdef __SYMBIAN32__
 #include <glib_global.h>
-
+#endif
 static GCond *cond = NULL;
 static GMutex *lock = NULL;
 static GstBuffer *buf = NULL;

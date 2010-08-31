@@ -54,14 +54,34 @@ G_BEGIN_DECLS
  * mixer, which means that setting this track will change
  * the hearable volume on any output.
  */
-
+/**
+ * GstMixerTrackFlags:
+ * @GST_MIXER_TRACK_INPUT: mixer track is for input
+ * @GST_MIXER_TRACK_OUTPUT: mixer track is for output
+ * @GST_MIXER_TRACK_MUTE: input or output is muted
+ * @GST_MIXER_TRACK_RECORD: input is audible in speakers attached to output
+ *     (for #GST_MIXER_TRACK_INPUT mixer tracks only)
+ * @GST_MIXER_TRACK_MASTER: this mixer track is likely to be the master control
+ * @GST_MIXER_TRACK_SOFTWARE: mixer track's' volume control is implemented
+ *     in software (as opposed to a hardware control)
+ * @GST_MIXER_TRACK_NO_RECORD: input track lacks support for recordable.
+ *     Since: 0.10.23
+ * @GST_MIXER_TRACK_NO_MUTE: play track doesn't support mute. Since: 0.10.23
+ * @GST_MIXER_TRACK_WHITELIST: track should be displayed "by default" in apps.
+ *     Since: 0.10.23
+ *
+ * Mixer track flags.
+ */
 typedef enum {
   GST_MIXER_TRACK_INPUT  = (1<<0),
   GST_MIXER_TRACK_OUTPUT = (1<<1),
   GST_MIXER_TRACK_MUTE   = (1<<2),
   GST_MIXER_TRACK_RECORD = (1<<3),
   GST_MIXER_TRACK_MASTER = (1<<4),
-  GST_MIXER_TRACK_SOFTWARE = (1<<5)
+  GST_MIXER_TRACK_SOFTWARE = (1<<5),
+  GST_MIXER_TRACK_NO_RECORD = (1<<6),
+  GST_MIXER_TRACK_NO_MUTE = (1<<7),
+  GST_MIXER_TRACK_WHITELIST = (1<<8),
 } GstMixerTrackFlags;
 
 #define GST_MIXER_TRACK_HAS_FLAG(channel, flag) \

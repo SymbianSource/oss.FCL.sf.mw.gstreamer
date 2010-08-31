@@ -63,8 +63,8 @@ typedef struct
     GstElement  *preroll;
     GstElement  *selector;
     gboolean     done;
-#define NUM_TYPES 3
-  } type[NUM_TYPES]; /* AUDIO, VIDEO, TEXT */
+#define NUM_TYPES 4
+  } type[NUM_TYPES]; /* AUDIO, VIDEO, TEXT, SUBPIC */
 } GstPlayBaseGroup;
 
 struct _GstPlayBaseBin {
@@ -87,6 +87,7 @@ struct _GstPlayBaseBin {
   GstElement    *subtitle;              /* additional filesrc ! subparse bin */
   gboolean       subtitle_done;
   gboolean       need_rebuild;
+  gboolean       raw_decoding_mode;     /* Use smaller queues when source outputs raw data */
 
   GSList        *subtitle_elements;     /* subtitle elements that have 'subtitle-encoding' property */
   gchar         *subencoding;           /* encoding to propagate to the above subtitle elements     */
@@ -113,6 +114,8 @@ struct _GstPlayBaseBinClass {
 
   void     (*set_subtitles_visible) (GstPlayBaseBin *play_base_bin,
                                      gboolean visible);
+  void     (*set_audio_mute)        (GstPlayBaseBin *play_base_bin,
+                                     gboolean mute);
 };
 #ifdef __SYMBIAN32__
 IMPORT_C

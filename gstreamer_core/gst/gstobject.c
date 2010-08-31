@@ -83,7 +83,6 @@
  * Last reviewed on 2005-11-09 (0.9.4)
  */
 
-
 #include "gst_private.h"
 
 #include "gstobject.h"
@@ -101,10 +100,11 @@
 static GstAllocTrace *_gst_object_trace;
 #endif
 
-
 #define DEBUG_REFCOUNT
 
 /* Object signals and args */
+/* FIXME-0.11: have a read-only parent property instead of the two signals
+ * then we get notify::parent for free */
 enum
 {
   PARENT_SET,
@@ -145,9 +145,6 @@ static void gst_signal_object_init (GstSignalObject * object);
 static guint gst_signal_object_signals[SO_LAST_SIGNAL] = { 0 };
 #endif
 
-static void gst_object_class_init (GstObjectClass * klass);
-static void gst_object_init (GTypeInstance * instance, gpointer g_class);
-
 static void gst_object_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
 static void gst_object_get_property (GObject * object, guint prop_id,
@@ -167,43 +164,13 @@ static void gst_object_real_restore_thyself (GstObject * object,
 
 static GObjectClass *parent_class = NULL;
 static guint gst_object_signals[LAST_SIGNAL] = { 0 };
-#ifdef __SYMBIAN32__
-EXPORT_C
-#endif
 
-
-GType
-gst_object_get_type (void)
-{
-  static GType gst_object_type = 0;
-
-  if (G_UNLIKELY (gst_object_type == 0)) {
-    static const GTypeInfo object_info = {
-      sizeof (GstObjectClass),
-      NULL,
-      NULL,
-      (GClassInitFunc) gst_object_class_init,
-      NULL,
-      NULL,
-      sizeof (GstObject),
-      0,
-      gst_object_init,
-      NULL
-    };
-
-    gst_object_type =
-        g_type_register_static (G_TYPE_OBJECT, "GstObject", &object_info,
-        G_TYPE_FLAG_ABSTRACT);
-  }
-  return gst_object_type;
-}
+G_DEFINE_ABSTRACT_TYPE (GstObject, gst_object, G_TYPE_OBJECT);
 
 static void
 gst_object_class_init (GstObjectClass * klass)
 {
-  GObjectClass *gobject_class;
-
-  gobject_class = G_OBJECT_CLASS (klass);
+  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
   parent_class = g_type_class_peek_parent (klass);
 
@@ -216,7 +183,8 @@ gst_object_class_init (GstObjectClass * klass)
 
   g_object_class_install_property (gobject_class, ARG_NAME,
       g_param_spec_string ("name", "Name", "The name of the object",
-          NULL, G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
+          NULL,
+          G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS));
 
   /**
    * GstObject::parent-set:
@@ -294,10 +262,8 @@ gst_object_class_init (GstObjectClass * klass)
 }
 
 static void
-gst_object_init (GTypeInstance * instance, gpointer g_class)
+gst_object_init (GstObject * object)
 {
-  GstObject *object = GST_OBJECT (instance);
-
   object->lock = g_mutex_new ();
   object->parent = NULL;
   object->name = NULL;
@@ -328,6 +294,7 @@ gst_object_init (GTypeInstance * instance, gpointer g_class)
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
+
 gpointer
 gst_object_ref (gpointer object)
 {
@@ -370,6 +337,43 @@ gst_object_unref (gpointer object)
       ((GObject *) object)->ref_count, ((GObject *) object)->ref_count - 1);
 #endif
   g_object_unref (object);
+}
+
+/**
+ * gst_object_ref_sink:
+ * @object: a #GstObject to sink
+ *
+ * Increase the reference count of @object, and possibly remove the floating
+ * reference, if @object has a floating reference.
+ *
+ * In other words, if the object is floating, then this call "assumes ownership"
+ * of the floating reference, converting it to a normal reference by clearing
+ * the floating flag while leaving the reference count unchanged. If the object
+ * is not floating, then this call adds a new normal reference increasing the
+ * reference count by one.
+ *
+ * MT safe. This function grabs and releases @object lock.
+ *
+ * Since: 0.10.24
+ */
+#ifdef __SYMBIAN32__
+EXPORT_C
+#endif
+
+void
+gst_object_ref_sink (gpointer object)
+{
+  g_return_if_fail (GST_IS_OBJECT (object));
+
+  GST_OBJECT_LOCK (object);
+  if (G_LIKELY (GST_OBJECT_IS_FLOATING (object))) {
+    GST_CAT_LOG_OBJECT (GST_CAT_REFCOUNTING, object, "unsetting floating flag");
+    GST_OBJECT_FLAG_UNSET (object, GST_OBJECT_FLOATING);
+    GST_OBJECT_UNLOCK (object);
+  } else {
+    GST_OBJECT_UNLOCK (object);
+    gst_object_ref (object);
+  }
 }
 
 /**
@@ -437,10 +441,10 @@ gst_object_replace (GstObject ** oldobj, GstObject * newobj)
   g_return_if_fail (newobj == NULL || GST_IS_OBJECT (newobj));
 
 #ifdef DEBUG_REFCOUNT
-  GST_CAT_LOG (GST_CAT_REFCOUNTING, "replace %s (%d) with %s (%d)",
-      *oldobj ? GST_STR_NULL (GST_OBJECT_NAME (*oldobj)) : "(NONE)",
+  GST_CAT_LOG (GST_CAT_REFCOUNTING, "replace %p %s (%d) with %p %s (%d)",
+      *oldobj, *oldobj ? GST_STR_NULL (GST_OBJECT_NAME (*oldobj)) : "(NONE)",
       *oldobj ? G_OBJECT (*oldobj)->ref_count : 0,
-      newobj ? GST_STR_NULL (GST_OBJECT_NAME (newobj)) : "(NONE)",
+      newobj, newobj ? GST_STR_NULL (GST_OBJECT_NAME (newobj)) : "(NONE)",
       newobj ? G_OBJECT (newobj)->ref_count : 0);
 #endif
 
@@ -525,16 +529,9 @@ gst_object_dispatch_properties_changed (GObject * object,
   GstObject *gst_object, *parent, *old_parent;
   guint i;
   gchar *name, *debug_name;
-  GstObjectClass *klass;
-
-  /* we fail when this is not a GstObject */
-  g_return_if_fail (GST_IS_OBJECT (object));
-
-  klass = GST_OBJECT_GET_CLASS (object);
 
   /* do the standard dispatching */
-  G_OBJECT_CLASS (parent_class)->dispatch_properties_changed (object, n_pspecs,
-      pspecs);
+  parent_class->dispatch_properties_changed (object, n_pspecs, pspecs);
 
   gst_object = GST_OBJECT_CAST (object);
   name = gst_object_get_name (gst_object);
@@ -544,12 +541,11 @@ gst_object_dispatch_properties_changed (GObject * object,
   parent = gst_object_get_parent (gst_object);
   while (parent) {
     for (i = 0; i < n_pspecs; i++) {
-      GST_LOG_OBJECT (parent, "deep notification from %s (%s)",
-          debug_name, pspecs[i]->name);
+      GST_CAT_LOG_OBJECT (GST_CAT_PROPERTIES, parent,
+          "deep notification from %s (%s)", debug_name, pspecs[i]->name);
 
       g_signal_emit (parent, gst_object_signals[DEEP_NOTIFY],
-          g_quark_from_string (pspecs[i]->name), GST_OBJECT_CAST (object),
-          pspecs[i]);
+          g_quark_from_string (pspecs[i]->name), gst_object, pspecs[i]);
     }
 
     old_parent = parent;
@@ -597,15 +593,16 @@ gst_object_default_deep_notify (GObject * object, GstObject * orig,
     g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (pspec));
     g_object_get_property (G_OBJECT (orig), pspec->name, &value);
 
+    /* FIXME: handle flags */
     if (G_IS_PARAM_SPEC_ENUM (pspec)) {
       GEnumValue *enum_value;
+      GEnumClass *klass = G_ENUM_CLASS (g_type_class_ref (pspec->value_type));
 
-      enum_value =
-          g_enum_get_value (G_ENUM_CLASS (g_type_class_ref (pspec->value_type)),
-          g_value_get_enum (&value));
+      enum_value = g_enum_get_value (klass, g_value_get_enum (&value));
 
       str = g_strdup_printf ("%s (%d)", enum_value->value_nick,
           enum_value->value);
+      g_type_class_unref (klass);
     } else {
       str = g_strdup_value_contents (&value);
     }
@@ -649,7 +646,7 @@ gst_object_set_name_default (GstObject * object)
   if (strncmp (type_name, "Gst", 3) == 0)
     type_name += 3;
   tmp = g_strdup_printf ("%s%d", type_name, count);
-  name = g_ascii_strdown (tmp, strlen (tmp));
+  name = g_ascii_strdown (tmp, -1);
   g_free (tmp);
 
   result = gst_object_set_name (object, name);
@@ -726,7 +723,8 @@ had_parent:
  */
 #ifdef __SYMBIAN32__
 EXPORT_C
-#endif 
+#endif
+
 gchar *
 gst_object_get_name (GstObject * object)
 {
@@ -814,9 +812,11 @@ gst_object_get_name_prefix (GstObject * object)
  *
  * MT safe. Grabs and releases @object's LOCK.
  */
+
 #ifdef __SYMBIAN32__
 EXPORT_C
-#endif 
+#endif
+
 gboolean
 gst_object_set_parent (GstObject * object, GstObject * parent)
 {
@@ -844,7 +844,7 @@ gst_object_set_parent (GstObject * object, GstObject * parent)
     gst_object_ref (object);
   }
 
-  g_signal_emit (G_OBJECT (object), gst_object_signals[PARENT_SET], 0, parent);
+  g_signal_emit (object, gst_object_signals[PARENT_SET], 0, parent);
 
   return TRUE;
 
@@ -899,9 +899,11 @@ gst_object_get_parent (GstObject * object)
  *
  * MT safe. Grabs and releases @object's lock.
  */
+
 #ifdef __SYMBIAN32__
 EXPORT_C
-#endif 
+#endif
+
 void
 gst_object_unparent (GstObject * object)
 {
@@ -917,8 +919,7 @@ gst_object_unparent (GstObject * object)
     object->parent = NULL;
     GST_OBJECT_UNLOCK (object);
 
-    g_signal_emit (G_OBJECT (object), gst_object_signals[PARENT_UNSET], 0,
-        parent);
+    g_signal_emit (object, gst_object_signals[PARENT_UNSET], 0, parent);
 
     gst_object_unref (object);
   } else {
@@ -1031,8 +1032,7 @@ gst_object_save_thyself (GstObject * object, xmlNodePtr parent)
   if (oclass->save_thyself)
     oclass->save_thyself (object, parent);
 
-  g_signal_emit (G_OBJECT (object), gst_object_signals[OBJECT_SAVED], 0,
-      parent);
+  g_signal_emit (object, gst_object_signals[OBJECT_SAVED], 0, parent);
 
   return parent;
 }
@@ -1128,6 +1128,7 @@ gst_object_get_path_string (GstObject * object)
   GSList *parents;
   void *parent;
   gchar *prevpath, *path;
+  const gchar *typename;
   gchar *component;
   gchar *separator;
 
@@ -1156,16 +1157,27 @@ gst_object_get_path_string (GstObject * object)
    * decrease the refcounting on each element after we handled
    * it. */
   for (parents = parentage; parents; parents = g_slist_next (parents)) {
+    if (G_IS_OBJECT (parents->data)) {
+      typename = G_OBJECT_TYPE_NAME (parents->data);
+    } else {
+      typename = NULL;
+    }
     if (GST_IS_OBJECT (parents->data)) {
       GstObject *item = GST_OBJECT_CAST (parents->data);
       GstObjectClass *oclass = GST_OBJECT_GET_CLASS (item);
+      gchar *objname = gst_object_get_name (item);
 
-      component = gst_object_get_name (item);
+      component = g_strdup_printf ("%s:%s", typename, objname);
       separator = oclass->path_string_separator;
       /* and unref now */
       gst_object_unref (item);
+      g_free (objname);
     } else {
-      component = g_strdup_printf ("%p", parents->data);
+      if (typename) {
+        component = g_strdup_printf ("%s:%p", typename, parents->data);
+      } else {
+        component = g_strdup_printf ("%p", parents->data);
+      }
       separator = "/";
     }
 
@@ -1197,39 +1209,51 @@ struct _GstSignalObjectClass
 #endif
 };
 
+
+//deviation for EXPORT_C issue Start
+#ifndef __SYMBIAN32__
+
+G_DEFINE_TYPE (GstSignalObject, gst_signal_object, G_TYPE_OBJECT);
+
+#else
+
+static void     gst_signal_object_init              (GstSignalObject        *self);
+static void     gst_signal_object_class_init        (GstSignalObjectClass *klass);
+static gpointer gst_signal_object_parent_class = NULL;
+static void     gst_signal_object_class_intern_init (gpointer klass)
+{
+  gst_signal_object_parent_class = g_type_class_peek_parent (klass);
+  gst_signal_object_class_init ((GstSignalObjectClass*) klass);
+}
+
 static GType
 gst_signal_object_get_type (void)
 {
-  static GType signal_object_type = 0;
+  static volatile gsize g_define_type_id__volatile = 0;
+  if (g_once_init_enter (&g_define_type_id__volatile)) 
+    {
+      GType g_define_type_id =
+        g_type_register_static_simple (G_TYPE_OBJECT,
+                                       g_intern_static_string ("GstSignalObject"),
+                                       sizeof (GstSignalObjectClass),
+                                       (GClassInitFunc) gst_signal_object_class_intern_init,
+                                       sizeof (GstSignalObject),
+                                       (GInstanceInitFunc) gst_signal_object_init,
+                                       (GTypeFlags) 0);
+      { /* custom code follows */
+      	//no code
+      }
+				
+      g_once_init_leave (&g_define_type_id__volatile, g_define_type_id); 
+    }					
+  return g_define_type_id__volatile;	
+} /* closes gst_signal_object_get_type() */
 
-  if (G_UNLIKELY (signal_object_type == 0)) {
-    static const GTypeInfo signal_object_info = {
-      sizeof (GstSignalObjectClass),
-      NULL,
-      NULL,
-      (GClassInitFunc) gst_signal_object_class_init,
-      NULL,
-      NULL,
-      sizeof (GstSignalObject),
-      0,
-      (GInstanceInitFunc) gst_signal_object_init,
-      NULL
-    };
-
-    signal_object_type =
-        g_type_register_static (G_TYPE_OBJECT, "GstSignalObject",
-        &signal_object_info, 0);
-  }
-  return signal_object_type;
-}
+#endif //deviation for EXPORT_C issue end
 
 static void
 gst_signal_object_class_init (GstSignalObjectClass * klass)
 {
-  GObjectClass *gobject_class;
-
-  gobject_class = (GObjectClass *) klass;
-
   parent_class = g_type_class_peek_parent (klass);
 
 #ifndef GST_DISABLE_LOADSAVE

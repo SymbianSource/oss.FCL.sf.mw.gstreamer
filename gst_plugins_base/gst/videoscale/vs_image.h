@@ -27,9 +27,8 @@
 
 #ifndef __VS_IMAGE_H__
 #define __VS_IMAGE_H__
-//#include <liboil/liboil-stdint.h>
 
-typedef unsigned char uint8_t;
+#include <liboil/liboil-stdint.h>
 
 typedef struct _VSImage VSImage;
 
@@ -39,40 +38,108 @@ struct _VSImage {
   int height;
   int stride;
 };
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 
 void vs_image_scale_nearest_RGBA (const VSImage *dest, const VSImage *src,
     uint8_t *tmpbuf);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void vs_image_scale_linear_RGBA (const VSImage *dest, const VSImage *src,
     uint8_t *tmpbuf);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 
 void vs_image_scale_nearest_RGB (const VSImage *dest, const VSImage *src,
     uint8_t *tmpbuf);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void vs_image_scale_linear_RGB (const VSImage *dest, const VSImage *src,
     uint8_t *tmpbuf);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 
 void vs_image_scale_nearest_YUYV (const VSImage *dest, const VSImage *src,
     uint8_t *tmpbuf);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void vs_image_scale_linear_YUYV (const VSImage *dest, const VSImage *src,
     uint8_t *tmpbuf);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 
 void vs_image_scale_nearest_UYVY (const VSImage *dest, const VSImage *src,
     uint8_t *tmpbuf);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void vs_image_scale_linear_UYVY (const VSImage *dest, const VSImage *src,
     uint8_t *tmpbuf);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 
 void vs_image_scale_nearest_Y (const VSImage *dest, const VSImage *src,
     uint8_t *tmpbuf);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void vs_image_scale_linear_Y (const VSImage *dest, const VSImage *src,
     uint8_t *tmpbuf);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 
 void vs_image_scale_nearest_RGB565 (const VSImage *dest, const VSImage *src,
     uint8_t *tmpbuf);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void vs_image_scale_linear_RGB565 (const VSImage *dest, const VSImage *src,
     uint8_t *tmpbuf);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 
 void vs_image_scale_nearest_RGB555 (const VSImage *dest, const VSImage *src,
     uint8_t *tmpbuf);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void vs_image_scale_linear_RGB555 (const VSImage *dest, const VSImage *src,
+    uint8_t *tmpbuf);
+
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+void vs_image_scale_nearest_Y16 (const VSImage *dest, const VSImage *src,
+    uint8_t *tmpbuf);
+
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+void vs_image_scale_linear_Y16 (const VSImage *dest, const VSImage *src,
     uint8_t *tmpbuf);
 
 #endif

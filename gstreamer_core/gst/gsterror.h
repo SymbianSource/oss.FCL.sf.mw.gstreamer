@@ -169,6 +169,10 @@ typedef enum
  * @GST_STREAM_ERROR_MUX: used when muxing fails.
  * @GST_STREAM_ERROR_FORMAT: used when the stream is of the wrong format
  * (for example, wrong caps).
+ * @GST_STREAM_ERROR_DECRYPT: used when the stream is encrypted and can't be
+ * decrypted because this is not supported by the element. (Since: 0.10.20)
+ * @GST_STREAM_ERROR_DECRYPT_NOKEY: used when the stream is encrypted and
+ * can't be decrypted because no suitable key is available. (Since: 0.10.20)
  * @GST_STREAM_ERROR_NUM_ERRORS: the number of stream error types.
  *
  * Stream errors are for anything related to the stream being processed:
@@ -188,6 +192,8 @@ typedef enum
   GST_STREAM_ERROR_DEMUX,
   GST_STREAM_ERROR_MUX,
   GST_STREAM_ERROR_FORMAT,
+  GST_STREAM_ERROR_DECRYPT,
+  GST_STREAM_ERROR_DECRYPT_NOKEY,
   GST_STREAM_ERROR_NUM_ERRORS
 } GstStreamError;
 
@@ -233,7 +239,9 @@ typedef enum
  * call.  To be used as the debug argument in #GST_ELEMENT_ERROR.
  */
 #define GST_ERROR_SYSTEM    ("system error: %s", g_strerror (errno))
-
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 GType gst_g_error_get_type (void);
 #ifdef __SYMBIAN32__
 IMPORT_C

@@ -38,42 +38,173 @@ G_BEGIN_DECLS
 #endif
 
 void vs_scanline_downsample_Y (uint8_t *dest, uint8_t *src, int n);
-void vs_scanline_resample_nearest_Y (uint8_t *dest, uint8_t *src, int n, int *accumulator, int increment);
-void vs_scanline_resample_linear_Y (uint8_t *dest, uint8_t *src, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void vs_scanline_resample_nearest_Y (uint8_t *dest, uint8_t *src, int n, int src_width, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void vs_scanline_resample_linear_Y (uint8_t *dest, uint8_t *src, int n, int src_width, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void vs_scanline_merge_linear_Y (uint8_t *dest, uint8_t *src1, uint8_t *src2, int n, int x);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 
 void vs_scanline_downsample_RGBA (uint8_t *dest, uint8_t *src, int n);
-void vs_scanline_resample_nearest_RGBA (uint8_t *dest, uint8_t *src, int n, int *accumulator, int increment);
-void vs_scanline_resample_linear_RGBA (uint8_t *dest, uint8_t *src, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void vs_scanline_resample_nearest_RGBA (uint8_t *dest, uint8_t *src, int src_width, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void vs_scanline_resample_linear_RGBA (uint8_t *dest, uint8_t *src, int src_width, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void vs_scanline_merge_linear_RGBA (uint8_t *dest, uint8_t *src1, uint8_t *src2, int n, int x);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 
 void vs_scanline_downsample_RGB (uint8_t *dest, uint8_t *src, int n);
-void vs_scanline_resample_nearest_RGB (uint8_t *dest, uint8_t *src, int n, int *accumulator, int increment);
-void vs_scanline_resample_linear_RGB (uint8_t *dest, uint8_t *src, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void vs_scanline_resample_nearest_RGB (uint8_t *dest, uint8_t *src, int src_width, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void vs_scanline_resample_linear_RGB (uint8_t *dest, uint8_t *src, int src_width, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void vs_scanline_merge_linear_RGB (uint8_t *dest, uint8_t *src1, uint8_t *src2, int n, int x);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 
 void vs_scanline_downsample_YUYV (uint8_t *dest, uint8_t *src, int n);
-void vs_scanline_resample_nearest_YUYV (uint8_t *dest, uint8_t *src, int n, int *accumulator, int increment);
-void vs_scanline_resample_linear_YUYV (uint8_t *dest, uint8_t *src, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void vs_scanline_resample_nearest_YUYV (uint8_t *dest, uint8_t *src, int src_width, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void vs_scanline_resample_linear_YUYV (uint8_t *dest, uint8_t *src, int src_width, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void vs_scanline_merge_linear_YUYV (uint8_t *dest, uint8_t *src1, uint8_t *src2, int n, int x);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 
 void vs_scanline_downsample_UYVY (uint8_t *dest, uint8_t *src, int n);
-void vs_scanline_resample_nearest_UYVY (uint8_t *dest, uint8_t *src, int n, int *accumulator, int increment);
-void vs_scanline_resample_linear_UYVY (uint8_t *dest, uint8_t *src, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void vs_scanline_resample_nearest_UYVY (uint8_t *dest, uint8_t *src, int src_width, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void vs_scanline_resample_linear_UYVY (uint8_t *dest, uint8_t *src, int src_width, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void vs_scanline_merge_linear_UYVY (uint8_t *dest, uint8_t *src1, uint8_t *src2, int n, int x);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 
 void vs_scanline_downsample_RGB565 (uint8_t *dest, uint8_t *src, int n);
-void vs_scanline_resample_nearest_RGB565 (uint8_t *dest, uint8_t *src, int n, int *accumulator, int increment);
-void vs_scanline_resample_linear_RGB565 (uint8_t *dest, uint8_t *src, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void vs_scanline_resample_nearest_RGB565 (uint8_t *dest, uint8_t *src, int src_width, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void vs_scanline_resample_linear_RGB565 (uint8_t *dest, uint8_t *src, int src_width, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void vs_scanline_merge_linear_RGB565 (uint8_t *dest, uint8_t *src1, uint8_t *src2, int n, int x);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 
 void vs_scanline_downsample_RGB555 (uint8_t *dest, uint8_t *src, int n);
-void vs_scanline_resample_nearest_RGB555 (uint8_t *dest, uint8_t *src, int n, int *accumulator, int increment);
-void vs_scanline_resample_linear_RGB555 (uint8_t *dest, uint8_t *src, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void vs_scanline_resample_nearest_RGB555 (uint8_t *dest, uint8_t *src, int src_width, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void vs_scanline_resample_linear_RGB555 (uint8_t *dest, uint8_t *src, int src_width, int n, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 void vs_scanline_merge_linear_RGB555 (uint8_t *dest, uint8_t *src1, uint8_t *src2, int n, int x);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void vs_scanline_downsample_Y16 (uint8_t *dest, uint8_t *src, int n);
+
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void vs_scanline_resample_nearest_Y16 (uint8_t *dest, uint8_t *src, int n, int src_width, int *accumulator, int increment);
+
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void vs_scanline_resample_linear_Y16 (uint8_t *dest, uint8_t *src, int n, int src_width, int *accumulator, int increment);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void vs_scanline_merge_linear_Y16 (uint8_t *dest, uint8_t *src1, uint8_t *src2, int n, int x);
 
 #ifdef __SYMBIAN32__
 G_END_DECLS
 #endif
+
 #endif
 

@@ -18,7 +18,15 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-
+/**
+ * SECTION:gstpropertyprobe
+ * @short_description: Interface for probing possible property values
+ *
+ * The property probe is a way to autodetect allowed values for a GObject
+ * property. It's primary use is to autodetect device-names in several elements.
+ *
+ * The interface is implemented by many hardware sources and sinks.
+ */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -73,6 +81,15 @@ gst_property_probe_iface_init (GstPropertyProbeInterface * iface)
   static gboolean initialized = FALSE;
 
   if (!initialized) {
+    /**
+     * GstPropertyProbe::probe-needed
+     * @pspec: #GParamSpec that needs a probe
+     *
+     */
+    /* FIXME:
+     * what is the purpose of this signal, I can't find any usage of it
+     * according to proto n *.h, it should be g_cclosure_marshal_VOID__PARAM
+     */
     gst_property_probe_signals[SIGNAL_PROBE_NEEDED] =
         g_signal_new ("probe-needed", G_TYPE_FROM_CLASS (iface),
         G_SIGNAL_RUN_LAST, G_STRUCT_OFFSET (GstPropertyProbeInterface,
@@ -99,13 +116,13 @@ gst_property_probe_iface_init (GstPropertyProbeInterface * iface)
 EXPORT_C
 #endif
 
-
 const GList *
 gst_property_probe_get_properties (GstPropertyProbe * probe)
 {
   GstPropertyProbeInterface *iface;
 
   g_return_val_if_fail (probe != NULL, NULL);
+  g_return_val_if_fail (GST_IS_PROPERTY_PROBE (probe), NULL);
 
   iface = GST_PROPERTY_PROBE_GET_IFACE (probe);
 
@@ -114,34 +131,57 @@ gst_property_probe_get_properties (GstPropertyProbe * probe)
 
   return NULL;
 }
+
+/**
+ * gst_property_probe_get_property:
+ * @probe: the #GstPropertyProbe to get the properties for.
+ * @name: name of the property.
+ *
+ * Get #GParamSpec for a property for which probing is supported.
+ *
+ * Returns: the #GParamSpec of %NULL.
+ */
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
 
-
 const GParamSpec *
 gst_property_probe_get_property (GstPropertyProbe * probe, const gchar * name)
 {
-  const GList *pspecs = gst_property_probe_get_properties (probe);
+  const GList *pspecs;
 
   g_return_val_if_fail (probe != NULL, NULL);
+  g_return_val_if_fail (GST_IS_PROPERTY_PROBE (probe), NULL);
   g_return_val_if_fail (name != NULL, NULL);
+
+  pspecs = gst_property_probe_get_properties (probe);
 
   while (pspecs) {
     const GParamSpec *pspec = pspecs->data;
 
-    if (!strcmp (pspec->name, name))
-      return pspec;
+    if (pspec) {
+      if (!strcmp (pspec->name, name))
+        return pspec;
+    } else {
+      GST_WARNING_OBJECT (probe, "NULL paramspec in property probe list");
+    }
 
     pspecs = pspecs->next;
   }
 
   return NULL;
 }
+
+/**
+ * gst_property_probe_probe_property:
+ * @probe: the #GstPropertyProbe to check.
+ * @pspec: #GParamSpec of the property.
+ *
+ * Runs a probe on the property specified by %pspec
+ */
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
-
 
 void
 gst_property_probe_probe_property (GstPropertyProbe * probe,
@@ -150,6 +190,7 @@ gst_property_probe_probe_property (GstPropertyProbe * probe,
   GstPropertyProbeInterface *iface;
 
   g_return_if_fail (probe != NULL);
+  g_return_if_fail (GST_IS_PROPERTY_PROBE (probe));
   g_return_if_fail (pspec != NULL);
 
   iface = GST_PROPERTY_PROBE_GET_IFACE (probe);
@@ -161,14 +202,13 @@ gst_property_probe_probe_property (GstPropertyProbe * probe,
 /**
  * gst_property_probe_probe_property_name:
  * @probe: the #GstPropertyProbe to check.
- * @name: name of the property to return.
+ * @name: name of the property.
  *
- * Runs a probe on the given property.
+ * Runs a probe on the property specified by %name.
  */
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
-
 
 void
 gst_property_probe_probe_property_name (GstPropertyProbe * probe,
@@ -177,6 +217,7 @@ gst_property_probe_probe_property_name (GstPropertyProbe * probe,
   const GParamSpec *pspec;
 
   g_return_if_fail (probe != NULL);
+  g_return_if_fail (GST_IS_PROPERTY_PROBE (probe));
   g_return_if_fail (name != NULL);
 
   pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (probe), name);
@@ -205,7 +246,6 @@ gst_property_probe_probe_property_name (GstPropertyProbe * probe,
 EXPORT_C
 #endif
 
-
 gboolean
 gst_property_probe_needs_probe (GstPropertyProbe * probe,
     const GParamSpec * pspec)
@@ -213,6 +253,7 @@ gst_property_probe_needs_probe (GstPropertyProbe * probe,
   GstPropertyProbeInterface *iface;
 
   g_return_val_if_fail (probe != NULL, FALSE);
+  g_return_val_if_fail (GST_IS_PROPERTY_PROBE (probe), FALSE);
   g_return_val_if_fail (pspec != NULL, FALSE);
 
   iface = GST_PROPERTY_PROBE_GET_IFACE (probe);
@@ -236,7 +277,6 @@ gst_property_probe_needs_probe (GstPropertyProbe * probe,
 EXPORT_C
 #endif
 
-
 gboolean
 gst_property_probe_needs_probe_name (GstPropertyProbe * probe,
     const gchar * name)
@@ -244,6 +284,7 @@ gst_property_probe_needs_probe_name (GstPropertyProbe * probe,
   const GParamSpec *pspec;
 
   g_return_val_if_fail (probe != NULL, FALSE);
+  g_return_val_if_fail (GST_IS_PROPERTY_PROBE (probe), FALSE);
   g_return_val_if_fail (name != NULL, FALSE);
 
   pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (probe), name);
@@ -269,7 +310,6 @@ gst_property_probe_needs_probe_name (GstPropertyProbe * probe,
 EXPORT_C
 #endif
 
-
 GValueArray *
 gst_property_probe_get_values (GstPropertyProbe * probe,
     const GParamSpec * pspec)
@@ -277,6 +317,7 @@ gst_property_probe_get_values (GstPropertyProbe * probe,
   GstPropertyProbeInterface *iface;
 
   g_return_val_if_fail (probe != NULL, NULL);
+  g_return_val_if_fail (GST_IS_PROPERTY_PROBE (probe), NULL);
   g_return_val_if_fail (pspec != NULL, NULL);
 
   iface = GST_PROPERTY_PROBE_GET_IFACE (probe);
@@ -300,7 +341,6 @@ gst_property_probe_get_values (GstPropertyProbe * probe,
 EXPORT_C
 #endif
 
-
 GValueArray *
 gst_property_probe_get_values_name (GstPropertyProbe * probe,
     const gchar * name)
@@ -308,6 +348,7 @@ gst_property_probe_get_values_name (GstPropertyProbe * probe,
   const GParamSpec *pspec;
 
   g_return_val_if_fail (probe != NULL, NULL);
+  g_return_val_if_fail (GST_IS_PROPERTY_PROBE (probe), NULL);
   g_return_val_if_fail (name != NULL, NULL);
 
   pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (probe), name);
@@ -334,7 +375,6 @@ gst_property_probe_get_values_name (GstPropertyProbe * probe,
 EXPORT_C
 #endif
 
-
 GValueArray *
 gst_property_probe_probe_and_get_values (GstPropertyProbe * probe,
     const GParamSpec * pspec)
@@ -342,6 +382,7 @@ gst_property_probe_probe_and_get_values (GstPropertyProbe * probe,
   GstPropertyProbeInterface *iface;
 
   g_return_val_if_fail (probe != NULL, NULL);
+  g_return_val_if_fail (GST_IS_PROPERTY_PROBE (probe), NULL);
   g_return_val_if_fail (pspec != NULL, NULL);
 
   iface = GST_PROPERTY_PROBE_GET_IFACE (probe);
@@ -365,7 +406,6 @@ gst_property_probe_probe_and_get_values (GstPropertyProbe * probe,
 EXPORT_C
 #endif
 
-
 GValueArray *
 gst_property_probe_probe_and_get_values_name (GstPropertyProbe * probe,
     const gchar * name)
@@ -373,6 +413,7 @@ gst_property_probe_probe_and_get_values_name (GstPropertyProbe * probe,
   const GParamSpec *pspec;
 
   g_return_val_if_fail (probe != NULL, NULL);
+  g_return_val_if_fail (GST_IS_PROPERTY_PROBE (probe), NULL);
   g_return_val_if_fail (name != NULL, NULL);
 
   pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (probe), name);

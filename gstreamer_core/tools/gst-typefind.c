@@ -137,7 +137,7 @@ typefind_file (const gchar * filename)
 int
 main (int argc, char *argv[])
 {
-  gchar **filenames = NULL;
+  static gchar **filenames = NULL;
   guint num, i;
   GError *err = NULL;
   GOptionContext *ctx;

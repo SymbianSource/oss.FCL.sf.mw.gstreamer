@@ -30,19 +30,10 @@
 #include <glib/gprintf.h>
 #include <gst/gst.h>
 
-#include "gstcontrolsource.h"
-#include "gstinterpolationcontrolsource.h"
+#include <gst/controller/gstcontrolsource.h>
+#include <gst/controller/gstinterpolationcontrolsource.h>
 
 G_BEGIN_DECLS
-
-/**
- * GST_PARAM_CONTROLLABLE:
- *
- * Use this flag on GstElement properties you wish to be (eventually) handled
- * by a GstController.
- * TODO: needs to go to gstelemnt.h (to avoid clashes on G_PARAM_USER_SHIFT)
- */
-#define	GST_PARAM_CONTROLLABLE	(1 << (G_PARAM_USER_SHIFT + 1))
 
 /* type macros */
 

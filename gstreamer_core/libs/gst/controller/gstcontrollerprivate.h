@@ -41,9 +41,12 @@ typedef struct _GstControlledProperty
   gchar *name;                  /* name of the property */
   GstControlSource *csource;    /* GstControlSource for this property */
   gboolean disabled;
+  GValue last_value;
 } GstControlledProperty;
 
 #define GST_CONTROLLED_PROPERTY(obj)    ((GstControlledProperty *)(obj))
+
+extern GQuark priv_gst_controller_key;
 
 G_END_DECLS
 

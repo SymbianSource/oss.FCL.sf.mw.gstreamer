@@ -1,24 +1,15 @@
-/*
-* Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
-*
-* This library is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Lesser General Public
-* License as published by the Free Software Foundation; either
-* version 2 of the License, or (at your option) any later version.
-*
-* This library is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-* Lesser General Public License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with this library; if not, write to the
-* Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-* Boston, MA 02111-1307, USA.
-*
-* Description:
-*
-*/
+ /*
+ *  Copyright © 2008 Nokia Corporation.
+ *  This material, including documentation and any related 
+ *  computer programs, is protected by copyright controlled by 
+ *  Nokia Corporation. All rights are reserved. Copying, 
+ *  including reproducing, storing, adapting or translating, any 
+ *  or all of this material requires the prior written consent of 
+ *  Nokia Corporation. This material also contains confidential 
+ *  information which may not be disclosed to others without the 
+ *  prior written consent of Nokia Corporation.
+ * ============================================================================
+ */
 
 /* GStreamer
  * Copyright (C) 2005 Wim Taymans <wim@fluendo.com>
@@ -53,11 +44,20 @@
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 
@@ -94,7 +94,7 @@ void test_range()
 }
 
 
-#define TIME_UNIT (GST_SECOND / 5)
+#define TIME_UNIT (GST_SECOND)
 static void
 gst_clock_debug (GstClock * clock)
 {
@@ -122,6 +122,7 @@ error_callback (GstClock * clock, GstClockTime time,
   return FALSE;
 }
 
+GMutex *store_lock;
 static gboolean
 store_callback (GstClock * clock, GstClockTime time,
     GstClockID id, gpointer user_data)
@@ -129,7 +130,9 @@ store_callback (GstClock * clock, GstClockTime time,
   GList **list = user_data;
 
   GST_DEBUG ("unlocked async id %p", id);
+  g_mutex_lock (store_lock);
   *list = g_list_append (*list, id);
+  g_mutex_unlock (store_lock);
   return FALSE;
 }
 
@@ -151,9 +154,12 @@ void test_single_shot()
   GstClockID id, id2;
   GstClockTime base;
   GstClockReturn result;
+  GstClockTime        time_my;
+  int value;
   
 	xmlfile = "test_single_shot";
   std_log(LOG_FILENAME_LINE, "Test Started test_single_shot");
+  GST_DEBUG ("test_single_shot started ");
 
   clock = gst_system_clock_obtain ();
   fail_unless (clock != NULL, "Could not create instance of GstSystemClock");
@@ -184,15 +190,16 @@ void test_single_shot()
       
   gst_clock_id_unref (id);
 
-  id = gst_clock_new_single_shot_id (clock, base + 2 * TIME_UNIT);
+    id = gst_clock_new_single_shot_id (clock, base + (2 * TIME_UNIT));
   GST_DEBUG ("waiting one second async id %p", id);
   result = gst_clock_id_wait_async (id, ok_callback, NULL);
-  gst_clock_id_unref (id);
   fail_unless (result == GST_CLOCK_OK, "Waiting did not return OK");
   
   g_usleep (TIME_UNIT / (2 * 1000));
+    gst_clock_id_unschedule (id);
+    gst_clock_id_unref (id);
 
-  id = gst_clock_new_single_shot_id (clock, base + 5 * TIME_UNIT);
+    id = gst_clock_new_single_shot_id (clock, base + (5 * TIME_UNIT));
   GST_DEBUG ("waiting one second async, with cancel on id %p", id);
   result = gst_clock_id_wait_async (id, error_callback, NULL);
   fail_unless (result == GST_CLOCK_OK, "Waiting did not return OK");
@@ -204,13 +211,12 @@ void test_single_shot()
   GST_DEBUG ("canceled id %p", id);
 
   GST_DEBUG ("waiting multiple one second async, with cancel");
-  id = gst_clock_new_single_shot_id (clock, base + 5 * TIME_UNIT);
-  id2 = gst_clock_new_single_shot_id (clock, base + 6 * TIME_UNIT);
+    id = gst_clock_new_single_shot_id (clock, base + (5 * TIME_UNIT));
+    id2 = gst_clock_new_single_shot_id (clock, base + (6 * TIME_UNIT));
   GST_DEBUG ("waiting id %p", id);
   result = gst_clock_id_wait_async (id, ok_callback, NULL);
   fail_unless (result == GST_CLOCK_OK, "Waiting did not return OK");
   
-  gst_clock_id_unref (id);
   GST_DEBUG ("waiting id %p", id2);
   result = gst_clock_id_wait_async (id2, error_callback, NULL);
   fail_unless (result == GST_CLOCK_OK, "Waiting did not return OK");
@@ -220,8 +226,13 @@ void test_single_shot()
   gst_clock_id_unschedule (id2);
   GST_DEBUG ("canceled id %p", id2);
   gst_clock_id_unref (id2);
-  g_usleep (TIME_UNIT / (2 * 1000));
+    g_usleep (TIME_UNIT / 1000 * 5);
+    fail_unless (((GstClockEntry *) id)->status == GST_CLOCK_OK,
+        "Waiting did not finish");
+    gst_clock_id_unref (id);
   
+    gst_object_unref (clock);
+  GST_DEBUG ("test_single_shot finished ");
   std_log(LOG_FILENAME_LINE, "Test Successful");
   create_xml(0);
 }
@@ -317,6 +328,7 @@ void test_async_order()
   std_log(LOG_FILENAME_LINE, "Test Started test_async_order");
   
   
+  store_lock = g_mutex_new ();
   clock = gst_system_clock_obtain ();
   fail_unless (clock != NULL, "Could not create instance of GstSystemClock");
   
@@ -335,21 +347,26 @@ void test_async_order()
   
   g_usleep (TIME_UNIT / 1000);
   // at this point at least one of the timers should have timed out 
+    g_mutex_lock (store_lock);
   fail_unless (cb_list != NULL, "expected notification");
   
   fail_unless (cb_list->data == id2,
       "Expected notification for id2 to come first");
-      
+    g_mutex_unlock (store_lock);
   g_usleep (TIME_UNIT / 1000);
+    g_mutex_lock (store_lock);
   // now both should have timed out 
   next = g_list_next (cb_list);
   fail_unless (next != NULL, "expected second notification");
   
   fail_unless (next->data == id1, "Missing notification for id1");
+    g_mutex_unlock (store_lock);
   
   gst_clock_id_unref (id1);
   gst_clock_id_unref (id2);
   g_list_free (cb_list);
+    gst_object_unref (clock);
+    g_mutex_free (store_lock);
   
   std_log(LOG_FILENAME_LINE, "Test Successful");
   create_xml(0);
@@ -455,7 +472,7 @@ void test_mixed()
   xmlfile = "test_mixed";
   std_log(LOG_FILENAME_LINE, "Test Started test_mixed");
 
-
+  GST_DEBUG ("test_mixed started ");
   info.clock = gst_system_clock_obtain ();
   fail_unless (info.clock != NULL,
       "Could not create instance of GstSystemClock");
@@ -495,6 +512,7 @@ void test_mixed()
   gst_object_unref (info.clock);
   
   std_log(LOG_FILENAME_LINE, "Test Successful");
+  GST_DEBUG ("test_mixed finished ");
   create_xml(0);
   
 }
@@ -542,8 +560,89 @@ void test_signedness()
   
 } 
 
-
-
+struct test_async_sync_interaction_data
+{
+  GMutex *lock;
+  GstClockID sync_id;
+  GstClockID sync_id2;
+  GstClockID async_id;
+  GstClockID async_id2;
+  GstClockID async_id3;
+};
+static gboolean
+test_async_sync_interaction_cb (GstClock * clock, GstClockTime time,
+    GstClockID id, gpointer user_data)
+{
+  struct test_async_sync_interaction_data *td =
+      (struct test_async_sync_interaction_data *) (user_data);
+  g_mutex_lock (td->lock);
+  if (id == td->async_id)
+    goto out;
+  if (id != td->async_id2 && id != td->async_id3)
+    goto out;
+  if (id == td->async_id3) {
+    gst_clock_id_unschedule (td->sync_id);
+    gst_clock_id_unschedule (td->async_id2);
+  }
+out:
+  g_mutex_unlock (td->lock);
+  return FALSE;
+}
+void test_async_sync_interaction()
+{
+  GstClock *clock;
+  GstClockReturn result;
+  GstClockTime base;
+  GstClockTimeDiff jitter;
+  struct test_async_sync_interaction_data td;
+  int i;
+  xmlfile = "test_async_sync_interaction";
+std_log(LOG_FILENAME_LINE, "Test Started test_async_sync_interaction");
+    clock = gst_system_clock_obtain ();
+     fail_unless (clock != NULL, "Could not create instance of GstSystemClock");
+     td.lock = g_mutex_new ();
+     for (i = 0; i < 50; i++) {
+       gst_clock_debug (clock);
+       base = gst_clock_get_time (clock);
+       g_mutex_lock (td.lock);
+       td.async_id = gst_clock_new_single_shot_id (clock, base + 40 * GST_MSECOND);
+       td.async_id2 =
+           gst_clock_new_single_shot_id (clock, base + 30 * GST_MSECOND);
+       td.async_id3 =
+           gst_clock_new_single_shot_id (clock, base + 20 * GST_MSECOND);
+       td.sync_id2 = gst_clock_new_single_shot_id (clock, base + 10 * GST_MSECOND);
+       td.sync_id = gst_clock_new_single_shot_id (clock, base + 50 * GST_MSECOND);
+       g_mutex_unlock (td.lock);
+       result = gst_clock_id_wait_async (td.async_id,
+           test_async_sync_interaction_cb, &td);
+       fail_unless (result == GST_CLOCK_OK, "Waiting did not return OK");
+       result = gst_clock_id_wait (td.sync_id2, &jitter);
+       fail_unless (result == GST_CLOCK_OK || result == GST_CLOCK_EARLY,
+           "Waiting did not return OK or EARLY");
+       result = gst_clock_id_wait_async (td.async_id2,
+           test_async_sync_interaction_cb, &td);
+       fail_unless (result == GST_CLOCK_OK, "Waiting did not return OK");
+       gst_clock_id_unschedule (td.async_id);
+       result = gst_clock_id_wait_async (td.async_id3,
+           test_async_sync_interaction_cb, &td);
+       fail_unless (result == GST_CLOCK_OK, "Waiting did not return OK");
+       result = gst_clock_id_wait (td.sync_id, &jitter);
+       fail_unless (result == GST_CLOCK_UNSCHEDULED || result == GST_CLOCK_EARLY,
+           "Waiting did not return UNSCHEDULED");
+       gst_clock_id_unschedule (td.async_id3);
+       g_mutex_lock (td.lock);
+       gst_clock_id_unref (td.sync_id);
+       gst_clock_id_unref (td.sync_id2);
+       gst_clock_id_unref (td.async_id);
+       gst_clock_id_unref (td.async_id2);
+       gst_clock_id_unref (td.async_id3);
+       g_mutex_unlock (td.lock);
+     }
+     g_mutex_free (td.lock);
+     gst_object_unref (clock);
+     std_log(LOG_FILENAME_LINE, "Test Successful");
+     create_xml(0);
+   }
 /*void main(int argc,char** argv)
 {
         gst_init(&argc,&argv);
@@ -560,7 +659,7 @@ void test_signedness()
 }*/
 
 
-void (*fn[8]) (void) = {
+void (*fn[]) (void) = {
         test_range,
         test_diff,
         test_signedness,
@@ -568,7 +667,8 @@ void (*fn[8]) (void) = {
         test_periodic_shot,
         test_periodic_multi,
         test_async_order,
-        test_mixed
+        test_mixed,
+        test_async_sync_interaction
 };
 
 char *args[] = {
@@ -580,6 +680,7 @@ char *args[] = {
         "test_periodic_multi",
         "test_async_order",
         "test_mixed",
+        "test_async_sync_interaction"
 };
 
 GST_CHECK_MAIN (gst_systemclock);

@@ -58,8 +58,8 @@ typedef struct _GstMessageClass GstMessageClass;
  *                          unusable. The pipeline will select a new clock on
  *                          the next PLAYING state change.
  * @GST_MESSAGE_NEW_CLOCK: a new clock was selected in the pipeline.
- * @GST_MESSAGE_STRUCTURE_CHANGE: the structure of the pipeline changed. Not
- * implemented yet.
+ * @GST_MESSAGE_STRUCTURE_CHANGE: the structure of the pipeline changed. This
+ * message is used internally and never forwarded to the application.
  * @GST_MESSAGE_STREAM_STATUS: status about a stream, emitted when it starts,
  *                             stops, errors, etc.. Not implemented yet.
  * @GST_MESSAGE_APPLICATION: message posted by the application, possibly
@@ -81,6 +81,10 @@ typedef struct _GstMessageClass GstMessageClass;
  * pipeline. Since: 0.10.13
  * @GST_MESSAGE_LATENCY: Posted by elements when their latency changes. The
  * pipeline will calculate and distribute a new latency. Since: 0.10.12
+ * @GST_MESSAGE_REQUEST_STATE: Posted by elements when they want the pipeline to
+ * change state. This message is a suggestion to the application which can
+ * decide to perform the state change on (part of) the pipeline. Since: 0.10.23.
+ * @GST_MESSAGE_STEP_START: A stepping operation was started.
  * @GST_MESSAGE_ANY: mask for all of the above messages.
  *
  * The different message types that are available.
@@ -113,6 +117,8 @@ typedef enum
   GST_MESSAGE_LATENCY           = (1 << 19),
   GST_MESSAGE_ASYNC_START       = (1 << 20),
   GST_MESSAGE_ASYNC_DONE        = (1 << 21),
+  GST_MESSAGE_REQUEST_STATE     = (1 << 22),
+  GST_MESSAGE_STEP_START        = (1 << 23),
   GST_MESSAGE_ANY               = ~0
 } GstMessageType;
 
@@ -178,6 +184,57 @@ typedef enum
  * Get the object that posted @message.
  */
 #define GST_MESSAGE_SRC(message)	(GST_MESSAGE(message)->src)
+/**
+ * GST_MESSAGE_SRC_NAME:
+ * @message: a #GstMessage
+ *
+ * Get the name of the object that posted @message. Returns "(NULL)" if
+ * the message has no source object set.
+ *
+ * Since: 0.10.24
+ */
+#define GST_MESSAGE_SRC_NAME(message)	(GST_MESSAGE_SRC(message) ? \
+    GST_OBJECT_NAME (GST_MESSAGE_SRC(message)) : "(NULL)")
+
+/**
+ * GstStructureChangeType:
+ * @GST_STRUCTURE_CHANGE_TYPE_PAD_LINK: Pad linking is starting or done.
+ * @GST_STRUCTURE_CHANGE_TYPE_PAD_UNLINK: Pad unlinking is starting or done.
+ *
+ * The type of a #GstMessageStructureChange.
+ *
+ * Since: 0.10.22
+ */
+typedef enum {
+  GST_STRUCTURE_CHANGE_TYPE_PAD_LINK   = 0,
+  GST_STRUCTURE_CHANGE_TYPE_PAD_UNLINK = 1
+} GstStructureChangeType;
+
+/**
+ * GstStreamStatusType:
+ * @GST_STREAM_STATUS_TYPE_CREATE: A new thread need to be created.
+ * @GST_STREAM_STATUS_TYPE_ENTER: a thread entered its loop function
+ * @GST_STREAM_STATUS_TYPE_LEAVE: a thread left its loop function
+ * @GST_STREAM_STATUS_TYPE_DESTROY: a thread is destroyed
+ * @GST_STREAM_STATUS_TYPE_START: a thread is started
+ * @GST_STREAM_STATUS_TYPE_PAUSE: a thread is paused
+ * @GST_STREAM_STATUS_TYPE_STOP: a thread is stopped
+ *
+ * The type of a #GstMessageStreamStatus. The stream status messages inform the
+ * application of new streaming threads and their status.
+ *
+ * Since: 0.10.24
+ */
+typedef enum {
+  GST_STREAM_STATUS_TYPE_CREATE   = 0,
+  GST_STREAM_STATUS_TYPE_ENTER    = 1,
+  GST_STREAM_STATUS_TYPE_LEAVE    = 2,
+  GST_STREAM_STATUS_TYPE_DESTROY  = 3,
+
+  GST_STREAM_STATUS_TYPE_START    = 8,
+  GST_STREAM_STATUS_TYPE_PAUSE    = 9,
+  GST_STREAM_STATUS_TYPE_STOP     = 10
+} GstStreamStatusType;
 
 /**
  * GstMessage:
@@ -193,7 +250,7 @@ struct _GstMessage
 {
   GstMiniObject mini_object;
 
-  /*< private > *//* with MESSAGE_LOCK */
+  /*< private >*//* with MESSAGE_LOCK */
   GMutex *lock;                 /* lock and cond for async delivery */
   GCond *cond;
 
@@ -204,14 +261,20 @@ struct _GstMessage
 
   GstStructure *structure;
 
-  /*< private > */
-  gpointer _gst_reserved[GST_PADDING];
+  /*< private >*/
+  union {
+    struct {
+      guint32 seqnum;
+    } ABI;
+    /* + 0 to mark ABI change for future greppage */
+    gpointer _gst_reserved[GST_PADDING + 0];
+  } abidata;
 };
 
 struct _GstMessageClass {
   GstMiniObjectClass mini_object_class;
 
-  /*< private > */
+  /*< private >*/
   gpointer _gst_reserved[GST_PADDING];
 };
 #ifdef __SYMBIAN32__
@@ -248,8 +311,6 @@ G_INLINE_FUNC GstMessage * gst_message_ref (GstMessage * msg);
 static inline GstMessage *
 gst_message_ref (GstMessage * msg)
 {
-  /* not using a macro here because gcc-4.1 will complain
-   * if the return value isn't used (because of the cast) */
   return (GstMessage *) gst_mini_object_ref (GST_MINI_OBJECT (msg));
 }
 
@@ -260,7 +321,16 @@ gst_message_ref (GstMessage * msg)
  * Convenience macro to decrease the reference count of the message, possibly
  * freeing it.
  */
-#define         gst_message_unref(msg)		gst_mini_object_unref (GST_MINI_OBJECT (msg))
+#ifdef _FOOL_GTK_DOC_
+G_INLINE_FUNC void gst_message_unref (GstMessage * msg);
+#endif
+
+static inline void
+gst_message_unref (GstMessage * msg)
+{
+  gst_mini_object_unref (GST_MINI_OBJECT_CAST (msg));
+}
+
 /* copy message */
 /**
  * gst_message_copy:
@@ -268,9 +338,20 @@ gst_message_ref (GstMessage * msg)
  *
  * Creates a copy of the message. Returns a copy of the message.
  *
+ * Returns: a new copy of @msg.
+ *
  * MT safe
  */
-#define         gst_message_copy(msg)		GST_MESSAGE (gst_mini_object_copy (GST_MINI_OBJECT (msg)))
+#ifdef _FOOL_GTK_DOC_
+G_INLINE_FUNC GstMessage * gst_message_copy (const GstMessage * msg);
+#endif
+
+static inline GstMessage *
+gst_message_copy (const GstMessage * msg)
+{
+  return GST_MESSAGE (gst_mini_object_copy (GST_MINI_OBJECT_CAST (msg)));
+}
+
 /**
  * gst_message_make_writable:
  * @msg: the message to make writable
@@ -282,22 +363,63 @@ gst_message_ref (GstMessage * msg)
  */
 #define         gst_message_make_writable(msg)	GST_MESSAGE (gst_mini_object_make_writable (GST_MINI_OBJECT (msg)))
 
+/* identifiers for events and messages */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+guint32         gst_message_get_seqnum          (GstMessage *message);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void            gst_message_set_seqnum          (GstMessage *message, guint32 seqnum);
+
+/* EOS */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 GstMessage *	gst_message_new_eos		(GstObject * src);
+
+/* ERROR */
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
 
-GstMessage *	gst_message_new_error		(GstObject * src, GError * error, gchar * debug);
+
+GstMessage *	gst_message_new_error		(GstObject * src, GError * error, const gchar * debug);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
 
-GstMessage *	gst_message_new_warning		(GstObject * src, GError * error, gchar * debug);
+void		gst_message_parse_error		(GstMessage *message, GError **gerror, gchar **debug);
+
+/* WARNING */
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
 
-GstMessage *	gst_message_new_info		(GstObject * src, GError * error, gchar * debug);
+GstMessage *	gst_message_new_warning		(GstObject * src, GError * error, const gchar * debug);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void		gst_message_parse_warning	(GstMessage *message, GError **gerror, gchar **debug);
+
+/* INFO */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+GstMessage *	gst_message_new_info		(GstObject * src, GError * error, const gchar * debug);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void		gst_message_parse_info 		(GstMessage *message, GError **gerror, gchar **debug);
+
+/* TAG */
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -307,7 +429,45 @@ GstMessage *	gst_message_new_tag		(GstObject * src, GstTagList * tag_list);
 IMPORT_C
 #endif
 
-GstMessage *	gst_message_new_buffering	(GstObject * src, gint percent);
+GstMessage *	gst_message_new_tag_full	(GstObject * src, GstPad *pad, GstTagList * tag_list);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void		gst_message_parse_tag		(GstMessage *message, GstTagList **tag_list);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void		gst_message_parse_tag_full	(GstMessage *message, GstPad **pad, GstTagList **tag_list);
+
+/* BUFFERING */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+GstMessage *	gst_message_new_buffering	  (GstObject * src, gint percent);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void 		gst_message_parse_buffering	  (GstMessage *message, gint *percent);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void            gst_message_set_buffering_stats   (GstMessage *message, GstBufferingMode mode,
+                                                   gint avg_in, gint avg_out,
+                                                   gint64 buffering_left);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void            gst_message_parse_buffering_stats (GstMessage *message, GstBufferingMode *mode,
+                                                   gint *avg_in, gint *avg_out,
+                                                   gint64 *buffering_left);
+
+/* STATE_CHANGED */
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -318,7 +478,32 @@ GstMessage *	gst_message_new_state_changed	(GstObject * src, GstState oldstate,
 IMPORT_C
 #endif
 
+void		gst_message_parse_state_changed	(GstMessage *message, GstState *oldstate,
+                                                 GstState *newstate, GstState *pending);
+
+/* STATE_DIRTY */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 GstMessage *	gst_message_new_state_dirty	(GstObject * src);
+
+/* STEP_DONE */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+GstMessage *    gst_message_new_step_done       (GstObject * src, GstFormat format, guint64 amount,
+                                                 gdouble rate, gboolean flush, gboolean intermediate, 
+						 guint64 duration, gboolean eos);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void            gst_message_parse_step_done     (GstMessage * message, GstFormat *format, guint64 *amount,
+                                                 gdouble *rate, gboolean *flush, gboolean *intermediate,
+						 guint64 *duration, gboolean *eos);
+/* CLOCK_PROVIDE */
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -328,7 +513,22 @@ GstMessage *	gst_message_new_clock_provide	(GstObject * src, GstClock *clock, gb
 IMPORT_C
 #endif
 
+void		gst_message_parse_clock_provide (GstMessage *message, GstClock **clock,
+                                                 gboolean *ready);
+
+/* CLOCK_LOST */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 GstMessage *	gst_message_new_clock_lost	(GstObject * src, GstClock *clock);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void		gst_message_parse_clock_lost	(GstMessage *message, GstClock **clock);
+
+/* NEW_CLOCK */
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -338,12 +538,23 @@ GstMessage *	gst_message_new_new_clock	(GstObject * src, GstClock *clock);
 IMPORT_C
 #endif
 
+void		gst_message_parse_new_clock	(GstMessage *message, GstClock **clock);
+
+/* APPLICATION */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 GstMessage *	gst_message_new_application	(GstObject * src, GstStructure * structure);
+
+/* ELEMENT */
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
 
 GstMessage *	gst_message_new_element		(GstObject * src, GstStructure * structure);
+
+/* SEGMENT_START */
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -353,7 +564,23 @@ GstMessage *	gst_message_new_segment_start	(GstObject * src, GstFormat format, g
 IMPORT_C
 #endif
 
+void		gst_message_parse_segment_start (GstMessage *message, GstFormat *format,
+                                                 gint64 *position);
+
+/* SEGMENT_DONE */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 GstMessage *	gst_message_new_segment_done	(GstObject * src, GstFormat format, gint64 position);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void		gst_message_parse_segment_done	(GstMessage *message, GstFormat *format,
+                                                 gint64 *position);
+
+/* DURATION */
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -363,17 +590,102 @@ GstMessage *	gst_message_new_duration	(GstObject * src, GstFormat format, gint64
 IMPORT_C
 #endif
 
-GstMessage *	gst_message_new_async_start	(GstObject * src, gboolean new_base_time);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
+void		gst_message_parse_duration	(GstMessage *message, GstFormat *format,
+                                                 gint64 *duration);
 
-GstMessage *	gst_message_new_async_done	(GstObject * src);
+/* LATENCY */
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
 
 GstMessage *	gst_message_new_latency         (GstObject * src);
+
+/* ASYNC_START */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+GstMessage *	gst_message_new_async_start	(GstObject * src, gboolean new_base_time);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void		gst_message_parse_async_start	(GstMessage *message, gboolean *new_base_time);
+
+/* ASYNC_DONE */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+GstMessage *	gst_message_new_async_done	(GstObject * src);
+
+/* STRUCTURE CHANGE */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+GstMessage *	gst_message_new_structure_change   (GstObject * src, GstStructureChangeType type,
+                                                    GstElement *owner, gboolean busy);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void		gst_message_parse_structure_change (GstMessage *message, GstStructureChangeType *type,
+                                                    GstElement **owner, gboolean *busy);
+
+/* STREAM STATUS */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+GstMessage *	gst_message_new_stream_status        (GstObject * src, GstStreamStatusType type,
+                                                      GstElement *owner);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void		gst_message_parse_stream_status      (GstMessage *message, GstStreamStatusType *type,
+                                                      GstElement **owner);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void            gst_message_set_stream_status_object (GstMessage *message, const GValue *object);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+const GValue *  gst_message_get_stream_status_object (GstMessage *message);
+
+/* REQUEST_STATE */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+GstMessage *    gst_message_new_request_state   (GstObject * src, GstState state);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void            gst_message_parse_request_state (GstMessage * message, GstState *state);
+
+/* STEP_START */
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+GstMessage *    gst_message_new_step_start      (GstObject * src, gboolean active, GstFormat format,
+                                                 guint64 amount, gdouble rate, gboolean flush,
+						 gboolean intermediate);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void            gst_message_parse_step_start    (GstMessage * message, gboolean *active, GstFormat *format,
+                                                 guint64 *amount, gdouble *rate, gboolean *flush,
+						 gboolean *intermediate);
+
+/* custom messages */
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -384,74 +696,6 @@ GstMessage *	gst_message_new_custom		(GstMessageType type,
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
-
-
-void		gst_message_parse_error		(GstMessage *message, GError **gerror, gchar **debug);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void		gst_message_parse_warning	(GstMessage *message, GError **gerror, gchar **debug);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void		gst_message_parse_info 		(GstMessage *message, GError **gerror, gchar **debug);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void		gst_message_parse_tag		(GstMessage *message, GstTagList **tag_list);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void 		gst_message_parse_buffering	(GstMessage *message, gint *percent);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void		gst_message_parse_state_changed	(GstMessage *message, GstState *oldstate,
-                                                 GstState *newstate, GstState *pending);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void		gst_message_parse_clock_provide (GstMessage *message, GstClock **clock, gboolean *ready);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void		gst_message_parse_clock_lost	(GstMessage *message, GstClock **clock);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void		gst_message_parse_new_clock	(GstMessage *message, GstClock **clock);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void		gst_message_parse_segment_start (GstMessage *message, GstFormat *format, gint64 *position);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void		gst_message_parse_segment_done	(GstMessage *message, GstFormat *format, gint64 *position);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void		gst_message_parse_duration	(GstMessage *message, GstFormat *format, gint64 *duration);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void		gst_message_parse_async_start	(GstMessage *message, gboolean *new_base_time);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
 
 const GstStructure *  gst_message_get_structure	(GstMessage *message);
 

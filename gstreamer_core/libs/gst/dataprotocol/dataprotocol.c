@@ -85,7 +85,7 @@ GST_DEBUG_CATEGORY_STATIC (data_protocol_debug);
 
 /* helper macros */
 
-/* write first 6 bytes of header, as well as ABI padding */
+/* write first 6 bytes of header */
 #define GST_DP_INIT_HEADER(h, version, flags, type)		\
 G_STMT_START {							\
   gint maj = 0, min = 0;					\
@@ -98,9 +98,6 @@ G_STMT_START {							\
   h[2] = (guint8) flags;					\
   h[3] = 0; /* padding byte */					\
   GST_WRITE_UINT16_BE (h + 4, type);				\
-								\
-  GST_WRITE_UINT64_BE (h + 42, (guint64) 0); /* ABI padding */	\
-  GST_WRITE_UINT64_BE (h + 50, (guint64) 0); /* ABI padding */	\
 } G_STMT_END
 
 #define GST_DP_SET_CRC(h, flags, payload, length);		\
@@ -130,7 +127,6 @@ G_STMT_START {							\
 #define CRC_INIT   0xFFFF
 
 /*** HELPER FUNCTIONS ***/
-
 
 static gboolean
 gst_dp_header_from_buffer_any (const GstBuffer * buffer, GstDPHeaderFlag flags,
@@ -225,7 +221,8 @@ gst_dp_packet_from_caps_any (const GstCaps * caps, GstDPHeaderFlag flags,
 #if defined(__WINSCW__) || defined(__WINS__)
   /* version, flags, type */
   GST_DP_INIT_HEADER (h, version, flags, GST_DP_PAYLOAD_CAPS);
-  
+
+  /* buffer properties */
   GST_WRITE_UINT32_BE (h + 6, payload_length);
   GST_WRITE_UINT64_BE (h + 10, (guint64) 0);
   GST_WRITE_UINT64_BE (h + 18, (guint64) 0);
@@ -600,7 +597,6 @@ gst_dp_packet_from_event (const GstEvent * event, GstDPHeaderFlag flags,
       GST_DP_PAYLOAD_EVENT_NONE + GST_EVENT_TYPE (event));
 
   /* length */
-  
   GST_WRITE_UINT32_BE (h + 6, (guint32) pl_length);
   /* timestamp */
   GST_WRITE_UINT64_BE (h + 10, GST_EVENT_TIMESTAMP (event));
@@ -679,7 +675,7 @@ gst_dp_packet_from_event_1_0 (const GstEvent * event, GstDPHeaderFlag flags,
   /* timestamp */
   GST_WRITE_UINT64_BE (h + 10, GST_EVENT_TIMESTAMP (event));
 
-  GST_DP_SET_CRC (h, flags, *payload, pl_length);
+  GST_DP_SET_CRC (h, flags, string, pl_length);
 
   GST_LOG ("created header from event:");
   gst_dp_dump_byte_array (h, GST_DP_HEADER_LENGTH);
@@ -697,7 +693,7 @@ gst_dp_packet_from_event_1_0 (const GstEvent * event, GstDPHeaderFlag flags,
     tmp = tmp + 10;
     GST_WRITE_UINT64_BE (tmp, GST_EVENT_TIMESTAMP (event));
 
-    GST_DP_SET_CRC ((guint8 *)h, flags, *payload, pl_length);
+    GST_DP_SET_CRC ((guint8 *)h, flags, string, pl_length);
 
     GST_LOG ("created header from event:");
     gst_dp_dump_byte_array ((guint8 *)h, GST_DP_HEADER_LENGTH);

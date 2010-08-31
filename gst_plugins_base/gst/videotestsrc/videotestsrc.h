@@ -25,13 +25,18 @@
 enum {
   VTS_YUV,
   VTS_RGB,
+  VTS_GRAY,
   VTS_BAYER
 };
 
-struct vts_color_struct {
-        guint8 Y, U, V;
-        guint8 R, G, B;
-	guint8 A;
+struct vts_color_struct_yuv {
+  guint8 Y, U, V;
+};
+struct vts_color_struct_rgb {
+  guint8 R, G, B;
+};
+struct vts_color_struct_gray {
+  guint16 G;
 };
 
 typedef struct paintinfo_struct paintinfo;
@@ -47,7 +52,13 @@ struct paintinfo_struct
   int vstride;
   int width;
   int height;
-  const struct vts_color_struct *color;
+  const struct vts_color_struct_rgb *rgb_colors;
+  const struct vts_color_struct_yuv *yuv_colors;
+  const struct vts_color_struct_gray *gray_colors;
+  const struct vts_color_struct_rgb *rgb_color;
+  const struct vts_color_struct_yuv *yuv_color;
+  const struct vts_color_struct_gray *gray_color;
+  //const struct vts_color_struct *color;
   void (*paint_hline) (paintinfo * p, int x, int y, int w);
 };
 
@@ -77,6 +88,8 @@ GstStructure *
 int     gst_video_test_src_get_size     (GstVideoTestSrc * v, int w, int h);
 void    gst_video_test_src_smpte        (GstVideoTestSrc * v,
                                          unsigned char *dest, int w, int h);
+void    gst_video_test_src_smpte75      (GstVideoTestSrc * v,
+                                         unsigned char *dest, int w, int h);
 void    gst_video_test_src_snow         (GstVideoTestSrc * v,
                                          unsigned char *dest, int w, int h);
 void    gst_video_test_src_black        (GstVideoTestSrc * v,
@@ -99,7 +112,8 @@ void    gst_video_test_src_checkers8    (GstVideoTestSrc * v,
                                          unsigned char *dest, int w, int h);
 void    gst_video_test_src_circular     (GstVideoTestSrc * v,
                                          unsigned char *dest, int w, int h);
-
+void    gst_video_test_src_zoneplate    (GstVideoTestSrc * v,
+		                         unsigned char *dest, int w, int h);
 extern struct fourcc_list_struct fourcc_list[];
 extern int n_fourccs;
 

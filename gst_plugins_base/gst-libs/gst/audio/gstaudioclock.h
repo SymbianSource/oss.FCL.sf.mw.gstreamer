@@ -23,6 +23,7 @@
 #ifndef __GST_AUDIO_CLOCK_H__
 #define __GST_AUDIO_CLOCK_H__
 
+#include <gst/gst.h>
 #include <gst/gstsystemclock.h>
 
 G_BEGIN_DECLS
@@ -37,6 +38,8 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_AUDIO_CLOCK))
 #define GST_IS_AUDIO_CLOCK_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_AUDIO_CLOCK))
+#define GST_AUDIO_CLOCK_CAST(obj) \
+  ((GstAudioClock*)(obj))
 
 typedef struct _GstAudioClock GstAudioClock;
 typedef struct _GstAudioClockClass GstAudioClockClass;
@@ -71,7 +74,13 @@ struct _GstAudioClock {
   GstClockTime last_time;
 
   /*< private >*/
-  gpointer _gst_reserved[GST_PADDING];
+  union {
+    struct {
+      GstClockTimeDiff   time_offset;
+    } ABI;
+    /* adding + 0 to mark ABI change to be undone later */
+    gpointer _gst_reserved[GST_PADDING + 0];
+  } abidata;
 };
 
 struct _GstAudioClockClass {
@@ -90,8 +99,24 @@ GType           gst_audio_clock_get_type        (void);
 IMPORT_C
 #endif
 
-GstClock*       gst_audio_clock_new             (gchar *name, GstAudioClockGetTimeFunc func,
+GstClock*       gst_audio_clock_new             (const gchar *name, GstAudioClockGetTimeFunc func,
                                                  gpointer user_data);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void            gst_audio_clock_reset           (GstAudioClock *clock, GstClockTime time);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+
+GstClockTime    gst_audio_clock_get_time        (GstClock * clock);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+GstClockTime    gst_audio_clock_adjust          (GstClock * clock, GstClockTime time);
 
 G_END_DECLS
 

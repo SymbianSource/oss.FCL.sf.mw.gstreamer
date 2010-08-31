@@ -18,14 +18,25 @@
  * Boston, MA 02111-1307, USA.
  */
 
+/**
+ * SECTION:element-tcpclientsink
+ * @see_also: #tcpclientsrc
+ *
+ * <refsect2>
+ * <title>Example launch line</title>
+ * |[
+ * # server:
+ * nc -l -p 3000
+ * # client:
+ * gst-launch fdsrc fd=1 ! tcpclientsink protocol=none port=3000
+ * ]| everything you type in the client is shown on the server
+ * </refsect2>
+ */
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#ifdef __SYMBIAN32__
-#include "gst/gst-i18n-plugin.h"
-#else
 #include <gst/gst-i18n-plugin.h>
-#endif
 #include <gst/dataprotocol/dataprotocol.h>
 #include "gsttcp.h"
 #include "gsttcpclientsink.h"
@@ -146,13 +157,15 @@ gst_tcp_client_sink_class_init (GstTCPClientSink * klass)
 
   g_object_class_install_property (gobject_class, ARG_HOST,
       g_param_spec_string ("host", "Host", "The host/IP to send the packets to",
-          TCP_DEFAULT_HOST, G_PARAM_READWRITE));
+          TCP_DEFAULT_HOST, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, ARG_PORT,
       g_param_spec_int ("port", "Port", "The port to send the packets to",
-          0, TCP_HIGHEST_PORT, TCP_DEFAULT_PORT, G_PARAM_READWRITE));
+          0, TCP_HIGHEST_PORT, TCP_DEFAULT_PORT,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (gobject_class, ARG_PROTOCOL,
       g_param_spec_enum ("protocol", "Protocol", "The protocol to wrap data in",
-          GST_TYPE_TCP_PROTOCOL, GST_TCP_PROTOCOL_NONE, G_PARAM_READWRITE));
+          GST_TYPE_TCP_PROTOCOL, GST_TCP_PROTOCOL_NONE,
+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   gstelement_class->change_state = gst_tcp_client_sink_change_state;
 

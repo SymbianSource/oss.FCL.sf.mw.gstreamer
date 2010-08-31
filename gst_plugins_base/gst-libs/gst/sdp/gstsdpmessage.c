@@ -69,6 +69,11 @@
 #include <gst/gstinfo.h>        /* For GST_STR_NULL */
 
 #ifdef G_OS_WIN32
+/* ws2_32.dll has getaddrinfo and freeaddrinfo on Windows XP and later.
+ * minwg32 headers check WINVER before allowing the use of these */
+#ifndef WINVER
+#define WINVER 0x0501
+#endif
 #ifdef _MSC_VER
 #include <Winsock2.h>
 #endif
@@ -151,10 +156,6 @@ GstSDPResult gst_sdp_message_add_##method (GstSDPMessage *msg, type val) {   \
   g_array_append_val (msg->field, v);                                   \
   return GST_SDP_OK;                                                    \
 }
-#ifdef __SYMBIAN32__
-EXPORT_C
-#endif
-
 
 static void
 gst_sdp_origin_init (GstSDPOrigin * origin)
@@ -328,14 +329,13 @@ is_multicast_address (const gchar * host_name, guint * family)
   struct addrinfo *ai;
   struct addrinfo *res;
   gboolean ret = FALSE;
-  int err;
 
   memset (&hints, 0, sizeof (hints));
   hints.ai_socktype = SOCK_DGRAM;
 
   g_return_val_if_fail (host_name, FALSE);
 
-  if ((err = getaddrinfo (host_name, NULL, &hints, &res)) < 0)
+  if (getaddrinfo (host_name, NULL, &hints, &res) < 0)
     return FALSE;
 
   for (ai = res; !ret && ai; ai = ai->ai_next) {
@@ -1742,17 +1742,38 @@ gst_sdp_parse_line (SDPContext * c, gchar type, gchar * buffer)
       gst_sdp_message_add_phone (c->msg, buffer);
       break;
     case 'c':
-      READ_STRING (c->msg->connection.nettype);
-      READ_STRING (c->msg->connection.addrtype);
-      READ_STRING (c->msg->connection.address);
-      READ_UINT (c->msg->connection.ttl);
-      READ_UINT (c->msg->connection.addr_number);
+    {
+      GstSDPConnection conn;
+      gchar *str2;
+
+      memset (&conn, 0, sizeof (conn));
+
+      str2 = p;
+      while ((str2 = strchr (str2, '/')))
+        *str2++ = ' ';
+      READ_STRING (conn.nettype);
+      READ_STRING (conn.addrtype);
+      READ_STRING (conn.address);
+      READ_UINT (conn.ttl);
+      READ_UINT (conn.addr_number);
+
+      if (c->state == SDP_SESSION) {
+        gst_sdp_message_set_connection (c->msg, conn.nettype, conn.addrtype,
+            conn.address, conn.ttl, conn.addr_number);
+      } else {
+        gst_sdp_media_add_connection (c->media, conn.nettype, conn.addrtype,
+            conn.address, conn.ttl, conn.addr_number);
+      }
+      gst_sdp_connection_init (&conn);
       break;
+    }
     case 'b':
     {
       gchar str2[MAX_LINE_LEN];
 
       read_string_del (str, sizeof (str), ':', &p);
+      if (*p != '\0')
+        p++;
       read_string (str2, sizeof (str2), &p);
       if (c->state == SDP_SESSION)
         gst_sdp_message_add_bandwidth (c->msg, str, atoi (str2));
@@ -1875,10 +1896,10 @@ gst_sdp_message_parse_buffer (const guint8 * data, guint size,
 static void
 print_media (GstSDPMedia * media)
 {
-  g_print ("   media:       '%s'\n", media->media);
+  g_print ("   media:       '%s'\n", GST_STR_NULL (media->media));
   g_print ("   port:        '%u'\n", media->port);
   g_print ("   num_ports:   '%u'\n", media->num_ports);
-  g_print ("   proto:       '%s'\n", media->proto);
+  g_print ("   proto:       '%s'\n", GST_STR_NULL (media->proto));
   if (media->fmts->len > 0) {
     guint i;
 
@@ -1887,10 +1908,37 @@ print_media (GstSDPMedia * media)
       g_print ("    format  '%s'\n", g_array_index (media->fmts, gchar *, i));
     }
   }
-  g_print ("   information: '%s'\n", media->information);
+  g_print ("   information: '%s'\n", GST_STR_NULL (media->information));
+  if (media->connections->len > 0) {
+    guint i;
+
+    g_print ("   connections:\n");
+    for (i = 0; i < media->connections->len; i++) {
+      GstSDPConnection *conn =
+          &g_array_index (media->connections, GstSDPConnection, i);
+
+      g_print ("    nettype:      '%s'\n", GST_STR_NULL (conn->nettype));
+      g_print ("    addrtype:     '%s'\n", GST_STR_NULL (conn->addrtype));
+      g_print ("    address:      '%s'\n", GST_STR_NULL (conn->address));
+      g_print ("    ttl:          '%u'\n", conn->ttl);
+      g_print ("    addr_number:  '%u'\n", conn->addr_number);
+    }
+  }
+  if (media->bandwidths->len > 0) {
+    guint i;
+
+    g_print ("   bandwidths:\n");
+    for (i = 0; i < media->bandwidths->len; i++) {
+      GstSDPBandwidth *bw =
+          &g_array_index (media->bandwidths, GstSDPBandwidth, i);
+
+      g_print ("    type:         '%s'\n", GST_STR_NULL (bw->bwtype));
+      g_print ("    bandwidth:    '%u'\n", bw->bandwidth);
+    }
+  }
   g_print ("   key:\n");
-  g_print ("    type:       '%s'\n", media->key.type);
-  g_print ("    data:       '%s'\n", media->key.data);
+  g_print ("    type:       '%s'\n", GST_STR_NULL (media->key.type));
+  g_print ("    data:       '%s'\n", GST_STR_NULL (media->key.data));
   if (media->attributes->len > 0) {
     guint i;
 
@@ -1952,6 +2000,18 @@ gst_sdp_message_dump (const GstSDPMessage * msg)
   g_print ("  address:      '%s'\n", GST_STR_NULL (msg->connection.address));
   g_print ("  ttl:          '%u'\n", msg->connection.ttl);
   g_print ("  addr_number:  '%u'\n", msg->connection.addr_number);
+  if (msg->bandwidths->len > 0) {
+    guint i;
+
+    g_print (" bandwidths:\n");
+    for (i = 0; i < msg->bandwidths->len; i++) {
+      GstSDPBandwidth *bw =
+          &g_array_index (msg->bandwidths, GstSDPBandwidth, i);
+
+      g_print ("  type:         '%s'\n", GST_STR_NULL (bw->bwtype));
+      g_print ("  bandwidth:    '%u'\n", bw->bandwidth);
+    }
+  }
   g_print (" key:\n");
   g_print ("  type:         '%s'\n", GST_STR_NULL (msg->key.type));
   g_print ("  data:         '%s'\n", GST_STR_NULL (msg->key.data));

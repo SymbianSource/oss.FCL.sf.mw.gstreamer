@@ -36,6 +36,7 @@
 #include <e32cons.h>
 #include <e32std.h>
 #include <e32debug.h>
+#include <AudioInput.h>
 #include <gst/gstbuffer.h>
 #include <gst/gst.h>
 
@@ -86,7 +87,6 @@ class DevSoundWrapperSrc :public MDevSoundObserver
 public:
 	CActiveListener	*AL;
 	CActiveScheduler *as;
-	TInt init_complete;
 	CMMFBuffer *buffer;
 	CMMFDevSound    *dev_sound;
 	TMMFCapabilities caps;
@@ -97,10 +97,13 @@ public:
   	TUint32 fourcc;
   	int bufferreadpos;
   	guint* supportedbitrates;
+  	int iSamplesRecorded;
+  	TUint speechbitrate;
     CSpeechEncoderConfig* iSpeechEncoderConfig;
     CG711EncoderIntfc*    iG711EncoderIntfc;
     CG729EncoderIntfc*    iG729EncoderIntfc;
     CIlbcEncoderIntfc*    iIlbcEncoderIntfc;
+    CAudioInput*          iAudoInputRecord;
 
 public:
 	DevSoundWrapperSrc();
@@ -141,6 +144,9 @@ extern "C" {
 	int open_devsound(DevSoundWrapperSrc **handle);
     int open_device(DevSoundWrapperSrc **handle);
     int initialize_devsound(GstDevsoundSrc* ds);
+    int pause_devsound(GstDevsoundSrc *ds);
+    int stop_devsound(GstDevsoundSrc *ds);
+    int resume_devsound(GstDevsoundSrc *ds);
 	int close_devsound(GstDevsoundSrc* ds);
 
 	int SetConfigurations(DevSoundWrapperSrc *handle);
@@ -171,7 +177,10 @@ extern "C" {
     int set_ilbc_encoder_mode(DevSoundWrapperSrc *handle,enum TIlbcEncodeMode aEncodeMode);
     int set_ilbc_vad_mode(DevSoundWrapperSrc *handle,gboolean aVadMode);
     int get_ilbc_vad_mode(DevSoundWrapperSrc *handle,gboolean* aVadMode);
-
+    void update_devsound_speech_bitrate(DevSoundWrapperSrc *handle, TUint bitrate);
+    
+    /// getting the call back error 
+    int call_back_error(DevSoundWrapperSrc* dsPtr);
 
 #ifdef __cplusplus
 }//extern c

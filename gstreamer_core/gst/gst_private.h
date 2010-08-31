@@ -20,12 +20,13 @@
  * Boston, MA 02111-1307, USA.
  */
 
-
 #ifndef __GST_PRIVATE_H__
 #define __GST_PRIVATE_H__
 
 #ifdef HAVE_CONFIG_H
+# ifndef GST_LICENSE   /* don't include config.h twice, it has no guards */
 #  include "config.h"
+# endif
 #endif
 
 /* This needs to be before glib.h, since it might be used in inline
@@ -41,7 +42,51 @@ extern const char             g_log_domain_gstreamer[];
 #include "gstregistry.h"
 #include "gststructure.h"
 
+/* we need this in pretty much all files */
+#include "gstinfo.h"
+
+/* for the flags in the GstPluginDep structure below */
+#include "gstplugin.h"
+
 G_BEGIN_DECLS
+
+/* used by gstparse.c and grammar.y */
+struct _GstParseContext {
+  GList * missing_elements;
+};
+
+/* used by gstplugin.c and gstregistrybinary.c */
+typedef struct {
+  /* details registered via gst_plugin_add_dependency() */
+  GstPluginDependencyFlags  flags;
+  gchar **env_vars;
+  gchar **paths;
+  gchar **names;
+
+  /* information saved from the last time the plugin was loaded (-1 = unset) */
+  guint   env_hash;  /* hash of content of environment variables in env_vars */
+  guint   stat_hash; /* hash of stat() on all relevant files and directories */
+} GstPluginDep;
+
+struct _GstPluginPrivate {
+  GList *deps;    /* list of GstPluginDep structures */
+  GstStructure *cache_data;
+};
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+
+gboolean _priv_plugin_deps_env_vars_changed (GstPlugin * plugin);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+gboolean _priv_plugin_deps_files_changed (GstPlugin * plugin);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 
 gboolean _priv_gst_in_valgrind (void);
 
@@ -62,6 +107,11 @@ IMPORT_C
 #endif
 
 void  _gst_buffer_initialize (void);
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
+void  _gst_buffer_list_initialize (void);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -113,74 +163,66 @@ void _priv_gst_registry_cleanup (void);
 /* used in both gststructure.c and gstcaps.c; numbers are completely made up */
 #define STRUCTURE_ESTIMATED_STRING_LEN(s) (16 + (s)->fields->len * 22)
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 gboolean  priv_gst_structure_append_to_gstring (const GstStructure * structure,
                                                 GString            * s);
 
 /* registry cache backends */
 /* FIXME 0.11: use priv_ prefix */
-#ifdef USE_BINARY_REGISTRY
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
+
 gboolean 		gst_registry_binary_read_cache 	(GstRegistry * registry, const char *location);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
 
 gboolean 		gst_registry_binary_write_cache	(GstRegistry * registry, const char *location);
-/* FIXME 0.11: this is in registry.h for backwards compatibility
-#else 
-gboolean 		gst_registry_xml_read_cache 	(GstRegistry * registry, const char *location);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
 
-gboolean 		gst_registry_xml_write_cache 	(GstRegistry * registry, const char *location);
-*/
-#endif
+
+/* used in gstvalue.c and gststructure.c */
+#define GST_ASCII_IS_STRING(c) (g_ascii_isalnum((c)) || ((c) == '_') || \
+    ((c) == '-') || ((c) == '+') || ((c) == '/') || ((c) == ':') || \
+    ((c) == '.'))
 
 /*** debugging categories *****************************************************/
 
-#ifndef GST_DISABLE_GST_DEBUG
+#ifndef GST_REMOVE_GST_DEBUG
 
-#ifndef _MSC_VER
-#define IMPORT_SYMBOL
-#else /* _MSC_VER */
-#ifndef LIBGSTREAMER_EXPORTS
-#define IMPORT_SYMBOL __declspec(dllimport)
-#else
-#define IMPORT_SYMBOL 
-#endif
-#endif
-
-#include <gst/gstinfo.h>
-
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_GST_INIT;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_AUTOPLUG;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_AUTOPLUG_ATTEMPT;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_PARENTAGE;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_STATES;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_SCHEDULING;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_BUFFER;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_BUS;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_CAPS;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_CLOCK;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_ELEMENT_PADS;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_PADS;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_PIPELINE;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_PLUGIN_LOADING;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_PLUGIN_INFO;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_PROPERTIES;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_XML;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_NEGOTIATION;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_REFCOUNTING;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_ERROR_SYSTEM;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_EVENT;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_MESSAGE;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_PARAMS;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_CALL_TRACE;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_SIGNAL;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_PROBE;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_REGISTRY;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_QOS;
-extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_TYPES; /* FIXME 0.11: remove? */
+GST_EXPORT GstDebugCategory *GST_CAT_GST_INIT;
+GST_EXPORT GstDebugCategory *GST_CAT_AUTOPLUG; /* FIXME 0.11: remove? */
+GST_EXPORT GstDebugCategory *GST_CAT_AUTOPLUG_ATTEMPT; /* FIXME 0.11: remove? */
+GST_EXPORT GstDebugCategory *GST_CAT_PARENTAGE;
+GST_EXPORT GstDebugCategory *GST_CAT_STATES;
+GST_EXPORT GstDebugCategory *GST_CAT_SCHEDULING;
+GST_EXPORT GstDebugCategory *GST_CAT_BUFFER;
+GST_EXPORT GstDebugCategory *GST_CAT_BUFFER_LIST;
+GST_EXPORT GstDebugCategory *GST_CAT_BUS;
+GST_EXPORT GstDebugCategory *GST_CAT_CAPS;
+GST_EXPORT GstDebugCategory *GST_CAT_CLOCK;
+GST_EXPORT GstDebugCategory *GST_CAT_ELEMENT_PADS;
+GST_EXPORT GstDebugCategory *GST_CAT_PADS;
+GST_EXPORT GstDebugCategory *GST_CAT_PERFORMANCE;
+GST_EXPORT GstDebugCategory *GST_CAT_PIPELINE;
+GST_EXPORT GstDebugCategory *GST_CAT_PLUGIN_LOADING;
+GST_EXPORT GstDebugCategory *GST_CAT_PLUGIN_INFO;
+GST_EXPORT GstDebugCategory *GST_CAT_PROPERTIES;
+GST_EXPORT GstDebugCategory *GST_CAT_XML;
+GST_EXPORT GstDebugCategory *GST_CAT_NEGOTIATION;
+GST_EXPORT GstDebugCategory *GST_CAT_REFCOUNTING;
+GST_EXPORT GstDebugCategory *GST_CAT_ERROR_SYSTEM;
+GST_EXPORT GstDebugCategory *GST_CAT_EVENT;
+GST_EXPORT GstDebugCategory *GST_CAT_MESSAGE;
+GST_EXPORT GstDebugCategory *GST_CAT_PARAMS;
+GST_EXPORT GstDebugCategory *GST_CAT_CALL_TRACE;
+GST_EXPORT GstDebugCategory *GST_CAT_SIGNAL;
+GST_EXPORT GstDebugCategory *GST_CAT_PROBE;
+GST_EXPORT GstDebugCategory *GST_CAT_REGISTRY;
+GST_EXPORT GstDebugCategory *GST_CAT_QOS;
+GST_EXPORT GstDebugCategory *GST_CAT_TYPES; /* FIXME 0.11: remove? */
 
 #else
 
@@ -192,11 +234,13 @@ extern IMPORT_SYMBOL GstDebugCategory *GST_CAT_TYPES; /* FIXME 0.11: remove? */
 #define GST_CAT_SCHEDULING       NULL
 #define GST_CAT_DATAFLOW         NULL
 #define GST_CAT_BUFFER           NULL
+#define GST_CAT_BUFFER_LIST      NULL
 #define GST_CAT_BUS              NULL
 #define GST_CAT_CAPS             NULL
 #define GST_CAT_CLOCK            NULL
 #define GST_CAT_ELEMENT_PADS     NULL
 #define GST_CAT_PADS             NULL
+#define GST_CAT_PERFORMANCE      NULL
 #define GST_CAT_PIPELINE         NULL
 #define GST_CAT_PLUGIN_LOADING   NULL
 #define GST_CAT_PLUGIN_INFO      NULL

@@ -35,11 +35,20 @@
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 #define SPECIAL_POINTER(x) ((void*)(19283847+(x)))
@@ -52,21 +61,21 @@ static int n_event_probes = 0;
 static GET_GLOBAL_VAR_FROM_TLS(raised_critical,gstcheck,gboolean)
 #define _gst_check_raised_critical (*GET_GSTREAMER_WSD_VAR_NAME(raised_critical,gstcheck,g)())
 #else 
-extern gboolean _gst_check_raised_critical;
+IMPORT_C extern gboolean _gst_check_raised_critical;
 #endif
 //gboolean _gst_check_raised_warning = FALSE;
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(raised_warning,gstcheck,gboolean)
 #define _gst_check_raised_warning (*GET_GSTREAMER_WSD_VAR_NAME(raised_warning,gstcheck,g)())
 #else 
-extern gboolean _gst_check_raised_warning;
+IMPORT_C extern gboolean _gst_check_raised_warning;
 #endif
 //gboolean _gst_check_expecting_log = FALSE;
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(expecting_log,gstcheck,gboolean)
 #define _gst_check_expecting_log (*GET_GSTREAMER_WSD_VAR_NAME(expecting_log,gstcheck,g)())
 #else 
-extern gboolean _gst_check_expecting_log;
+IMPORT_C extern gboolean _gst_check_expecting_log;
 #endif
 
 
@@ -132,16 +141,16 @@ void test_buffer_probe_n_times()
   gst_object_unref (bus);
 
   g_assert (n_buffer_probes == 10);     /* one for every buffer */
-  g_assert (n_event_probes == 2);       /* new segment and eos */
-  g_assert (n_data_probes == 12);       /* duh */
+  g_assert (n_event_probes == 3);       /* new segment, latency and eos */
+  g_assert (n_data_probes == 13);       /* duh */
 
   gst_element_set_state (pipeline, GST_STATE_NULL);
   gst_object_unref (pipeline);
 
   /* make sure nothing was sent in addition to the above when shutting down */
   g_assert (n_buffer_probes == 10);     /* one for every buffer */
-  g_assert (n_event_probes == 2);       /* new segment and eos */
-  g_assert (n_data_probes == 12);       /* duh */
+  g_assert (n_event_probes == 3);       /* new segment, latency and eos */
+  g_assert (n_data_probes == 13);       /* duh */
   
   std_log(LOG_FILENAME_LINE, "Test Successful");
   create_xml(0);

@@ -1,4 +1,4 @@
-../../../..//*
+/*
 ============================================================================
  Name		: gsturi.mmp
  Author	  : 
@@ -10,7 +10,7 @@
 #include <platform_paths.hrh>
 
 TARGET		  gsturi.exe
-TARGETTYPE	  stdexe
+TARGETTYPE	  exe
 UID			 0 0xE18AC648
 
 CAPABILITY All -TCB
@@ -21,12 +21,7 @@ MW_LAYER_SYSTEMINCLUDE
 OS_LAYER_LIBC_SYSTEMINCLUDE
 
 OS_LAYER_GLIB_SYSTEMINCLUDE
-USERINCLUDE		../../../../../../include/gstreamer
-USERINCLUDE		../../../../../../include/gstreamer/gst
-USERINCLUDE		../../../../../../include/gstreamer/gst/base
-USERINCLUDE		../../../../../../include/gstreamer/gst/controller
-USERINCLUDE		../../../../../../include/gstreamer/gst/dataprotocol
-USERINCLUDE		../../../../../../include/gstreamer/gst/net
+MW_LAYER_GSTREAMER_SYSTEMINCLUDE 
 
 
 USERINCLUDE		../../../../../libs/gst/check
@@ -40,8 +35,8 @@ SOURCEPATH	  ../src
 SOURCE		  gsturi.c
 
 
-
-LIBRARY		 euser.lib libgstreamer.lib libgstbase.lib libgstcontroller.lib libgstcoreelements.lib
+STATICLIBRARY	libcrt0.lib
+LIBRARY		 euser.lib libc.lib libgstreamer.lib libgstbase.lib libgstcontroller.lib libgstcoreelements.lib
 LIBRARY		 libglib.lib libgmodule.lib libgobject.lib
 
 #ifdef ENABLE_ABIV2_MODE

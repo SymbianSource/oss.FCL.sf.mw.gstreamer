@@ -22,8 +22,9 @@
  */
 #include <gst/gst_global.h>
 #include <unistd.h>
-
+#include <gst/check/check.h>
 #include <gst/check/gstcheck.h>
+
 
 #define LOG_FILE "c:\\logs\\fakesink_log1.txt"
 #include "std_log_result.h"
@@ -32,11 +33,20 @@
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 typedef struct

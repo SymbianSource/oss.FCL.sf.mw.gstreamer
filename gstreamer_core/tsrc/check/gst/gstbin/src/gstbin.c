@@ -34,11 +34,20 @@
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 #include "libgstreamer_wsd_solution.h" 
@@ -47,7 +56,7 @@ void create_xml(int result)
 GET_GLOBAL_VAR_FROM_TLS(buffers,gstcheck,GList*)
 #define buffers (*GET_GSTREAMER_WSD_VAR_NAME(buffers,gstcheck,g)())
 #else 
-extern GList *buffers;
+IMPORT_C extern GList *buffers;
 #endif
 
 
@@ -55,28 +64,28 @@ extern GList *buffers;
 static GET_GLOBAL_VAR_FROM_TLS(raised_critical,gstcheck,gboolean)
 #define _gst_check_raised_critical (*GET_GSTREAMER_WSD_VAR_NAME(raised_critical,gstcheck,g)())
 #else 
-extern gboolean _gst_check_raised_critical;
+IMPORT_C extern gboolean _gst_check_raised_critical;
 #endif
 //gboolean _gst_check_raised_warning = FALSE;
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(raised_warning,gstcheck,gboolean)
 #define _gst_check_raised_warning (*GET_GSTREAMER_WSD_VAR_NAME(raised_warning,gstcheck,g)())
 #else 
-extern gboolean _gst_check_raised_warning;
+IMPORT_C extern gboolean _gst_check_raised_warning;
 #endif
 //gboolean _gst_check_expecting_log = FALSE;
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(expecting_log,gstcheck,gboolean)
 #define _gst_check_expecting_log (*GET_GSTREAMER_WSD_VAR_NAME(expecting_log,gstcheck,g)())
 #else 
-extern gboolean _gst_check_expecting_log;
+IMPORT_C extern gboolean _gst_check_expecting_log;
 #endif
 //gboolean _gst_check_threads_running = FALSE;
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(threads_running,gstcheck,gboolean)
 #define _gst_check_threads_running (*GET_GSTREAMER_WSD_VAR_NAME(threads_running,gstcheck,g)())
 #else 
-extern gboolean _gst_check_threads_running;
+IMPORT_C extern gboolean _gst_check_threads_running;
 #endif
 
 #if EMULATOR
@@ -401,7 +410,7 @@ void test_message_state_changed_children()
    * base_src is blocked in the push and has an extra refcount.
    * base_sink_chain has taken a refcount on the sink, and is blocked on
    * preroll */
-  ASSERT_OBJECT_REFCOUNT (src, "src", 2);
+  ASSERT_OBJECT_REFCOUNT (src, "src", 4);
   /* refcount can be 4 if the bin is still processing the async_done message of
    * the sink. */
   ASSERT_OBJECT_REFCOUNT_BETWEEN (sink, "sink", 2, 3);
@@ -453,7 +462,7 @@ void test_message_state_changed_children()
   fail_unless (ret == GST_STATE_CHANGE_SUCCESS);
 
   /* each object is referenced by two messages */
-  ASSERT_OBJECT_REFCOUNT (src, "src", 3);
+  ASSERT_OBJECT_REFCOUNT (src, "src", 4);
   ASSERT_OBJECT_REFCOUNT (sink, "sink", 3);
   ASSERT_OBJECT_REFCOUNT (pipeline, "pipeline", 3);
 
@@ -1028,6 +1037,85 @@ void test_iterate_sorted()
   create_xml(0); 
 }
 
+static void
+test_link_structure_change_state_changed_sync_cb (GstBus * bus,
+    GstMessage * message, gpointer data)
+{
+  GstPipeline *pipeline = GST_PIPELINE (data);
+  GstElement *src, *identity, *sink;
+  GstState old, snew, pending;
+
+  sink = gst_bin_get_by_name (GST_BIN (pipeline), "sink");
+  fail_unless (sink != NULL, "Could not get sink");
+
+  gst_message_parse_state_changed (message, &old, &snew, &pending);
+  if (message->src != GST_OBJECT (sink) || snew != GST_STATE_READY) {
+    gst_object_unref (sink);
+    return;
+  }
+
+  src = gst_bin_get_by_name (GST_BIN (pipeline), "src");
+  fail_unless (src != NULL, "Could not get src");
+
+  identity = gst_bin_get_by_name (GST_BIN (pipeline), "identity");
+  fail_unless (identity != NULL, "Could not get identity");
+
+  /* link src to identity, the pipeline should detect the new link and
+   * resync the state change */
+  fail_unless (gst_element_link (src, identity) == TRUE);
+
+  gst_object_unref (src);
+  gst_object_unref (identity);
+  gst_object_unref (sink);
+}
+
+void test_link_structure_change()
+{
+  GstElement *src, *identity, *sink, *pipeline;
+  GstBus *bus;
+  GstState state;
+  xmlfile = "test_link_structure_change";
+  std_log(LOG_FILENAME_LINE, "Test Started test_link_structure_change"); 
+  pipeline = gst_pipeline_new (NULL);
+  fail_unless (pipeline != NULL, "Could not create pipeline");
+
+  bus = gst_pipeline_get_bus (GST_PIPELINE (pipeline));
+  fail_unless (bus != NULL, "Could not get bus");
+
+  /* use the sync signal handler to link elements while the pipeline is still
+   * doing the state change */
+  gst_bus_set_sync_handler (bus, gst_bus_sync_signal_handler, pipeline);
+  g_object_connect (bus, "signal::sync-message::state-changed",
+      G_CALLBACK (test_link_structure_change_state_changed_sync_cb), pipeline,
+      NULL);
+
+  src = gst_element_factory_make ("fakesrc", "src");
+  fail_if (src == NULL, "Could not create fakesrc");
+
+  identity = gst_element_factory_make ("identity", "identity");
+  fail_if (identity == NULL, "Could not create identity");
+
+  sink = gst_element_factory_make ("fakesink", "sink");
+  fail_if (sink == NULL, "Could not create fakesink1");
+
+  gst_bin_add_many (GST_BIN (pipeline), src, identity, sink, NULL);
+
+  gst_element_set_state (pipeline, GST_STATE_READY);
+  gst_element_get_state (pipeline, NULL, NULL, GST_CLOCK_TIME_NONE);
+
+  /* the state change will be done on src only if the pipeline correctly resyncs
+   * after that filesrc has been linked to identity */
+  gst_element_get_state (src, &state, NULL, 0);
+  fail_unless_equals_int (state, GST_STATE_READY);
+
+  gst_object_unref (bus);
+  gst_object_unref (pipeline);
+  
+  std_log(LOG_FILENAME_LINE, "Test test_link_structure_change Successful");
+  create_xml(0); 
+}
+
+
 void (*fn[]) (void) = {
 test_message_state_changed,
 test_interface,
@@ -1039,7 +1127,8 @@ test_add_self,
 test_iterate_sorted,
 test_children_state_change_order_flagged_sink,
 test_children_state_change_order_semi_sink,
-test_children_state_change_order_two_sink
+test_children_state_change_order_two_sink,
+test_link_structure_change
 };
 
 char *args[] = {
@@ -1053,7 +1142,8 @@ char *args[] = {
 "test_iterate_sorted",
 "test_children_state_change_order_flagged_sink",
 "test_children_state_change_order_semi_sink",
-"test_children_state_change_order_two_sink"
+"test_children_state_change_order_two_sink",
+"test_link_structure_change"
 };
 
 GST_CHECK_MAIN (gst_bin);

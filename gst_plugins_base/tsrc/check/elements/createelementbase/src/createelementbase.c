@@ -1,24 +1,16 @@
+//createelementbase.c
 /*
-* Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
-*
-* This library is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Lesser General Public
-* License as published by the Free Software Foundation; either
-* version 2 of the License, or (at your option) any later version.
-*
-* This library is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-* Lesser General Public License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with this library; if not, write to the
-* Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-* Boston, MA 02111-1307, USA.
-*
-* Description:
-*
-*/
+ *  Copyright © 2005 Nokia Corporation.
+ *  This material, including documentation and any related 
+ *  computer progrs, is protected by copyright controlled by 
+ *  Nokia Corporation. All rights are reserved. Copying, 
+ *  including reproducing, storing, adapting or translating, any 
+ *  or all of this material requires the prior written consent of 
+ *  Nokia Corporation. This material also contains confidential 
+ *  information which may not be disclosed to others without the 
+ *  prior written consent of Nokia Corporation.
+ * ============================================================================
+ */
 
 
 #ifdef HAVE_CONFIG_H
@@ -35,11 +27,20 @@
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 #include <gst/check/gstcheck.h>
 #include "libgstreamer_wsd_solution.h" 
@@ -48,7 +49,7 @@ void create_xml(int result)
 GET_GLOBAL_VAR_FROM_TLS(buffers,gstcheck,GList*)
 #define buffers (*GET_GSTREAMER_WSD_VAR_NAME(buffers,gstcheck,g)())
 #else 
-extern GList *buffers;
+IMPORT_C extern GList *buffers;
 #endif
 
 

@@ -16,14 +16,14 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-#ifdef __SYMBIAN32__
-#include <gst_global.h>
-#endif
 
 #include <gst/gst_private.h>
 #include <gst/gstversion.h>
 #include <gst/gstplugin.h>
 
+#ifdef __SYMBIAN32__
+IMPORT_C
+#endif
 extern gboolean gst_mem_index_plugin_init (GstPlugin * plugin);
 
 #ifndef GST_DISABLE_LOADSAVE

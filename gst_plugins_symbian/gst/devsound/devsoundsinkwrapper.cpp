@@ -42,6 +42,7 @@ DevSoundWrapper::DevSoundWrapper()
     iIlbcDecoderIntfc = NULL;
     iCallbackError = KErrNone;
     iAudioOutput = NULL;
+    iIsBufferToBeFilledDone = TRUE;
     }
 
 /*********************************************************/
@@ -78,6 +79,7 @@ void DevSoundWrapper::BufferToBeFilled(CMMFBuffer* aBuffer)
         {
         User::RequestComplete(stat, KErrNone);
         iCallbackError = KErrNone;
+        iIsBufferToBeFilledDone = FALSE;
         }
     else
         {
@@ -93,7 +95,7 @@ void DevSoundWrapper::PlayError(TInt aError)
     {
     TRequestStatus* stat = &(AL->iStatus);
     User::RequestComplete(stat, aError);
-    iCallbackError = aError;
+    iCallbackError = 0;
     }
 /*******************************************************/
 void DevSoundWrapper::BufferToBeEmptied(CMMFBuffer* /*aBuffer*/)
@@ -244,9 +246,48 @@ int initialize_devsound(GstDevsoundSink* ds)
 
 /************************************************************/
 
+int pause_devsound(GstDevsoundSink *ds)
+    {
+    TRACE_PRN_FN_ENT;
+    DevSoundWrapper* handle = (DevSoundWrapper*) ds->handle;
+    if(handle->dev_sound->IsResumeSupported())
+        {
+        handle->dev_sound->Pause();
+        }
+    else
+        {
+        handle->iSamplesPlayed = handle->dev_sound->SamplesPlayed();
+        handle->dev_sound->Stop();
+        }
+    TRACE_PRN_FN_EXT;
+    return 0;
+    }
+
+int resume_devsound(GstDevsoundSink *ds)
+    {
+    TRACE_PRN_FN_ENT;
+    DevSoundWrapper* handle = (DevSoundWrapper*) ds->handle;
+    if(handle->dev_sound->IsResumeSupported())
+        {
+        handle->dev_sound->Resume();
+        }
+    else
+        {
+        playinit(handle);
+        initproperties(ds);
+        }
+    TRACE_PRN_FN_EXT;
+    return 0;
+    }
+
+
 int close_devsound(GstDevsoundSink *ds)
     {
     TRACE_PRN_FN_ENT;
+    CMMFDevSound    *dev_sound = 0;
+    dev_sound = (STATIC_CAST(DevSoundWrapper*, ds->handle))->dev_sound;
+    dev_sound->Stop();
+    delete dev_sound;
 
     g_list_foreach(ds->fmt, (GFunc) g_free, NULL);
     g_list_free(ds->fmt);
@@ -560,20 +601,37 @@ int get_ds_cb_error(DevSoundWrapper *handle)
     {
     return handle->iCallbackError;
     }
+
+#ifdef AV_SYNC
+gboolean  is_timeplayed_supported(DevSoundWrapper *handle)
+    {
+    gboolean retVal = FALSE;
+    if (handle->dev_sound && (handle->dev_sound)->IsGetTimePlayedSupported())
+        {
+        retVal = TRUE;
+        }
+    return retVal;
+    }
+#endif /*AV_SYNC*/
+
 /*******************************************************************/
 
 int playinit(DevSoundWrapper *handle)
     {
     TRACE_PRN_FN_ENT;
-
-    ((handle)->AL)->InitialiseActiveListener();
-    handle->eosReceived = false;
-
+    handle->iCallbackError = KErrNone;
+    if( handle->iIsBufferToBeFilledDone )
+    {
+        ((handle)->AL)->InitialiseActiveListener();
+        handle->eosReceived = false;
+    
         TRAP(handle->iCallbackError,(handle->dev_sound)->PlayInitL());
-    if (handle->iCallbackError == KErrNone)
-        {
-        ((handle)->AL)->StartActiveScheduler();
-        }
+        if (handle->iCallbackError == KErrNone)
+            {
+            ((handle)->AL)->StartActiveScheduler();
+            }    
+    }
+
 
     TRACE_PRN_IF_ERR(handle->iCallbackError);
     TRACE_PRN_FN_EXT;
@@ -631,7 +689,7 @@ int play_data(DevSoundWrapper *handle)
     (handle->dev_sound)->PlayData();
 
     ((handle)->AL)->StartActiveScheduler();
-
+    handle->iIsBufferToBeFilledDone = TRUE;
     TRACE_PRN_FN_EXT;
     return KErrNone;
     }
@@ -715,7 +773,19 @@ void populateproperties(GstDevsoundSink *ds)
     {
     TRACE_PRN_FN_ENT;
     DevSoundWrapper* dsPtr = STATIC_CAST(DevSoundWrapper*, ds->handle);
-    ds->samplesplayed = (dsPtr->dev_sound)->SamplesPlayed();
+#ifdef AV_SYNC
+    if (dsPtr->dev_sound->IsGetTimePlayedSupported())
+        {
+        TTimeIntervalMicroSeconds timePlayedInMS = 0;
+        (dsPtr->dev_sound)->GetTimePlayed(timePlayedInMS);
+        /* store value in nano seconds */
+        ds->time_or_samples_played = timePlayedInMS.Int64() * 1000;
+        }
+    else
+        {
+        ds->time_or_samples_played += (dsPtr->dev_sound)->SamplesPlayed();
+        }
+#endif /*AV_SYNC*/
     get_outputdevice(dsPtr,&ds->output);
     TRACE_PRN_FN_EXT;
     }
@@ -725,9 +795,6 @@ void initproperties(GstDevsoundSink* ds)
     TRACE_PRN_FN_ENT;
     DevSoundWrapper* dsPtr=  STATIC_CAST(DevSoundWrapper*, ds->handle);
     ds->maxvolume     = (dsPtr->dev_sound)->MaxVolume();
-    ds->volume        = (dsPtr->dev_sound)->Volume();
-    framemode_rqrd_for_ec(dsPtr,&ds->framemodereq);   
-    get_cng(dsPtr,&ds->g711cng);
-    get_ilbccng(dsPtr,&ds->ilbccng);
+    ds->volume        = (dsPtr->dev_sound)->Volume();    
     TRACE_PRN_FN_EXT;    
     }

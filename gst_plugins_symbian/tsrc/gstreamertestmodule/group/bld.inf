@@ -27,7 +27,9 @@ DEFAULT
 
 PRJ_TESTEXPORTS
 #ifdef FF_GSTREAMER
-../data/16khzstereo.mp3 /epoc32/winscw/c/data/16khzstereo.mp3
+../conf/GStreamerTestClass.cfg   /epoc32/winscw/c/TestFramework/GStreamerTestClass.cfg
+../init/GStreamerTestClass.ini   /epoc32/winscw/c/TestFramework/GStreamerTestClass.ini
+../init/TestFramework.ini       /epoc32/winscw/c/TestFramework/TestFramework.ini
 #endif
 
 PRJ_TESTMMPFILES

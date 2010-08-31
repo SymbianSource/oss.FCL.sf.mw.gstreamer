@@ -20,8 +20,8 @@
 *
 */
 
-PRJ_EXPORTS
-//warning.wav       /epoc32/winscw/c/data/gstreamer/warning.wav
+PRJ_TESTEXPORTS
+warning.wav       /epoc32/winscw/c/data/gstreamer/warning.wav
 
 PRJ_TESTMMPFILES
 

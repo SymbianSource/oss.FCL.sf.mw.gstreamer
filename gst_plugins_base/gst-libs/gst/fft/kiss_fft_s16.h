@@ -26,7 +26,9 @@ extern "C" {
 
 #define KISS_FFT_S16_MALLOC g_malloc
 
-#include "machine/_stdint.h"
+#ifndef __SYMBIAN32__
+#include "_stdint.h"
+#endif
 
 #define kiss_fft_s16_scalar int16_t
 

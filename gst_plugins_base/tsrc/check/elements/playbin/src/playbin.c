@@ -35,17 +35,26 @@
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 #ifndef GST_DISABLE_REGISTRY
 
-static GType gst_red_video_src_get_type (void);
-static GType gst_codec_src_get_type (void);
+IMPORT_C GType gst_red_video_src_get_type (void);
+IMPORT_C GType gst_codec_src_get_type (void);
 
 #define DEFINE_TEST(func) \
     static void func (void);                            \
@@ -757,8 +766,9 @@ gst_red_video_src_init_type (GType type)
 typedef GstPushSrc GstRedVideoSrc;
 typedef GstPushSrcClass GstRedVideoSrcClass;
 
+
 GST_BOILERPLATE_FULL (GstRedVideoSrc, gst_red_video_src, GstPushSrc,
-    GST_TYPE_PUSH_SRC, gst_red_video_src_init_type);
+   GST_TYPE_PUSH_SRC, gst_red_video_src_init_type);
 
 static void
 gst_red_video_src_base_init (gpointer klass)
@@ -868,6 +878,7 @@ gst_codec_src_init_type (GType type)
 
 typedef GstPushSrc GstCodecSrc;
 typedef GstPushSrcClass GstCodecSrcClass;
+
 
 GST_BOILERPLATE_FULL (GstCodecSrc, gst_codec_src, GstPushSrc,
     GST_TYPE_PUSH_SRC, gst_codec_src_init_type);

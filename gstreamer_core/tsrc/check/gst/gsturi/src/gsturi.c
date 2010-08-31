@@ -31,11 +31,20 @@ GstElement *parser,*bin,*sink,*pipeline,*source,*filter;
 
 void create_xml(int result)
 {
+
     if(result)
+    {
         assert_failed = 1;
-    
+    } 
+
     testResultXml(xmlfile);
     close_log_file();
+
+    if(result)
+    {
+        exit (-1);
+    }    
+
 }
 
 void test_protocol_case()
@@ -46,14 +55,14 @@ void test_protocol_case()
   xmlfile = "gsturi_test_protocol_case";
   std_log(LOG_FILENAME_LINE, "Test Started gsturi_test_protocol_case");
 
-  element = gst_element_make_from_uri (GST_URI_SRC, "file://c:\\data\\gstreamer\\warning.wav", NULL);
+  element = gst_element_make_from_uri (GST_URI_SRC, "file:///foo/bar", NULL);
 
   /* no element? probably no registry, bail out */
   if (element == NULL)
     return;
 
   gst_object_unref (element);
-  element = gst_element_make_from_uri (GST_URI_SRC, "FILE://c:\\data\\gstreamer\\warning.wav", NULL);
+  element = gst_element_make_from_uri (GST_URI_SRC, "FILE:///foo/bar", NULL);
   fail_unless (element != NULL,
       "Got source for 'file://' URI but not for 'FILE://' URI");
   gst_object_unref (element);

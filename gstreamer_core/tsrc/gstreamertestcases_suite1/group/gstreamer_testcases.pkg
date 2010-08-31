@@ -1,0 +1,219 @@
+; ============================================================================
+;  Name        : gstreamer_testcases.pkg
+;  Part of     : Gstreamer project
+;  Description : Package file for all gstreamer test binaries
+;
+;  Version     : %version: bh1mmcf#3 %
+;
+;  Copyright Â© 2002-2006 Nokia.  All rights reserved.
+;  This material, including documentation and any related computer
+;  programs, is protected by copyright controlled by Nokia.  All
+;  rights are reserved.  Copying, including reproducing, storing,
+;  adapting or translating, any or all of this material requires the
+;  prior written consent of Nokia.  This material also contains
+;  confidential information which may not be disclosed to others
+;  without the prior written consent of Nokia.
+; ============================================================================
+
+;Languages
+&EN
+
+;Header
+#{"gstreamer_testcases.pkg"},(0x2001F45C),1,0,0, TYPE=SU
+
+;Supports S60 3.0
+[0x101F7961], 0, 0, 0, {"S60ProductID"}
+
+;Localised Vendor name
+%{"Nokia Testing EN"}
+
+;Unique Vendor name
+:"Vendor"
+
+
+;gstreamer dll
+
+"\epoc32\winscw\c\gstreamer\plugins_list\gst_dll_2001F41F.txt" - "c:\gstreamer\plugins_list\gst_dll_2001F41F.txt"
+"\epoc32\release\armv5\urel\libgstadder.dll"-"!:\sys\bin\libgstadder.dll"
+"\epoc32\release\armv5\urel\libgstaudio.dll"-"!:\sys\bin\libgstaudio.dll"
+"\epoc32\release\armv5\urel\libgstbase.dll"-"!:\sys\bin\libgstbase.dll"
+"\epoc32\release\armv5\urel\libgstcdda.dll"-"!:\sys\bin\libgstcdda.dll"
+"\epoc32\release\armv5\urel\libgstcontroller.dll"-"!:\sys\bin\libgstcontroller.dll"
+"\epoc32\release\armv5\urel\libgstdataprotocol.dll"-"!:\sys\bin\libgstdataprotocol.dll"
+"\epoc32\release\armv5\urel\libgstdevsoundext.dll"-"!:\sys\bin\libgstdevsoundext.dll"
+"\epoc32\release\armv5\urel\libgstfft.dll"-"!:\sys\bin\libgstfft.dll"
+"\epoc32\release\armv5\urel\libgstgdp.dll"-"!:\sys\bin\libgstgdp.dll"
+"\epoc32\release\armv5\urel\libgstinterfaces.dll"-"!:\sys\bin\libgstinterfaces.dll"
+"\epoc32\release\armv5\urel\libgstnet.dll"-"!:\sys\bin\libgstnet.dll"
+"\epoc32\release\armv5\urel\libgstnetbuffer.dll"-"!:\sys\bin\libgstnetbuffer.dll"
+"\epoc32\release\armv5\urel\libgstpbutils.dll"-"!:\sys\bin\libgstpbutils.dll"
+"\epoc32\release\armv5\urel\libgstreamer.dll"-"!:\sys\bin\libgstreamer.dll"
+"\epoc32\release\armv5\urel\libgstriff.dll"-"!:\sys\bin\libgstriff.dll"
+"\epoc32\release\armv5\urel\libgstrtp.dll"-"!:\sys\bin\libgstrtp.dll"
+"\epoc32\release\armv5\urel\libgstsubparse.dll"-"!:\sys\bin\libgstsubparse.dll"
+"\epoc32\release\armv5\urel\libgsttag.dll"-"!:\sys\bin\libgsttag.dll"
+"\epoc32\release\armv5\urel\libgsttcp.dll"-"!:\sys\bin\libgsttcp.dll"
+"\epoc32\release\armv5\urel\libgstvolume.dll"-"!:\sys\bin\libgstvolume.dll"
+"\epoc32\release\armv5\urel\libgstaudiorate.dll"-"!:\sys\bin\libgstaudiorate.dll"
+"\epoc32\release\armv5\urel\libgstaudioresample.dll"-"!:\sys\bin\libgstaudioresample.dll"
+"\epoc32\release\armv5\urel\libgstaudiotestsrc.dll"-"!:\sys\bin\libgstaudiotestsrc.dll"
+"\epoc32\release\armv5\urel\libgstcoreelements.dll"-"!:\sys\bin\libgstcoreelements.dll"
+"\epoc32\release\armv5\urel\libgstcoreindexers.dll"-"!:\sys\bin\libgstcoreindexers.dll"
+"\epoc32\release\armv5\urel\libgstdecodebin.dll"-"!:\sys\bin\libgstdecodebin.dll"
+"\epoc32\release\armv5\urel\libgstdecodebin2.dll"-"!:\sys\bin\libgstdecodebin2.dll"
+"\epoc32\release\armv5\urel\libgstdevsoundsink.dll"-"!:\sys\bin\libgstdevsoundsink.dll"
+"\epoc32\release\armv5\urel\libgstdevsoundsrc.dll"-"!:\sys\bin\libgstdevsoundsrc.dll"
+"\epoc32\release\armv5\urel\libgstplaybin.dll"-"!:\sys\bin\libgstplaybin.dll"
+"\epoc32\release\armv5\urel\libgsttypefindfunctions.dll"-"!:\sys\bin\libgsttypefindfunctions.dll"
+"\epoc32\release\armv5\urel\libgstwavparse.dll"-"!:\sys\bin\libgstwavparse.dll"
+"\epoc32\release\armv5\urel\libgstwavenc.dll"-"!:\sys\bin\libgstwavenc.dll"
+"\epoc32\release\armv5\urel\libgstaudioconvert.dll"-"!:\sys\bin\libgstaudioconvert.dll"
+"\epoc32\release\armv5\urel\libgstqueue2.dll"-"!:\sys\bin\libgstqueue2.dll"
+"\epoc32\release\armv5\urel\libgstapp.dll"-"!:\sys\bin\libgstapp.dll"
+"\epoc32\release\armv5\urel\libgstautodetect.dll"-"!:\sys\bin\libgstautodetect.dll"
+"\epoc32\release\armv5\urel\liboil.dll"-"!:\sys\bin\liboil.dll"
+"\epoc32\release\armv5\urel\gstreamertestcases_suite1.dll"-"!:\sys\bin\gstreamertestcases_suite1.dll"
+;"\epoc32\release\armv5\urel\libgstvideo.dll"-"!:\sys\bin\libgstvideo.dll"
+;"\epoc32\release\armv5\urel\libgstvideorate.dll"-"!:\sys\bin\libgstvideorate.dll"
+;"\epoc32\release\armv5\urel\libgstvideoscale.dll"-"!:\sys\bin\libgstvideoscale.dll"
+;"\epoc32\release\armv5\urel\libgstvideotestsrc.dll"-"!:\sys\bin\libgstvideotestsrc.dll"
+;"\epoc32\release\armv5\urel\libgstffmpegcolorspace.dll"-"!:\sys\bin\libgstffmpegcolorspace.dll"
+
+
+;gstregistry exe
+
+"\epoc32\release\armv5\urel\GSTRegistryGenerator.exe"		  -"!:\sys\bin\GSTRegistryGenerator.exe",FR,RI
+
+;gstreamer-core test exe's
+
+"\epoc32\release\armv5\urel\cleanup.exe"-"!:\sys\bin\cleanup.exe"
+"\epoc32\release\armv5\urel\createelementcore.exe"-"!:\sys\bin\createelementcore.exe"
+"\epoc32\release\armv5\urel\element_gstfakesink.exe"-"!:\sys\bin\element_gstfakesink.exe"
+"\epoc32\release\armv5\urel\element_gstfakesrc.exe"-"!:\sys\bin\element_gstfakesrc.exe"
+"\epoc32\release\armv5\urel\element_gstfdsrc.exe"-"!:\sys\bin\element_gstfdsrc.exe"
+"\epoc32\release\armv5\urel\element_gstfilesink.exe"-"!:\sys\bin\element_gstfilesink.exe"
+"\epoc32\release\armv5\urel\element_gstfilesrc.exe"-"!:\sys\bin\element_gstfilesrc.exe"
+"\epoc32\release\armv5\urel\element_gstidentity.exe"-"!:\sys\bin\element_gstidentity.exe"
+"\epoc32\release\armv5\urel\element_gstmultiqueue.exe"-"!:\sys\bin\element_gstmultiqueue.exe"
+"\epoc32\release\armv5\urel\element_gstqueue.exe"-"!:\sys\bin\element_gstqueue.exe"
+"\epoc32\release\armv5\urel\element_gsttee.exe"-"!:\sys\bin\element_gsttee.exe"
+"\epoc32\release\armv5\urel\gst.exe"-"!:\sys\bin\gst.exe"
+"\epoc32\release\armv5\urel\gstadapter.exe"-"!:\sys\bin\gstadapter.exe"
+"\epoc32\release\armv5\urel\gstbasesrc.exe"-"!:\sys\bin\gstbasesrc.exe"
+"\epoc32\release\armv5\urel\gstbin.exe"-"!:\sys\bin\gstbin.exe"
+"\epoc32\release\armv5\urel\gstbuffer.exe"-"!:\sys\bin\gstbuffer.exe"
+"\epoc32\release\armv5\urel\gstbus.exe"-"!:\sys\bin\gstbus.exe"
+"\epoc32\release\armv5\urel\gstcaps.exe"-"!:\sys\bin\gstcaps.exe"
+"\epoc32\release\armv5\urel\gstcollectpads.exe"-"!:\sys\bin\gstcollectpads.exe"
+"\epoc32\release\armv5\urel\gstcontroller.exe"-"!:\sys\bin\gstcontroller.exe"
+"\epoc32\release\armv5\urel\gstelement.exe"-"!:\sys\bin\gstelement.exe"
+"\epoc32\release\armv5\urel\gstevent.exe"-"!:\sys\bin\gstevent.exe"
+"\epoc32\release\armv5\urel\gstgdp.exe"-"!:\sys\bin\gstgdp.exe"
+"\epoc32\release\armv5\urel\gstghostpad.exe"-"!:\sys\bin\gstghostpad.exe"
+"\epoc32\release\armv5\urel\gstgstnetclientclock.exe"-"!:\sys\bin\gstgstnetclientclock.exe"
+"\epoc32\release\armv5\urel\gstgstnettimeprovider.exe"-"!:\sys\bin\gstgstnettimeprovider.exe"
+"\epoc32\release\armv5\urel\gstindex.exe"-"!:\sys\bin\gstindex.exe"
+"\epoc32\release\armv5\urel\gstinterface.exe"-"!:\sys\bin\gstinterface.exe"
+"\epoc32\release\armv5\urel\gstiterator.exe"-"!:\sys\bin\gstiterator.exe"
+"\epoc32\release\armv5\urel\gstlibsabi.exe"-"!:\sys\bin\gstlibsabi.exe"
+"\epoc32\release\armv5\urel\gstmessage.exe"-"!:\sys\bin\gstmessage.exe"
+"\epoc32\release\armv5\urel\gstminiobject.exe"-"!:\sys\bin\gstminiobject.exe"
+"\epoc32\release\armv5\urel\gstobject.exe"-"!:\sys\bin\gstobject.exe"
+"\epoc32\release\armv5\urel\gstpad.exe"-"!:\sys\bin\gstpad.exe"
+"\epoc32\release\armv5\urel\gstparamspecs.exe"-"!:\sys\bin\gstparamspecs.exe"
+"\epoc32\release\armv5\urel\gstpipeline.exe"-"!:\sys\bin\gstpipeline.exe"
+"\epoc32\release\armv5\urel\gstplugin.exe"-"!:\sys\bin\gstplugin.exe"
+"\epoc32\release\armv5\urel\gstpoll.exe"-"!:\sys\bin\gstpoll.exe"
+"\epoc32\release\armv5\urel\gstquery.exe"-"!:\sys\bin\gstquery.exe"
+"\epoc32\release\armv5\urel\gstregistry.exe"-"!:\sys\bin\gstregistry.exe"
+"\epoc32\release\armv5\urel\gstsegment.exe"-"!:\sys\bin\gstsegment.exe"
+"\epoc32\release\armv5\urel\gstsinks.exe"-"!:\sys\bin\gstsinks.exe"
+"\epoc32\release\armv5\urel\gststates.exe"-"!:\sys\bin\gststates.exe"
+"\epoc32\release\armv5\urel\gststructure.exe"-"!:\sys\bin\gststructure.exe"
+"\epoc32\release\armv5\urel\gstsystemclock.exe"-"!:\sys\bin\gstsystemclock.exe"
+"\epoc32\release\armv5\urel\gsttag.exe"-"!:\sys\bin\gsttag.exe"
+"\epoc32\release\armv5\urel\gsttagsetter.exe"-"!:\sys\bin\gsttagsetter.exe"
+"\epoc32\release\armv5\urel\gsttask.exe"-"!:\sys\bin\gsttask.exe"
+"\epoc32\release\armv5\urel\gsttypefindhelper.exe"-"!:\sys\bin\gsttypefindhelper.exe"
+"\epoc32\release\armv5\urel\gsturi.exe"-"!:\sys\bin\gsturi.exe"
+"\epoc32\release\armv5\urel\gstutils.exe"-"!:\sys\bin\gstutils.exe"
+"\epoc32\release\armv5\urel\gstvalue.exe"-"!:\sys\bin\gstvalue.exe"
+"\epoc32\release\armv5\urel\helloworld.exe"-"!:\sys\bin\helloworld.exe"
+"\epoc32\release\armv5\urel\launch.exe"-"!:\sys\bin\launch.exe"
+"\epoc32\release\armv5\urel\manual_dynamic.exe"-"!:\sys\bin\manual_dynamic.exe"
+"\epoc32\release\armv5\urel\manual_ghostpad.exe"-"!:\sys\bin\manual_ghostpad.exe"
+"\epoc32\release\armv5\urel\manual_gstbin.exe"-"!:\sys\bin\manual_gstbin.exe"
+"\epoc32\release\armv5\urel\manual_gstdecodebin.exe"-"!:\sys\bin\manual_gstdecodebin.exe"
+"\epoc32\release\armv5\urel\manual_gstelementcreate.exe"-"!:\sys\bin\manual_gstelementcreate.exe"
+"\epoc32\release\armv5\urel\manual_gstelementfactory.exe"-"!:\sys\bin\manual_gstelementfactory.exe"
+"\epoc32\release\armv5\urel\manual_gstelementget.exe"-"!:\sys\bin\manual_gstelementget.exe"
+"\epoc32\release\armv5\urel\manual_gstelementlink.exe"-"!:\sys\bin\manual_gstelementlink.exe"
+"\epoc32\release\armv5\urel\manual_gstelementmake.exe"-"!:\sys\bin\manual_gstelementmake.exe"
+"\epoc32\release\armv5\urel\manual_gstinit.exe"-"!:\sys\bin\manual_gstinit.exe"
+"\epoc32\release\armv5\urel\manual_gstpad.exe"-"!:\sys\bin\manual_gstpad.exe"
+"\epoc32\release\armv5\urel\manual_gstplaybin.exe"-"!:\sys\bin\manual_gstplaybin.exe"
+"\epoc32\release\armv5\urel\manual_gstquery.exe"-"!:\sys\bin\manual_gstquery.exe"
+"\epoc32\release\armv5\urel\manual_helloworld.exe"-"!:\sys\bin\manual_helloworld.exe"
+"\epoc32\release\armv5\urel\manual_typefind.exe"-"!:\sys\bin\manual_typefind.exe"
+"\epoc32\release\armv5\urel\metadata.exe"-"!:\sys\bin\metadata.exe"
+"\epoc32\release\armv5\urel\mp3launch.exe"-"!:\sys\bin\mp3launch.exe"
+"\epoc32\release\armv5\urel\parse-disabled.exe"-"!:\sys\bin\parse-disabled.exe"
+"\epoc32\release\armv5\urel\parse-launch.exe"-"!:\sys\bin\parse-launch.exe"
+"\epoc32\release\armv5\urel\simple-launch-lines.exe"-"!:\sys\bin\simple-launch-lines.exe"
+"\epoc32\release\armv5\urel\stress.exe"-"!:\sys\bin\stress.exe"
+"\epoc32\release\armv5\urel\testaudioexample.exe"-"!:\sys\bin\testaudioexample.exe"
+"\epoc32\release\armv5\urel\testgstadapter.exe"-"!:\sys\bin\testgstadapter.exe"
+"\epoc32\release\armv5\urel\testqueue.exe"-"!:\sys\bin\testqueue.exe"
+"\epoc32\release\armv5\urel\typefind.exe"-"!:\sys\bin\typefind.exe"
+
+
+
+;gst_plugins_base test exe's
+
+"\epoc32\release\armv5\urel\gstadder.exe"-"!:\sys\bin\gstadder.exe"
+"\epoc32\release\armv5\urel\gstaudioconvert.exe"-"!:\sys\bin\gstaudioconvert.exe"
+"\epoc32\release\armv5\urel\gstaudiorate.exe"-"!:\sys\bin\gstaudiorate.exe"
+"\epoc32\release\armv5\urel\gstaudioresample.exe"-"!:\sys\bin\gstaudioresample.exe"
+"\epoc32\release\armv5\urel\gstaudiotestsrc.exe"-"!:\sys\bin\gstaudiotestsrc.exe"
+"\epoc32\release\armv5\urel\createelementbase.exe"-"!:\sys\bin\createelementbase.exe"
+"\epoc32\release\armv5\urel\gstdecodebin.exe"-"!:\sys\bin\gstdecodebin.exe"
+"\epoc32\release\armv5\urel\gdpdepay.exe"-"!:\sys\bin\gdpdepay.exe"
+"\epoc32\release\armv5\urel\multifdsink.exe"-"!:\sys\bin\multifdsink.exe"
+"\epoc32\release\armv5\urel\playbin.exe"-"!:\sys\bin\playbin.exe"
+"\epoc32\release\armv5\urel\gstsubparse.exe"-"!:\sys\bin\gstsubparse.exe"
+"\epoc32\release\armv5\urel\volume.exe"-"!:\sys\bin\volume.exe"
+"\epoc32\release\armv5\urel\clock-selection.exe"-"!:\sys\bin\clock-selection.exe"
+"\epoc32\release\armv5\urel\states.exe"-"!:\sys\bin\states.exe"
+"\epoc32\release\armv5\urel\fft.exe"-"!:\sys\bin\fft.exe"
+;"\epoc32\release\armv5\urel\gstnetbuffer.exe"-"!:\sys\bin\gstnetbuffer.exe"
+"\epoc32\release\armv5\urel\pbutils.exe"-"!:\sys\bin\pbutils.exe"
+"\epoc32\release\armv5\urel\gst_plugin_rtp.exe"-"!:\sys\bin\gst_plugin_rtp.exe"
+"\epoc32\release\armv5\urel\gst_plugin_tag.exe"-"!:\sys\bin\gst_plugin_tag.exe"
+"\epoc32\release\armv5\urel\taudio.exe"-"!:\sys\bin\taudio.exe"
+"\epoc32\release\armv5\urel\gstsimple-launch-lines.exe"-"!:\sys\bin\gstsimple-launch-lines.exe"
+"\epoc32\release\armv5\urel\gststreamheader.exe"-"!:\sys\bin\gststreamheader.exe"
+"\epoc32\release\armv5\urel\stress_playbin.exe"-"!:\sys\bin\stress_playbin.exe"
+
+;"\epoc32\release\armv5\urel\ffmpegcolorspace.exe"-"!:\sys\bin\ffmpegcolorspace.exe"
+;"\epoc32\release\armv5\urel\addstream.exe"-"!:\sys\bin\addstream.exe"
+;"\epoc32\release\armv5\urel\video.exe"-"!:\sys\bin\video.exe"
+;"\epoc32\release\armv5\urel\typefindfunctions.exe" -"!:\sys\bin\typefindfunctions.exe"
+;"\epoc32\release\armv5\urel\videorate.exe"-"!:\sys\bin\videorate.exe"
+
+
+
+;dependecy files
+"\epoc32\winscw\c\data\gstreamer\khuda1.wav"-"c:\data\gstreamer\khuda1.wav"
+"\epoc32\winscw\c\data\gstreamer\khuda.wav"-"c:\data\gstreamer\khuda.wav"
+"\epoc32\winscw\c\data\gstreamer\warning.wav"-"c:\data\gstreamer\warning.wav"
+"\epoc32\winscw\c\data\gstreamer\Crnival.mp3"-"c:\data\gstreamer\Crnival.mp3"
+"\epoc32\winscw\c\data\gstreamer\khuda.wav"-"c:\data\gstreamer\gsttestfiles\khuda.wav"
+"\epoc32\winscw\c\data\gstreamer\khuda.wav"-"c:\data\khuda.wav"
+"\epoc32\winscw\c\data\gstreamer\warning.wav"-"c:\data\warning.wav"
+;"\epoc32\winscw\c\data\gstreamer\Crnival.mp3"-"c:\data\Crnival.mp3"
+
+;Testframework.ini and conf files
+
+"..\conf\gstreamertestcases_suite1.cfg"-"c:\TestFramework\gstreamertestcases_suite1.cfg"
+"..\init\gstreamertestcases_suite1.ini"-"c:\TestFramework\gstreamertestcases_suite1.ini"
+"..\init\TestFramework.ini"-"c:\TestFramework\TestFramework.ini"

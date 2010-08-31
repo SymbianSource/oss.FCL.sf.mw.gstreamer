@@ -20,6 +20,8 @@
 *
 */
 
+PRJ_EXPORTS
+../gst/devsound/gstspeechencoderconfig.h  MW_LAYER_PLATFORM_EXPORT_PATH(gstreamer/gst/interfaces/gstspeechencoderconfig.h)
 
 PRJ_PLATFORMS
 DEFAULT
@@ -28,3 +30,5 @@ PRJ_MMPFILES
 gstdevsoundext.mmp
 gstdevsoundsink.mmp
 gstdevsoundsrc.mmp
+gstamrmux.mmp
+#include "../gst/AudioRecordBin/group/bld.inf"

@@ -1,12 +1,6 @@
 #ifdef HAVE_CONFIG_H
-#ifdef __SYMBIAN32__
-#include "config.h"
-#else
 #include <config.h>
 #endif
-#endif
-
-
 /* A Bison parser, made by GNU Bison 2.3.  */
 
 /* Skeleton implementation for Bison's Yacc-like parsers in C
@@ -112,6 +106,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#ifdef __SYMBIAN32__
+#include <glib_global.h>
+#endif
 
 #include "../gst_private.h"
 #include "../gst-i18n-lib.h"
@@ -120,6 +117,7 @@
 #include "../gstparse.h"
 #include "../gstinfo.h"
 #include "../gsterror.h"
+#include "../gststructure.h"
 #include "../gsturi.h"
 #include "../gstutils.h"
 #include "../gstvalue.h"
@@ -235,7 +233,7 @@ G_STMT_START { \
 } G_STMT_END
 
 #  define ERROR(type, ...) \
-  SET_ERROR (((graph_t *) graph)->error, (type), __VA_ARGS__ )
+  SET_ERROR (graph->error, (type), __VA_ARGS__ )
 
 #elif defined(G_HAVE_GNUC_VARARGS)
 
@@ -248,7 +246,7 @@ G_STMT_START { \
 } G_STMT_END
 
 #  define ERROR(type, args...) \
-  SET_ERROR (((graph_t *) graph)->error,(type) , args )
+  SET_ERROR (graph->error,(type) , args )
 
 #else
 
@@ -321,13 +319,19 @@ YYPRINTF(const char *format, ...)
 
 #endif /* GST_DISABLE_GST_DEBUG */
 
+#define ADD_MISSING_ELEMENT(graph,name) G_STMT_START {                      \
+    if ((graph)->ctx) {                                                     \
+      (graph)->ctx->missing_elements =                                      \
+          g_list_append ((graph)->ctx->missing_elements, g_strdup (name));  \
+    } } G_STMT_END
+
 #define GST_BIN_MAKE(res, type, chainval, assign, free_string) \
 G_STMT_START { \
   chain_t *chain = chainval; \
   GSList *walk; \
   GstBin *bin = (GstBin *) gst_element_factory_make (type, NULL); \
   if (!chain) { \
-    SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_EMPTY_BIN, \
+    SET_ERROR (graph->error, GST_PARSE_ERROR_EMPTY_BIN, \
         _("specified empty bin \"%s\", not allowed"), type); \
     g_slist_foreach (assign, (GFunc) gst_parse_strfree, NULL); \
     g_slist_free (assign); \
@@ -336,7 +340,8 @@ G_STMT_START { \
       gst_parse_strfree (type); /* Need to clean up the string */ \
     YYERROR; \
   } else if (!bin) { \
-    SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_NO_SUCH_ELEMENT, \
+    ADD_MISSING_ELEMENT(graph, type); \
+    SET_ERROR (graph->error, GST_PARSE_ERROR_NO_SUCH_ELEMENT, \
         _("no bin \"%s\", skipping"), type); \
     g_slist_foreach (assign, (GFunc) gst_parse_strfree, NULL); \
     g_slist_free (assign); \
@@ -390,29 +395,46 @@ static void gst_parse_new_child(GstChildProxy *child_proxy, GObject *object,
   GType value_type;
 
   if (gst_child_proxy_lookup (GST_OBJECT (set->parent), set->name, &target, &pspec)) { 
+    gboolean got_value = FALSE;
+
     value_type = G_PARAM_SPEC_VALUE_TYPE (pspec);
 
     GST_CAT_LOG (GST_CAT_PIPELINE, "parsing delayed property %s as a %s from %s", pspec->name,
       g_type_name (value_type), set->value_str);
     g_value_init (&v, value_type);
-    if (gst_value_deserialize (&v, set->value_str)) {
-      g_object_set_property (G_OBJECT (target), pspec->name, &v);
+    if (gst_value_deserialize (&v, set->value_str))
+      got_value = TRUE;
+    else if (g_type_is_a (value_type, GST_TYPE_ELEMENT)) {
+       GstElement *bin;
+       
+       bin = gst_parse_bin_from_description (set->value_str, TRUE, NULL);
+       if (bin) {
+         g_value_set_object (&v, bin);
+         got_value = TRUE;
+       }
     }
     g_signal_handler_disconnect (child_proxy, set->signal_id);
     g_free(set->name);
     g_free(set->value_str);
     g_free(set);
+    if (!got_value)
+      goto error;
+    g_object_set_property (G_OBJECT (target), pspec->name, &v);
   }
 
+out:
   if (G_IS_VALUE (&v))
     g_value_unset (&v);
   if (target)
     gst_object_unref (target);
   return;
+
+error:
+  GST_CAT_ERROR (GST_CAT_PIPELINE, "could not set property \"%s\" in element \"%s\"",
+	 pspec->name, GST_ELEMENT_NAME (target));
+  goto out;
 }
-#ifdef __SYMBIAN32__
-#include<glib_global.h>
-#endif
+
 
 static void
 gst_parse_element_set (gchar *value, GstElement *element, graph_t *graph)
@@ -422,6 +444,10 @@ gst_parse_element_set (gchar *value, GstElement *element, graph_t *graph)
   GValue v = { 0, }; 
   GstObject *target = NULL;
   GType value_type;
+
+  /* do nothing if assignment is for missing element */
+  if (element == NULL)
+    goto out;
 
   /* parse the string, so the property name is null-terminated an pos points
      to the beginning of the value */
@@ -442,11 +468,25 @@ gst_parse_element_set (gchar *value, GstElement *element, graph_t *graph)
   gst_parse_unescape (pos);
 
   if (gst_child_proxy_lookup (GST_OBJECT (element), value, &target, &pspec)) { 
+    gboolean got_value = FALSE;
+
     value_type = G_PARAM_SPEC_VALUE_TYPE (pspec); 
+
     GST_CAT_LOG (GST_CAT_PIPELINE, "parsing property %s as a %s", pspec->name,
       g_type_name (value_type));
     g_value_init (&v, value_type);
-    if (!gst_value_deserialize (&v, pos))
+    if (gst_value_deserialize (&v, pos))
+      got_value = TRUE;
+    else if (g_type_is_a (value_type, GST_TYPE_ELEMENT)) {
+       GstElement *bin;
+       
+       bin = gst_parse_bin_from_description (pos, TRUE, NULL);
+       if (bin) {
+         g_value_set_object (&v, bin);
+         got_value = TRUE;
+       }
+    }
+    if (!got_value)
       goto error;
     g_object_set_property (G_OBJECT (target), pspec->name, &v);
   } else { 
@@ -460,7 +500,7 @@ gst_parse_element_set (gchar *value, GstElement *element, graph_t *graph)
       data->signal_id = g_signal_connect(GST_OBJECT (element),"child-added", G_CALLBACK (gst_parse_new_child), data);
     }
     else {
-      SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_NO_SUCH_PROPERTY, \
+      SET_ERROR (graph->error, GST_PARSE_ERROR_NO_SUCH_PROPERTY, \
           _("no property \"%s\" in element \"%s\""), value, \
           GST_ELEMENT_NAME (element));
     }
@@ -475,7 +515,7 @@ out:
   return;
   
 error:
-  SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_COULD_NOT_SET_PROPERTY,
+  SET_ERROR (graph->error, GST_PARSE_ERROR_COULD_NOT_SET_PROPERTY,
          _("could not set property \"%s\" in element \"%s\" to \"%s\""), 
 	 value, GST_ELEMENT_NAME (element), pos); 
   goto out;
@@ -617,7 +657,7 @@ success:
   return 0;
   
 error:
-  SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_LINK,
+  SET_ERROR (graph->error, GST_PARSE_ERROR_LINK,
       _("could not link %s to %s"), GST_ELEMENT_NAME (src),
       GST_ELEMENT_NAME (sink));
   gst_parse_free_link (link);
@@ -648,7 +688,7 @@ static int yyerror (void *scanner, graph_t *graph, const char *s);
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 521 "./grammar.y"
+#line 566 "./grammar.y"
 {
     gchar *s;
     chain_t *c;
@@ -658,7 +698,7 @@ typedef union YYSTYPE
     graph_t *g;
 }
 /* Line 187 of yacc.c.  */
-#line 651 "grammar.tab.c"
+#line 696 "grammar.tab.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -671,7 +711,7 @@ typedef union YYSTYPE
 
 
 /* Line 216 of yacc.c.  */
-#line 664 "grammar.tab.c"
+#line 709 "grammar.tab.c"
 
 #ifdef short
 # undef short
@@ -813,14 +853,14 @@ YYID (i)
 #   define YYMALLOC malloc
 #   if ! defined malloc && ! defined _STDLIB_H && (defined __STDC__ || defined __C99__FUNC__ \
      || defined __cplusplus || defined _MSC_VER)
-void *malloc (YYSIZE_T); /* INFRINGES ON USER NAME SPACE */
+IMPORT_C void *malloc (YYSIZE_T); /* INFRINGES ON USER NAME SPACE */
 #   endif
 #  endif
 #  ifndef YYFREE
 #   define YYFREE free
 #   if ! defined free && ! defined _STDLIB_H && (defined __STDC__ || defined __C99__FUNC__ \
      || defined __cplusplus || defined _MSC_VER)
-void free (void *); /* INFRINGES ON USER NAME SPACE */
+IMPORT_C void free (void *); /* INFRINGES ON USER NAME SPACE */
 #   endif
 #  endif
 # endif
@@ -964,10 +1004,10 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   556,   556,   564,   568,   569,   571,   572,   575,   578,
-     583,   584,   588,   589,   592,   593,   596,   597,   598,   601,
-     614,   615,   616,   619,   624,   625,   660,   688,   689,   703,
-     723,   748,   751
+       0,   601,   601,   615,   619,   620,   622,   623,   626,   629,
+     634,   635,   639,   640,   643,   644,   647,   648,   649,   652,
+     665,   666,   667,   670,   675,   676,   711,   739,   740,   754,
+     774,   799,   802
 };
 #endif
 
@@ -1934,114 +1974,120 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 556 "./grammar.y"
+#line 601 "./grammar.y"
     { (yyval.e) = gst_element_factory_make ((yyvsp[(1) - (1)].s), NULL); 
 						if ((yyval.e) == NULL) {
-						  SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_NO_SUCH_ELEMENT, _("no element \"%s\""), (yyvsp[(1) - (1)].s));
-						  gst_parse_strfree ((yyvsp[(1) - (1)].s));
-						  YYERROR;
+						  ADD_MISSING_ELEMENT (graph, (yyvsp[(1) - (1)].s));
+						  SET_ERROR (graph->error, GST_PARSE_ERROR_NO_SUCH_ELEMENT, _("no element \"%s\""), (yyvsp[(1) - (1)].s));
+						  /* if FATAL_ERRORS flag is set, we don't have to worry about backwards
+						   * compatibility and can continue parsing and check for other missing
+						   * elements */
+						  if ((graph->flags & GST_PARSE_FLAG_FATAL_ERRORS) == 0) {
+						    gst_parse_strfree ((yyvsp[(1) - (1)].s));
+						    YYERROR;
+						  }
 						}
 						gst_parse_strfree ((yyvsp[(1) - (1)].s));
                                               ;}
     break;
 
   case 3:
-#line 564 "./grammar.y"
+#line 615 "./grammar.y"
     { gst_parse_element_set ((yyvsp[(2) - (2)].s), (yyvsp[(1) - (2)].e), graph);
 						(yyval.e) = (yyvsp[(1) - (2)].e);
 	                                      ;}
     break;
 
   case 4:
-#line 568 "./grammar.y"
+#line 619 "./grammar.y"
     { (yyval.p) = NULL; ;}
     break;
 
   case 5:
-#line 569 "./grammar.y"
+#line 620 "./grammar.y"
     { (yyval.p) = g_slist_prepend ((yyvsp[(1) - (2)].p), (yyvsp[(2) - (2)].s)); ;}
     break;
 
   case 6:
-#line 571 "./grammar.y"
+#line 622 "./grammar.y"
     { GST_BIN_MAKE ((yyval.c), "bin", (yyvsp[(3) - (4)].c), (yyvsp[(2) - (4)].p), FALSE); ;}
     break;
 
   case 7:
-#line 572 "./grammar.y"
+#line 623 "./grammar.y"
     { GST_BIN_MAKE ((yyval.c), (yyvsp[(1) - (4)].s), (yyvsp[(3) - (4)].c), (yyvsp[(2) - (4)].p), TRUE); 
 						gst_parse_strfree ((yyvsp[(1) - (4)].s));
 					      ;}
     break;
 
   case 8:
-#line 575 "./grammar.y"
+#line 626 "./grammar.y"
     { GST_BIN_MAKE ((yyval.c), (yyvsp[(1) - (3)].s), NULL, (yyvsp[(2) - (3)].p), TRUE); 
 						gst_parse_strfree ((yyvsp[(1) - (3)].s));
 					      ;}
     break;
 
   case 9:
-#line 578 "./grammar.y"
+#line 629 "./grammar.y"
     { GST_BIN_MAKE ((yyval.c), (yyvsp[(1) - (4)].s), NULL, (yyvsp[(2) - (4)].p), TRUE); 
 						gst_parse_strfree ((yyvsp[(1) - (4)].s));
 					      ;}
     break;
 
   case 10:
-#line 583 "./grammar.y"
+#line 634 "./grammar.y"
     { (yyval.p) = g_slist_prepend (NULL, (yyvsp[(1) - (1)].s)); ;}
     break;
 
   case 11:
-#line 584 "./grammar.y"
+#line 635 "./grammar.y"
     { (yyval.p) = (yyvsp[(2) - (2)].p);
 						(yyval.p) = g_slist_prepend ((yyval.p), (yyvsp[(1) - (2)].s));
 					      ;}
     break;
 
   case 12:
-#line 588 "./grammar.y"
+#line 639 "./grammar.y"
     { (yyval.p) = g_slist_prepend (NULL, (yyvsp[(2) - (2)].s)); ;}
     break;
 
   case 13:
-#line 589 "./grammar.y"
+#line 640 "./grammar.y"
     { (yyval.p) = g_slist_prepend ((yyvsp[(3) - (3)].p), (yyvsp[(2) - (3)].s)); ;}
     break;
 
   case 14:
-#line 592 "./grammar.y"
+#line 643 "./grammar.y"
     { MAKE_REF ((yyval.l), (yyvsp[(1) - (1)].s), NULL); ;}
     break;
 
   case 15:
-#line 593 "./grammar.y"
+#line 644 "./grammar.y"
     { MAKE_REF ((yyval.l), (yyvsp[(1) - (2)].s), (yyvsp[(2) - (2)].p)); ;}
     break;
 
   case 16:
-#line 596 "./grammar.y"
+#line 647 "./grammar.y"
     { (yyval.l) = (yyvsp[(1) - (1)].l); ;}
     break;
 
   case 17:
-#line 597 "./grammar.y"
+#line 648 "./grammar.y"
     { MAKE_REF ((yyval.l), NULL, (yyvsp[(1) - (1)].p)); ;}
     break;
 
   case 18:
-#line 598 "./grammar.y"
+#line 649 "./grammar.y"
     { MAKE_REF ((yyval.l), NULL, NULL); ;}
     break;
 
   case 19:
-#line 601 "./grammar.y"
+#line 652 "./grammar.y"
     { (yyval.l) = (yyvsp[(1) - (3)].l);
 						if ((yyvsp[(2) - (3)].s)) {
 						  (yyval.l)->caps = gst_caps_from_string ((yyvsp[(2) - (3)].s));
 						  if ((yyval.l)->caps == NULL)
-						    SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_LINK, _("could not parse caps \"%s\""), (yyvsp[(2) - (3)].s));
+						    SET_ERROR (graph->error, GST_PARSE_ERROR_LINK, _("could not parse caps \"%s\""), (yyvsp[(2) - (3)].s));
 						  gst_parse_strfree ((yyvsp[(2) - (3)].s));
 						}
 						(yyval.l)->sink_name = (yyvsp[(3) - (3)].l)->src_name;
@@ -2051,22 +2097,22 @@ yyreduce:
     break;
 
   case 20:
-#line 614 "./grammar.y"
+#line 665 "./grammar.y"
     { (yyval.p) = g_slist_prepend (NULL, (yyvsp[(1) - (1)].l)); ;}
     break;
 
   case 21:
-#line 615 "./grammar.y"
+#line 666 "./grammar.y"
     { (yyval.p) = g_slist_prepend ((yyvsp[(2) - (2)].p), (yyvsp[(1) - (2)].l)); ;}
     break;
 
   case 22:
-#line 616 "./grammar.y"
+#line 667 "./grammar.y"
     { (yyval.p) = (yyvsp[(1) - (2)].p); ;}
     break;
 
   case 23:
-#line 619 "./grammar.y"
+#line 670 "./grammar.y"
     { (yyval.c) = gst_parse_chain_new ();
 						(yyval.c)->first = (yyval.c)->last = (yyvsp[(1) - (1)].e);
 						(yyval.c)->front = (yyval.c)->back = NULL;
@@ -2075,24 +2121,24 @@ yyreduce:
     break;
 
   case 24:
-#line 624 "./grammar.y"
+#line 675 "./grammar.y"
     { (yyval.c) = (yyvsp[(1) - (1)].c); ;}
     break;
 
   case 25:
-#line 625 "./grammar.y"
+#line 676 "./grammar.y"
     { if ((yyvsp[(1) - (2)].c)->back && (yyvsp[(2) - (2)].c)->front) {
 						  if (!(yyvsp[(1) - (2)].c)->back->sink_name) {
-						    SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_LINK, _("link without source element"));
+						    SET_ERROR (graph->error, GST_PARSE_ERROR_LINK, _("link without source element"));
 						    gst_parse_free_link ((yyvsp[(1) - (2)].c)->back);
 						  } else {
-						    ((graph_t *) graph)->links = g_slist_prepend (((graph_t *) graph)->links, (yyvsp[(1) - (2)].c)->back);
+						    graph->links = g_slist_prepend (graph->links, (yyvsp[(1) - (2)].c)->back);
 						  }
 						  if (!(yyvsp[(2) - (2)].c)->front->src_name) {
-						    SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_LINK, _("link without sink element"));
+						    SET_ERROR (graph->error, GST_PARSE_ERROR_LINK, _("link without sink element"));
 						    gst_parse_free_link ((yyvsp[(2) - (2)].c)->front);
 						  } else {
-						    ((graph_t *) graph)->links = g_slist_prepend (((graph_t *) graph)->links, (yyvsp[(2) - (2)].c)->front);
+						    graph->links = g_slist_prepend (graph->links, (yyvsp[(2) - (2)].c)->front);
 						  }
 						  (yyvsp[(1) - (2)].c)->back = NULL;
 						} else if ((yyvsp[(1) - (2)].c)->back) {
@@ -2107,7 +2153,7 @@ yyreduce:
 						}
 						
 						if ((yyvsp[(1) - (2)].c)->back) {
-						  ((graph_t *) graph)->links = g_slist_prepend (((graph_t *) graph)->links, (yyvsp[(1) - (2)].c)->back);
+						  graph->links = g_slist_prepend (graph->links, (yyvsp[(1) - (2)].c)->back);
 						}
 						(yyvsp[(1) - (2)].c)->last = (yyvsp[(2) - (2)].c)->last;
 						(yyvsp[(1) - (2)].c)->back = (yyvsp[(2) - (2)].c)->back;
@@ -2119,7 +2165,7 @@ yyreduce:
     break;
 
   case 26:
-#line 660 "./grammar.y"
+#line 711 "./grammar.y"
     { GSList *walk;
 						if ((yyvsp[(1) - (2)].c)->back) {
 						  (yyvsp[(2) - (2)].p) = g_slist_prepend ((yyvsp[(2) - (2)].p), (yyvsp[(1) - (2)].c)->back);
@@ -2132,14 +2178,14 @@ yyreduce:
 						for (walk = (yyvsp[(2) - (2)].p); walk; walk = walk->next) {
 						  link_t *link = (link_t *) walk->data;
 						  if (!link->sink_name && walk->next) {
-						    SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_LINK, _("link without sink element"));
+						    SET_ERROR (graph->error, GST_PARSE_ERROR_LINK, _("link without sink element"));
 						    gst_parse_free_link (link);
 						  } else if (!link->src_name && !link->src) {
-						    SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_LINK, _("link without source element"));
+						    SET_ERROR (graph->error, GST_PARSE_ERROR_LINK, _("link without source element"));
 						    gst_parse_free_link (link);
 						  } else {
 						    if (walk->next) {
-						      ((graph_t *) graph)->links = g_slist_prepend (((graph_t *) graph)->links, link);
+						      graph->links = g_slist_prepend (graph->links, link);
 						    } else {
 						      (yyvsp[(1) - (2)].c)->back = link;
 						    }
@@ -2151,18 +2197,18 @@ yyreduce:
     break;
 
   case 27:
-#line 688 "./grammar.y"
+#line 739 "./grammar.y"
     { (yyval.c) = (yyvsp[(1) - (2)].c); ;}
     break;
 
   case 28:
-#line 689 "./grammar.y"
+#line 740 "./grammar.y"
     { if ((yyvsp[(2) - (2)].c)->front) {
 						  if (!(yyvsp[(2) - (2)].c)->front->src_name) {
-						    SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_LINK, _("link without source element"));
+						    SET_ERROR (graph->error, GST_PARSE_ERROR_LINK, _("link without source element"));
 						    gst_parse_free_link ((yyvsp[(2) - (2)].c)->front);
 						  } else {
-						    ((graph_t *) graph)->links = g_slist_prepend (((graph_t *) graph)->links, (yyvsp[(2) - (2)].c)->front);
+						    graph->links = g_slist_prepend (graph->links, (yyvsp[(2) - (2)].c)->front);
 						  }
 						}
 						if (!(yyvsp[(1) - (2)].l)->sink_name) {
@@ -2174,23 +2220,23 @@ yyreduce:
     break;
 
   case 29:
-#line 703 "./grammar.y"
+#line 754 "./grammar.y"
     { (yyval.c) = (yyvsp[(2) - (2)].c);
 						if ((yyval.c)->front) {
 						  GstElement *element = 
 							  gst_element_make_from_uri (GST_URI_SRC, (yyvsp[(1) - (2)].s), NULL);
 						  if (!element) {
-						    SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_NO_SUCH_ELEMENT, 
+						    SET_ERROR (graph->error, GST_PARSE_ERROR_NO_SUCH_ELEMENT, 
 							    _("no source element for URI \"%s\""), (yyvsp[(1) - (2)].s));
 						  } else {
 						    (yyval.c)->front->src = element;
-						    ((graph_t *) graph)->links = g_slist_prepend (
-							    ((graph_t *) graph)->links, (yyval.c)->front);
+						    graph->links = g_slist_prepend (
+							    graph->links, (yyval.c)->front);
 						    (yyval.c)->front = NULL;
 						    (yyval.c)->elements = g_slist_prepend ((yyval.c)->elements, element);
 						  }
 						} else {
-						  SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_LINK, 
+						  SET_ERROR (graph->error, GST_PARSE_ERROR_LINK, 
 							  _("no element to link URI \"%s\" to"), (yyvsp[(1) - (2)].s));
 						}
 						g_free ((yyvsp[(1) - (2)].s));
@@ -2198,18 +2244,18 @@ yyreduce:
     break;
 
   case 30:
-#line 723 "./grammar.y"
+#line 774 "./grammar.y"
     { GstElement *element =
 							  gst_element_make_from_uri (GST_URI_SINK, (yyvsp[(2) - (2)].s), NULL);
 						if (!element) {
-						  SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_NO_SUCH_ELEMENT, 
+						  SET_ERROR (graph->error, GST_PARSE_ERROR_NO_SUCH_ELEMENT, 
 							  _("no sink element for URI \"%s\""), (yyvsp[(2) - (2)].s));
 						  gst_parse_link_free ((yyvsp[(1) - (2)].l));
 						  g_free ((yyvsp[(2) - (2)].s));
 						  YYERROR;
 						} else if ((yyvsp[(1) - (2)].l)->sink_name || (yyvsp[(1) - (2)].l)->sink_pads) {
                                                   gst_object_unref (element);
-						  SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_LINK, 
+						  SET_ERROR (graph->error, GST_PARSE_ERROR_LINK, 
 							  _("could not link sink element for URI \"%s\""), (yyvsp[(2) - (2)].s));
 						  gst_parse_link_free ((yyvsp[(1) - (2)].l));
 						  g_free ((yyvsp[(2) - (2)].s));
@@ -2226,18 +2272,18 @@ yyreduce:
     break;
 
   case 31:
-#line 748 "./grammar.y"
-    { SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_EMPTY, _("empty pipeline not allowed"));
-						(yyval.g) = (graph_t *) graph;
+#line 799 "./grammar.y"
+    { SET_ERROR (graph->error, GST_PARSE_ERROR_EMPTY, _("empty pipeline not allowed"));
+						(yyval.g) = graph;
 					      ;}
     break;
 
   case 32:
-#line 751 "./grammar.y"
-    { (yyval.g) = (graph_t *) graph;
+#line 802 "./grammar.y"
+    { (yyval.g) = graph;
 						if ((yyvsp[(1) - (1)].c)->front) {
 						  if (!(yyvsp[(1) - (1)].c)->front->src_name) {
-						    SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_LINK, _("link without source element"));
+						    SET_ERROR (graph->error, GST_PARSE_ERROR_LINK, _("link without source element"));
 						    gst_parse_free_link ((yyvsp[(1) - (1)].c)->front);
 						  } else {
 						    (yyval.g)->links = g_slist_prepend ((yyval.g)->links, (yyvsp[(1) - (1)].c)->front);
@@ -2246,7 +2292,7 @@ yyreduce:
 						}
 						if ((yyvsp[(1) - (1)].c)->back) {
 						  if (!(yyvsp[(1) - (1)].c)->back->sink_name) {
-						    SET_ERROR (((graph_t *) graph)->error, GST_PARSE_ERROR_LINK, _("link without sink element"));
+						    SET_ERROR (graph->error, GST_PARSE_ERROR_LINK, _("link without sink element"));
 						    gst_parse_free_link ((yyvsp[(1) - (1)].c)->back);
 						  } else {
 						    (yyval.g)->links = g_slist_prepend ((yyval.g)->links, (yyvsp[(1) - (1)].c)->back);
@@ -2259,7 +2305,7 @@ yyreduce:
 
 
 /* Line 1267 of yacc.c.  */
-#line 2252 "grammar.tab.c"
+#line 2303 "grammar.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2473,7 +2519,7 @@ yyreturn:
 }
 
 
-#line 774 "./grammar.y"
+#line 825 "./grammar.y"
 
 
 
@@ -2487,7 +2533,8 @@ yyerror (void *scanner, graph_t *graph, const char *s)
 
 
 GstElement *
-_gst_parse_launch (const gchar *str, GError **error)
+_gst_parse_launch (const gchar *str, GError **error, GstParseContext *ctx,
+    GstParseFlags flags)
 {
   graph_t g;
   gchar *dstr;
@@ -2497,10 +2544,13 @@ _gst_parse_launch (const gchar *str, GError **error)
   yyscan_t scanner;
 
   g_return_val_if_fail (str != NULL, NULL);
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
   g.chain = NULL;
   g.links = NULL;
   g.error = error;
+  g.ctx = ctx;
+  g.flags = flags;
   
 #ifdef __GST_PARSE_TRACE
   GST_CAT_DEBUG (GST_CAT_PIPELINE, "TRACE: tracing enabled");
@@ -2533,10 +2583,10 @@ _gst_parse_launch (const gchar *str, GError **error)
   
   if (!g.chain) {
     ret = NULL;
-  } else if (!(((chain_t *) g.chain)->elements->next)) {
+  } else if (!g.chain->elements->next) {
     /* only one toplevel element */  
-    ret = (GstElement *) ((chain_t *) g.chain)->elements->data;
-    g_slist_free (((chain_t *) g.chain)->elements);
+    ret = (GstElement *) g.chain->elements->data;
+    g_slist_free (g.chain->elements);
     if (GST_IS_BIN (ret))
       bin = GST_BIN (ret);
     gst_parse_chain_free (g.chain);
@@ -2569,8 +2619,12 @@ _gst_parse_launch (const gchar *str, GError **error)
         }
       }
       if (!l->src) {
-        SET_ERROR (error, GST_PARSE_ERROR_NO_SUCH_ELEMENT,
-            "No element named \"%s\" - omitting link", l->src_name);
+        if (l->src_name) {
+          SET_ERROR (error, GST_PARSE_ERROR_NO_SUCH_ELEMENT,
+              "No element named \"%s\" - omitting link", l->src_name);
+        } else {
+          /* probably a missing element which we've handled already */
+        }
         gst_parse_free_link (l);
         continue;
       }
@@ -2586,8 +2640,12 @@ _gst_parse_launch (const gchar *str, GError **error)
         }
       }
       if (!l->sink) {
-        SET_ERROR (error, GST_PARSE_ERROR_NO_SUCH_ELEMENT,
-            "No element named \"%s\" - omitting link", l->sink_name);
+        if (l->sink_name) {
+          SET_ERROR (error, GST_PARSE_ERROR_NO_SUCH_ELEMENT,
+              "No element named \"%s\" - omitting link", l->sink_name);
+        } else {
+          /* probably a missing element which we've handled already */
+        }
         gst_parse_free_link (l);
         continue;
       }

@@ -83,7 +83,7 @@ struct _GstCollectData
 
 /**
  * GstCollectPadsFunction:
- * @pads: the #GstCollectPads that trigered the callback
+ * @pads: the #GstCollectPads that triggered the callback
  * @user_data: user data passed to gst_collect_pads_set_function()
  *
  * A function that will be called when all pads have received data.
@@ -248,13 +248,13 @@ guint		gst_collect_pads_read		(GstCollectPads *pads, GstCollectData *data,
 IMPORT_C
 #endif
 
-GstBuffer *      gst_collect_pads_read_buffer      (GstCollectPads * pads, GstCollectData * data,
+GstBuffer *     gst_collect_pads_read_buffer    (GstCollectPads * pads, GstCollectData * data,
 						 guint size);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
 
-GstBuffer *      gst_collect_pads_take_buffer      (GstCollectPads * pads, GstCollectData * data,
+GstBuffer *     gst_collect_pads_take_buffer    (GstCollectPads * pads, GstCollectData * data,
 						 guint size);
 #ifdef __SYMBIAN32__
 IMPORT_C

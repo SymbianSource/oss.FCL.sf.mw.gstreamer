@@ -23,7 +23,6 @@
 #ifndef __GST_TAGLIST_H__
 #define __GST_TAGLIST_H__
 
-#include <gst/gstbuffer.h>
 #include <gst/gststructure.h>
 #include <gst/glib-compat.h>
 
@@ -41,12 +40,12 @@ G_BEGIN_DECLS
  * @GST_TAG_MERGE_COUNT: the number of merge modes
  *
  * The different tag merging modes are basically replace, overwrite and append,
- * but they can be seen from two directions. Given two taglists: (A) the tags
- * already in the element and (B) the ones that are supplied to the element (
- * e.g. via gst_tag_setter_merge_tags() / gst_tag_setter_add_tags() or a
- * %GST_EVENT_TAG), how are these tags merged?
- * In the table below this is shown for the cases that a tag exists in the list
- * (A) or does not exists (!A) and combinations thereof.
+ * but they can be seen from two directions.
+ * Given two taglists: A - the one that are supplied to
+ * gst_tag_setter_merge_tags() or gst_tag_setter_add_tags() and B - the tags
+ * already in the element, how are the tags merged? In the table below this is
+ * shown for the cases that a tag exists in the list (A) or does not exists (!A)
+ * and combination thereof.
  *
  * <table frame="all" colsep="1" rowsep="1">
  *   <title>merge mode</title>
@@ -246,17 +245,6 @@ GstTagList * gst_tag_list_new               (void);
 IMPORT_C
 #endif
 
-GstTagList * gst_tag_list_new_full          (const gchar * tag, ...);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-GstTagList * gst_tag_list_new_full_valist   (va_list var_args);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
 gboolean     gst_is_tag_list                (gconstpointer p);
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -325,14 +313,6 @@ void         gst_tag_list_add_valist_values (GstTagList       * list,
                                              GstTagMergeMode    mode,
                                              const gchar      * tag,
                                              va_list            var_args);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void         gst_tag_list_add_value         (GstTagList       * list,
-                                             GstTagMergeMode    mode,
-                                             const gchar      * tag,
-                                             const GValue     * value);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -574,21 +554,6 @@ gboolean     gst_tag_list_get_date_index    (const GstTagList * list,
                                              const gchar      * tag,
                                              guint              index,
                                              GDate           ** value);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-gboolean     gst_tag_list_get_buffer        (const GstTagList * list,
-                                             const gchar      * tag,
-                                             GstBuffer       ** value);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-gboolean     gst_tag_list_get_buffer_index  (const GstTagList * list,
-                                             const gchar      * tag,
-                                             guint              index,
-                                             GstBuffer       ** value);
 
 /* GStreamer core tags */
 /**
@@ -716,18 +681,9 @@ gboolean     gst_tag_list_get_buffer_index  (const GstTagList * list,
 /**
  * GST_TAG_LOCATION:
  *
- * Origin of media as a URI (location, where the original of the file or stream
- * is hosted) (string)
+ * original location of file as a URI (string)
  */
 #define GST_TAG_LOCATION               "location"
-/**
- * GST_TAG_HOMEPAGE:
- *
- * Homepage for this media (i.e. artist or movie homepage) (string)
- *
- * Since: 0.10.23
- */
-#define GST_TAG_HOMEPAGE               "homepage"
 /**
  * GST_TAG_DESCRIPTION:
  *
@@ -817,22 +773,6 @@ gboolean     gst_tag_list_get_buffer_index  (const GstTagList * list,
  */
 #define GST_TAG_AUDIO_CODEC            "audio-codec"
 /**
- * GST_TAG_SUBTITLE_CODEC:
- *
- * codec/format the subtitle data is stored in (string)
- *
- * Since: 0.10.23
- */
-#define GST_TAG_SUBTITLE_CODEC         "subtitle-codec"
-/**
- * GST_TAG_CONTAINER_FORMAT:
- *
- * container format the data is stored in (string)
- *
- * Since: 0.10.24
- */
-#define GST_TAG_CONTAINER_FORMAT       "container-format"
-/**
  * GST_TAG_BITRATE:
  *
  * exact or average bitrate in bits/s (unsigned integer)
@@ -909,14 +849,13 @@ gboolean     gst_tag_list_get_buffer_index  (const GstTagList * list,
 /**
  * GST_TAG_LANGUAGE_CODE:
  *
- * Language code (ISO-639-1) (string) of the content
+ * Language code (ISO-639-1) (string)
  */
 #define GST_TAG_LANGUAGE_CODE          "language-code"
 /**
  * GST_TAG_IMAGE:
  *
- * image (buffer) (buffer caps should specify the content type and preferably
- * also set "image-type" field as #GstTagImageType)
+ * image (buffer) (buffer caps should specify the content type)
  *
  * Since: 0.10.6
  */
@@ -924,24 +863,12 @@ gboolean     gst_tag_list_get_buffer_index  (const GstTagList * list,
 /**
  * GST_TAG_PREVIEW_IMAGE:
  *
- * image that is meant for preview purposes, e.g. small icon-sized version
- * (buffer) (buffer caps should specify the content type)
+ * image that is meant for preview purposes (buffer)
+ * (buffer caps should specify the content type)
  *
  * Since: 0.10.7
  */
 #define GST_TAG_PREVIEW_IMAGE          "preview-image"
-
-/**
- * GST_TAG_ATTACHMENT:
- *
- * generic file attachment (buffer) (buffer caps should specify the content
- * type and if possible set "filename" to the file name of the
- * attachment)
- *
- * Since: 0.10.21
- */
-#define GST_TAG_ATTACHMENT             "attachment"
-
 /**
  * GST_TAG_BEATS_PER_MINUTE:
  *
@@ -950,57 +877,6 @@ gboolean     gst_tag_list_get_buffer_index  (const GstTagList * list,
  * Since: 0.10.12
  */
 #define GST_TAG_BEATS_PER_MINUTE       "beats-per-minute"
-
-/**
- * GST_TAG_KEYWORDS:
- *
- * comma separated keywords describing the content (string).
- *
- * Since: 0.10.21
- */
-#define GST_TAG_KEYWORDS               "keywords"
-
-/**
- * GST_TAG_GEO_LOCATION_NAME:
- *
- * human readable descriptive location of where the media has been recorded or
- * produced. (string).
- *
- * Since: 0.10.21
- */
-#define GST_TAG_GEO_LOCATION_NAME               "geo-location-name"
-
-/**
- * GST_TAG_GEO_LOCATION_LATITUDE:
- *
- * geo latitude location of where the media has been recorded or produced in
- * degrees according to WGS84 (zero at the equator, negative values for southern
- * latitudes) (double).
- *
- * Since: 0.10.21
- */
-#define GST_TAG_GEO_LOCATION_LATITUDE               "geo-location-latitude"
-
-/**
- * GST_TAG_GEO_LOCATION_LONGITUDE:
- *
- * geo longitude location of where the media has been recorded or produced in
- * degrees according to WGS84 (zero at the prime meridian in Greenwich/UK,
- * negative values for western longitudes). (double).
- *
- * Since: 0.10.21
- */
-#define GST_TAG_GEO_LOCATION_LONGITUDE               "geo-location-longitude"
-
-/**
- * GST_TAG_GEO_LOCATION_ELEVATION:
- *
- * geo elevation of where the media has been recorded or produced in meters
- * according to WGS84 (zero is average sea level) (double).
- *
- * Since: 0.10.21
- */
-#define GST_TAG_GEO_LOCATION_ELEVATION               "geo-location-elevation"
 
 G_END_DECLS
 

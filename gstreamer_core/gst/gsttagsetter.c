@@ -24,26 +24,30 @@
  * @short_description: Element interface that allows setting and retrieval
  *                     of media metadata
  *
+ * <refsect2>
+ * <para>
  * Element interface that allows setting of media metadata.
- *
+ * </para>
+ * <para>
  * Elements that support changing a stream's metadata will implement this
  * interface. Examples of such elements are 'vorbisenc', 'theoraenc' and
  * 'id3v2mux'.
- * 
+ * </para>
+ * <para>
  * If you just want to retrieve metadata in your application then all you
  * need to do is watch for tag messages on your pipeline's bus. This
  * interface is only for setting metadata, not for extracting it. To set tags
  * from the application, find tagsetter elements and set tags using e.g.
- * gst_tag_setter_merge_tags() or gst_tag_setter_add_tags(). Also consider
- * setting the #GstTagMergeMode that is used for tag events that arrive at the
- * tagsetter element (default mode is to keep existing tags).
- * The application should do that before the element goes to %GST_STATE_PAUSED.
- * 
+ * gst_tag_setter_merge_tags() or gst_tag_setter_add_tags(). The application
+ * should do that before the element goes to %GST_STATE_PAUSED.
+ * </para>
+ * <para>
  * Elements implementing the #GstTagSetter interface often have to merge
  * any tags received from upstream and the tags set by the application via
  * the interface. This can be done like this:
- *
- * |[
+ * </para>
+ * <para>
+ * <programlisting>
  * GstTagMergeMode merge_mode;
  * const GstTagList *application_tags;
  * const GstTagList *event_tags;
@@ -53,7 +57,7 @@
  * tagsetter = GST_TAG_SETTER (element);
  *  
  * merge_mode = gst_tag_setter_get_tag_merge_mode (tagsetter);
- * application_tags = gst_tag_setter_get_tag_list (tagsetter);
+ * tagsetter_tags = gst_tag_setter_get_tag_list (tagsetter);
  * event_tags = (const GstTagList *) element->event_tags;
  *  
  * GST_LOG_OBJECT (tagsetter, "merging tags, merge mode = %d", merge_mode);
@@ -63,9 +67,12 @@
  * result = gst_tag_list_merge (application_tags, event_tags, merge_mode);
  *  
  * GST_LOG_OBJECT (tagsetter, "final tags: %" GST_PTR_FORMAT, result);
- * ]|
- * 
+ * </programlisting>
+ * </para>
+ * <para>
  * Last reviewed on 2006-05-18 (0.10.6)
+ * </para>
+ * </refsect2>
  */
 
 #ifdef HAVE_CONFIG_H
@@ -86,7 +93,8 @@ typedef struct
 {
   GstTagMergeMode mode;
   GstTagList *list;
-} GstTagData;
+}
+GstTagData;
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
@@ -95,10 +103,9 @@ EXPORT_C
 GType
 gst_tag_setter_get_type (void)
 {
-  static volatile gsize tag_setter_type = 0;
+  static GType tag_setter_type = 0;
 
-  if (g_once_init_enter (&tag_setter_type)) {
-    GType _type;
+  if (G_UNLIKELY (tag_setter_type == 0)) {
     static const GTypeInfo tag_setter_info = {
       sizeof (GstTagSetterIFace),       /* class_size */
       NULL,                     /* base_init */
@@ -114,18 +121,16 @@ gst_tag_setter_get_type (void)
     GST_DEBUG_CATEGORY_INIT (gst_tag_interface_debug, "GstTagInterface", 0,
         "interfaces for tagging");
 
-    _type = g_type_register_static (G_TYPE_INTERFACE, "GstTagSetter",
+    tag_setter_type = g_type_register_static (G_TYPE_INTERFACE, "GstTagSetter",
         &tag_setter_info, 0);
 
-    g_type_interface_add_prerequisite (_type, GST_TYPE_ELEMENT);
+    g_type_interface_add_prerequisite (tag_setter_type, GST_TYPE_ELEMENT);
 
     gst_tag_key = g_quark_from_static_string ("GST_TAG_SETTER");
-    g_once_init_leave (&tag_setter_type, _type);
   }
 
   return tag_setter_type;
 }
-
 static void
 gst_tag_data_free (gpointer p)
 {
@@ -136,7 +141,6 @@ gst_tag_data_free (gpointer p)
 
   g_free (data);
 }
-
 static GstTagData *
 gst_tag_setter_get_data (GstTagSetter * setter)
 {
@@ -152,33 +156,6 @@ gst_tag_setter_get_data (GstTagSetter * setter)
   }
 
   return data;
-}
-
-/**
- * gst_tag_setter_reset_tags:
- * @setter: a #GstTagSetter
- *
- * Reset the internal taglist. Elements should call this from within the
- * state-change handler.
- *
- * Since: 0.10.22
- */
-#ifdef __SYMBIAN32__
-EXPORT_C
-#endif
-
-void
-gst_tag_setter_reset_tags (GstTagSetter * setter)
-{
-  GstTagData *data;
-
-  g_return_if_fail (GST_IS_TAG_SETTER (setter));
-
-  data = gst_tag_setter_get_data (setter);
-  if (data->list) {
-    gst_tag_list_free (data->list);
-    data->list = NULL;
-  }
 }
 
 /**
@@ -204,9 +181,8 @@ gst_tag_setter_merge_tags (GstTagSetter * setter, const GstTagList * list,
   g_return_if_fail (GST_IS_TAG_LIST (list));
 
   data = gst_tag_setter_get_data (setter);
-  if (data->list == NULL) {
-    if (mode != GST_TAG_MERGE_KEEP_ALL)
-      data->list = gst_tag_list_copy (list);
+  if (!data->list) {
+    data->list = gst_tag_list_copy (list);
   } else {
     gst_tag_list_insert (data->list, list, mode);
   }
@@ -326,37 +302,6 @@ gst_tag_setter_add_tag_valist_values (GstTagSetter * setter,
     data->list = gst_tag_list_new ();
 
   gst_tag_list_add_valist_values (data->list, mode, tag, var_args);
-}
-
-/**
- * gst_tag_setter_add_tag_value:
- * @setter: a #GstTagSetter
- * @mode: the mode to use
- * @tag: tag to set
- * @value: GValue to set for the tag
- *
- * Adds the given tag / GValue pair on the setter using the given merge mode.
- *
- * Since: 0.10.24
- */
-#ifdef __SYMBIAN32__
-EXPORT_C
-#endif
-
-void
-gst_tag_setter_add_tag_value (GstTagSetter * setter,
-    GstTagMergeMode mode, const gchar * tag, const GValue * value)
-{
-  GstTagData *data;
-
-  g_return_if_fail (GST_IS_TAG_SETTER (setter));
-  g_return_if_fail (GST_TAG_MODE_IS_VALID (mode));
-
-  data = gst_tag_setter_get_data (setter);
-  if (!data->list)
-    data->list = gst_tag_list_new ();
-
-  gst_tag_list_add_value (data->list, mode, tag, value);
 }
 
 /**

@@ -86,10 +86,6 @@ struct _GstVideoScale {
 struct _GstVideoScaleClass {
   GstBaseTransformClass parent_class;
 };
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
 
 GType gst_video_scale_get_type(void);
 

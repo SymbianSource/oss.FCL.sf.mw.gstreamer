@@ -24,10 +24,7 @@
 
 G_BEGIN_DECLS
 
-#ifndef GST_DISABLE_DEPRECATED
 gchar *gst_rtsp_base64_encode    (const gchar *data, gsize len);
-#endif
-
 void   gst_rtsp_base64_decode_ip (gchar *data, gsize *len);
 
 G_END_DECLS

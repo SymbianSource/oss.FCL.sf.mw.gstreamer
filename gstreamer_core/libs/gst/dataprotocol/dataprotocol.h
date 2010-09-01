@@ -169,18 +169,12 @@ GstDPPayloadType
 
 /* converting from GstBuffer/GstEvent/GstCaps */
 #ifndef GST_DISABLE_DEPRECATED
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
 gboolean	gst_dp_header_from_buffer	(const GstBuffer * buffer,
 						GstDPHeaderFlag flags,
 						guint * length,
 						guint8 ** header);
 #endif
 #ifndef GST_DISABLE_DEPRECATED
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
 gboolean	gst_dp_packet_from_caps		(const GstCaps * caps,
 						GstDPHeaderFlag flags,
 						guint * length,
@@ -188,9 +182,6 @@ gboolean	gst_dp_packet_from_caps		(const GstCaps * caps,
 						guint8 ** payload);
 #endif
 #ifndef GST_DISABLE_DEPRECATED
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
 gboolean	gst_dp_packet_from_event	(const GstEvent * event,
 						GstDPHeaderFlag flags,
 						guint * length,

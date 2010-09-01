@@ -43,9 +43,8 @@ G_BEGIN_DECLS
   (G_TYPE_INSTANCE_GET_INTERFACE ((inst), GST_TYPE_TUNER, GstTunerClass))
 
 typedef struct _GstTuner GstTuner;
-typedef struct _GstTunerClass GstTunerClass;
 
-struct _GstTunerClass {
+typedef struct _GstTunerClass {
   GTypeInterface klass;
 
   /* virtual functions */
@@ -81,7 +80,7 @@ struct _GstTunerClass {
                              gint             signal);
 
   gpointer _gst_reserved[GST_PADDING];
-};
+} GstTunerClass;
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif

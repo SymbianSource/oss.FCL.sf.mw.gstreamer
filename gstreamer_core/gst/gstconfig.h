@@ -59,7 +59,10 @@
 #define GST_DISABLE_TRACE 1
 #define GST_DISABLE_ALLOC_TRACE 1
 #define GST_DISABLE_REGISTRY 1
+#define GST_DISABLE_ENUMTYPES 1
+#define GST_DISABLE_INDEX 1
 #define GST_DISABLE_PLUGIN 1
+#define GST_DISABLE_URI 1
 #define GST_DISABLE_XML 1
 #define GST_DISABLE_LOADSAVE_REGISTRY 1
 #define GST_HAVE_GLIB_2_8 1
@@ -130,8 +133,18 @@
 #define GST_DISABLE_XML 1
 
 /* FIXME: test and document these! */
+/* Configure the use of glib enumtypes (useful for introspection)
+ * see http://bugzilla.gnome.org/show_bug.cgi?id=342564
+ */
+/* #undef GST_DISABLE_ENUMTYPES */
+/* Configure the use of indizies for seeking
+ * (not used in plugins right now)
+ */
+/* #undef GST_DISABLE_INDEX */
 /* Configures the use of external plugins */
 /* #undef GST_DISABLE_PLUGIN */
+/* Configures the use of uri-handlers */
+/* #undef GST_DISABLE_URI */
 
 /* printf extension format */
 /**
@@ -199,16 +212,7 @@
 #endif
 #else /* not _MSC_VER */
 #define GST_PLUGIN_EXPORT
-#ifdef __SYMBIAN32__
-#ifdef __WINSCW__
-#define GST_EXPORT __declspec(dllexport) extern
-#else
-#define GST_EXPORT __declspec(dllimport) extern
-#endif
-#else
 #define GST_EXPORT extern
-#endif
-
 #endif
 
 #endif /* __GST_CONFIG_H__ */

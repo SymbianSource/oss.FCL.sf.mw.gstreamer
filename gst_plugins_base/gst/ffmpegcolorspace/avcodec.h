@@ -53,8 +53,6 @@ enum CodecType {
  */
 enum PixelFormat {
     PIX_FMT_YUV420P,   ///< Planar YUV 4:2:0 (1 Cr & Cb sample per 2x2 Y samples) (I420)
-    PIX_FMT_NV12,      ///< Packed YUV 4:2:0 (separate Y plane, interleaved Cb & Cr planes)
-    PIX_FMT_NV21,      ///< Packed YUV 4:2:0 (separate Y plane, interleaved Cb & Cr planes)
     PIX_FMT_YVU420P,   ///< Planar YUV 4:2:0 (1 Cb & Cr sample per 2x2 Y samples) (YV12)
     PIX_FMT_YUV422,    ///< Packed pixel, Y0 Cb Y1 Cr 
     PIX_FMT_RGB24,     ///< Packed pixel, 3 bytes per pixel, RGBRGB...
@@ -62,9 +60,9 @@ enum PixelFormat {
     PIX_FMT_YUV422P,   ///< Planar YUV 4:2:2 (1 Cr & Cb sample per 2x1 Y samples)
     PIX_FMT_YUV444P,   ///< Planar YUV 4:4:4 (1 Cr & Cb sample per 1x1 Y samples)
     PIX_FMT_RGBA32,    ///< Packed pixel, 4 bytes per pixel, BGRABGRA..., stored in cpu endianness
-    PIX_FMT_BGRA32,    ///< Packed pixel, 4 bytes per pixel, ARGBARGB...
+    PIX_FMT_BGRA32,     ///< Packed pixel, 4 bytes per pixel, ARGBARGB...
     PIX_FMT_ARGB32,    ///< Packed pixel, 4 bytes per pixel, ABGRABGR..., stored in cpu endianness
-    PIX_FMT_ABGR32,    ///< Packed pixel, 4 bytes per pixel, RGBARGBA...
+    PIX_FMT_ABGR32,     ///< Packed pixel, 4 bytes per pixel, RGBARGBA...
     PIX_FMT_RGB32,     ///< Packed pixel, 4 bytes per pixel, BGRxBGRx..., stored in cpu endianness
     PIX_FMT_xRGB32,    ///< Packed pixel, 4 bytes per pixel, xBGRxBGR..., stored in cpu endianness
     PIX_FMT_BGR32,     ///< Packed pixel, 4 bytes per pixel, xRGBxRGB...
@@ -75,8 +73,6 @@ enum PixelFormat {
     PIX_FMT_RGB565,    ///< always stored in cpu endianness 
     PIX_FMT_RGB555,    ///< always stored in cpu endianness, most significant bit to 1 
     PIX_FMT_GRAY8,
-    PIX_FMT_GRAY16_L,
-    PIX_FMT_GRAY16_B,
     PIX_FMT_MONOWHITE, ///< 0 is white 
     PIX_FMT_MONOBLACK, ///< 0 is black 
     PIX_FMT_PAL8,      ///< 8 bit with RGBA palette 
@@ -86,9 +82,7 @@ enum PixelFormat {
     PIX_FMT_XVMC_MPEG2_MC,///< XVideo Motion Acceleration via common packet passing(xvmc_render.h)
     PIX_FMT_XVMC_MPEG2_IDCT,
     PIX_FMT_UYVY422,   ///< Packed pixel, Cb Y0 Cr Y1 
-    PIX_FMT_YVYU422,   ///< Packed pixel, Y0 Cr Y1 Cb 
     PIX_FMT_UYVY411,   ///< Packed pixel, Cb Y0 Y1 Cr Y2 Y3
-    PIX_FMT_V308,      ///< Packed pixel, Y0 Cb Cr
 
     PIX_FMT_AYUV4444,  ///< Packed pixel, A0 Y0 Cb Cr
     PIX_FMT_NB

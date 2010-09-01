@@ -24,7 +24,7 @@
 #include "config.h"
 #endif
 
-#include "gst/gstregistry.h"
+#include "gstregistry.h"
 
 #include "gstspeechencoderconfig.h"
 
@@ -55,7 +55,7 @@ EXPORT_C GType gst_speech_encoder_config_get_type (void)
 
   
     speech_encoder_config_type = g_type_register_static (G_TYPE_INTERFACE, "GstSpeechEncoderConfig",
-        &speech_encoder_config_info, (GTypeFlags)0);
+        &speech_encoder_config_info, 0);
 
   }
 

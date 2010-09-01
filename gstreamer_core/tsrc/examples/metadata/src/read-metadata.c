@@ -28,12 +28,11 @@
 #endif
 
 
-
+#include <gst/gst_global.h>
 #include <string.h>
 #include <stdlib.h>
 #include <locale.h>
 #include <gst/gst.h>
-#include <gst/gst_global.h>
 
 static char *filename = NULL;
 static GstElement *pipeline = NULL;
@@ -49,22 +48,12 @@ static GstElement *source = NULL;
 
 void create_xml(int result)
 {
-
     if(result)
-    {
         assert_failed = 1;
-    } 
-
+    
     testResultXml(xmlfile);
     close_log_file();
-
-    if(result)
-    {
-        exit (-1);
-    }    
-
 }
-
 static gboolean
 message_loop (GstElement * element, GstTagList ** tags)
 {

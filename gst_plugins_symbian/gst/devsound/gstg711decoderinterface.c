@@ -56,7 +56,7 @@ EXPORT_C GType gst_g711_decoder_get_type(void)
 
 
     g711_decoder_type = g_type_register_static (G_TYPE_INTERFACE, "GstG711DecoderInterface",
-        &g711_decoder_info, (GTypeFlags)0);
+        &g711_decoder_info, 0);
 
   }
 

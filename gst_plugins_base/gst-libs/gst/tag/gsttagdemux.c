@@ -75,7 +75,11 @@
 #include "gsttagdemux.h"
 
 #include <gst/base/gsttypefindhelper.h>
+#ifndef __SYMBIAN32__
 #include <gst/gst-i18n-plugin.h>
+#else
+#include "gst/gst-i18n-plugin.h"
+#endif
 #include <string.h>
 
 typedef enum
@@ -111,8 +115,6 @@ struct _GstTagDemuxPrivate
   GstSegment segment;
   gboolean need_newseg;
   gboolean newseg_update;
-
-  GList *pending_events;
 };
 
 /* Require at least 8kB of data before we attempt typefind. 
@@ -164,27 +166,6 @@ static void gst_tag_demux_class_init (gpointer g_class, gpointer d);
 static void gst_tag_demux_init (GstTagDemux * obj, GstTagDemuxClass * klass);
 
 static gpointer parent_class;   /* NULL */
-#ifdef __SYMBIAN32__
-EXPORT_C
-#endif
-
-
-GType
-gst_tag_demux_result_get_type (void)
-{
-  static GType etype = 0;
-  if (etype == 0) {
-    static const GEnumValue values[] = {
-      {GST_TAG_DEMUX_RESULT_BROKEN_TAG, "GST_TAG_DEMUX_RESULT_BROKEN_TAG",
-          "broken-tag"},
-      {GST_TAG_DEMUX_RESULT_AGAIN, "GST_TAG_DEMUX_RESULT_AGAIN", "again"},
-      {GST_TAG_DEMUX_RESULT_OK, "GST_TAG_DEMUX_RESULT_OK", "ok"},
-      {0, NULL, NULL}
-    };
-    etype = g_enum_register_static ("GstTagDemuxResult", values);
-  }
-  return etype;
-}
 
 /* Cannot use boilerplate macros here because we want the abstract flag */
 #ifdef __SYMBIAN32__
@@ -277,11 +258,6 @@ gst_tag_demux_reset (GstTagDemux * tagdemux)
   gst_segment_init (&tagdemux->priv->segment, GST_FORMAT_UNDEFINED);
   tagdemux->priv->need_newseg = TRUE;
   tagdemux->priv->newseg_update = FALSE;
-
-  g_list_foreach (tagdemux->priv->pending_events,
-      (GFunc) gst_mini_object_unref, NULL);
-  g_list_free (tagdemux->priv->pending_events);
-  tagdemux->priv->pending_events = NULL;
 }
 
 static void
@@ -446,6 +422,8 @@ gst_tag_demux_trim_buffer (GstTagDemux * tagdemux, GstBuffer ** buf_ref)
     }
     need_sub = TRUE;
   }
+
+  g_assert (out_size > 0);
 
   if (need_sub == TRUE) {
     if (out_size != GST_BUFFER_SIZE (buf) || !gst_buffer_is_writable (buf)) {
@@ -678,8 +656,6 @@ gst_tag_demux_chain (GstPad * pad, GstBuffer * buf)
           return GST_FLOW_UNEXPECTED;
       }
       if (outbuf) {
-        GList *events;
-
         if (G_UNLIKELY (demux->priv->srcpad == NULL)) {
           gst_buffer_unref (outbuf);
           return GST_FLOW_ERROR;
@@ -694,20 +670,7 @@ gst_tag_demux_chain (GstPad * pad, GstBuffer * buf)
           demux->priv->need_newseg = FALSE;
         }
 
-        /* send any pending events we cached */
-        GST_OBJECT_LOCK (demux);
-        events = demux->priv->pending_events;
-        demux->priv->pending_events = NULL;
-        GST_OBJECT_UNLOCK (demux);
-
-        while (events != NULL) {
-          GST_DEBUG_OBJECT (demux->priv->srcpad, "sending cached %s event: %"
-              GST_PTR_FORMAT, GST_EVENT_TYPE_NAME (events->data), events->data);
-          gst_pad_push_event (demux->priv->srcpad, GST_EVENT (events->data));
-          events = g_list_delete_link (events, events);
-        }
-
-        /* Send our own pending tag event */
+        /* Send pending tag event */
         if (demux->priv->send_tag_event) {
           gst_tag_demux_send_tag_event (demux);
           demux->priv->send_tag_event = FALSE;
@@ -765,18 +728,7 @@ gst_tag_demux_sink_event (GstPad * pad, GstEvent * event)
       break;
     }
     default:
-      if (demux->priv->need_newseg) {
-        /* Cache all events if we have a pending segment, so they don't get
-         * lost (esp. tag events) */
-        GST_INFO_OBJECT (demux, "caching event: %" GST_PTR_FORMAT, event);
-        GST_OBJECT_LOCK (demux);
-        demux->priv->pending_events =
-            g_list_append (demux->priv->pending_events, event);
-        GST_OBJECT_UNLOCK (demux);
-        ret = TRUE;
-      } else {
-        ret = gst_pad_event_default (pad, event);
-      }
+      ret = gst_pad_event_default (pad, event);
       break;
   }
 
@@ -877,14 +829,12 @@ gst_tag_demux_srcpad_event (GstPad * pad, GstEvent * event)
       break;
     }
     default:
-      res = gst_pad_push_event (tagdemux->priv->sinkpad, event);
-      event = NULL;
+      /* FIXME: shouldn't we pass unknown and unhandled events upstream? */
       break;
   }
 
   gst_object_unref (tagdemux);
-  if (event)
-    gst_event_unref (event);
+  gst_event_unref (event);
   return res;
 }
 
@@ -1209,13 +1159,6 @@ gst_tag_demux_sink_activate (GstPad * sinkpad)
     demux->priv->send_tag_event = TRUE;
   }
 
-  if (demux->priv->upstream_size <=
-      demux->priv->strip_start + demux->priv->strip_end) {
-    /* There was no data (probably due to a truncated file) */
-    GST_DEBUG_OBJECT (demux, "No data in file");
-    return FALSE;
-  }
-
   /* 3 - Do typefinding on data */
   caps = gst_type_find_helper_get_range (GST_OBJECT (demux),
       (GstTypeFindHelperGetRangeFunction) gst_tag_demux_read_range,
@@ -1326,7 +1269,7 @@ read_beyond_end:
   {
     GST_DEBUG_OBJECT (demux, "attempted read beyond end of file");
     if (*buffer != NULL) {
-      gst_buffer_unref (*buffer);
+      gst_buffer_unref (buffer);
       *buffer = NULL;
     }
     return GST_FLOW_UNEXPECTED;

@@ -38,11 +38,6 @@ G_BEGIN_DECLS
 typedef struct _GstGDPPay GstGDPPay;
 typedef struct _GstGDPPayClass GstGDPPayClass;
 
-/**
- * GstGDPPay:
- *
- * Private gdppay element structure.
- */
 struct _GstGDPPay
 {
   GstElement element;

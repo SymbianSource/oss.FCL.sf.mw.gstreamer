@@ -25,7 +25,7 @@
 #include <glib.h>
 #include <gst/gst.h>
 
-#include "gst/riff/riff-ids.h"
+#include "riff-ids.h"
 
 G_BEGIN_DECLS
 

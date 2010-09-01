@@ -92,7 +92,6 @@ typedef enum {
  *                        user requests, such as mouse or keyboard movements,
  *                        to upstream elements.
  * @GST_EVENT_LATENCY: Notification of new latency adjustment. Since: 0.10.12
- * @GST_EVENT_STEP: A request for stepping through the media. Since: 0.10.24
  * @GST_EVENT_CUSTOM_UPSTREAM: Upstream custom event
  * @GST_EVENT_CUSTOM_DOWNSTREAM: Downstream custom event that travels in the
  *                        data flow.
@@ -125,7 +124,6 @@ typedef enum {
   GST_EVENT_SEEK		  = GST_EVENT_MAKE_TYPE (16, FLAG(UPSTREAM)),
   GST_EVENT_NAVIGATION		  = GST_EVENT_MAKE_TYPE (17, FLAG(UPSTREAM)),
   GST_EVENT_LATENCY		  = GST_EVENT_MAKE_TYPE (18, FLAG(UPSTREAM)),
-  GST_EVENT_STEP		  = GST_EVENT_MAKE_TYPE (19, FLAG(UPSTREAM)),
 
   /* custom events start here */
   GST_EVENT_CUSTOM_UPSTREAM	  = GST_EVENT_MAKE_TYPE (32, FLAG(UPSTREAM)),
@@ -230,10 +228,7 @@ typedef struct _GstEventClass GstEventClass;
 /**
  * GstSeekType:
  * @GST_SEEK_TYPE_NONE: no change in position is required
- * @GST_SEEK_TYPE_CUR: change relative to currently configured segment. This
- *    can't be used to seek relative to the current playback position - do a
- *    position query, calculate the desired position and then do an absolute
- *    position seek instead if that's what you want to do.
+ * @GST_SEEK_TYPE_CUR: change relative to current position
  * @GST_SEEK_TYPE_SET: absolute position is requested
  * @GST_SEEK_TYPE_END: relative position to duration is requested
  *
@@ -259,9 +254,6 @@ typedef enum {
  * @GST_SEEK_FLAG_KEY_UNIT: seek to the nearest keyframe. This might be
  *		       faster but less accurate.
  * @GST_SEEK_FLAG_SEGMENT: perform a segment seek.
- * @GST_SEEK_FLAG_SKIP: when doing fast foward or fast reverse playback, allow
- *                     elements to skip frames instead of generating all
- *                     frames. Since 0.10.22.
  *
  * Flags to be used with gst_element_seek() or gst_event_new_seek(). All flags
  * can be used together.
@@ -279,20 +271,15 @@ typedef enum {
  * When this message is posted, it is possible to send a new seek event to
  * continue playback. With this seek method it is possible to perform seemless
  * looping or simple linear editing.
- *
- * When doing fast forward (rate > 1.0) or fast reverse (rate < -1.0) trickmode
- * playback, the @GST_SEEK_FLAG_SKIP flag can be used to instruct decoders
- * and demuxers to adjust the playback rate by skipping frames. This can improve
- * performance and decrease CPU usage because not all frames need to be decoded. 
  */
 typedef enum {
   GST_SEEK_FLAG_NONE		= 0,
   GST_SEEK_FLAG_FLUSH		= (1 << 0),
   GST_SEEK_FLAG_ACCURATE	= (1 << 1),
   GST_SEEK_FLAG_KEY_UNIT	= (1 << 2),
-  GST_SEEK_FLAG_SEGMENT		= (1 << 3),
-  GST_SEEK_FLAG_SKIP		= (1 << 4)
+  GST_SEEK_FLAG_SEGMENT		= (1 << 3)
 } GstSeekFlags;
+
 
 /**
  * GstEvent:
@@ -315,10 +302,7 @@ struct _GstEvent {
   GstStructure	*structure;
 
   /*< private >*/
-  union {
-    guint32 seqnum;
-    gpointer _gst_reserved;
-  } abidata;
+  gpointer _gst_reserved;
 };
 
 struct _GstEventClass {
@@ -366,44 +350,29 @@ G_INLINE_FUNC GstEvent * gst_event_ref (GstEvent * event);
 #endif
 
 static inline GstEvent *
-gst_event_ref (GstEvent * event)
+gst_event_ref (GstEvent * ev)
 {
-  return (GstEvent *) gst_mini_object_ref (GST_MINI_OBJECT (event));
+  /* not using a macro here because gcc-4.1 will complain
+   * if the return value isn't used (because of the cast) */
+  return (GstEvent *) gst_mini_object_ref (GST_MINI_OBJECT (ev));
 }
 
 /**
  * gst_event_unref:
- * @event: The event to refcount
+ * @ev: The event to refcount
  *
  * Decrease the refcount of an event, freeing it if the refcount reaches 0.
  */
-#ifdef _FOOL_GTK_DOC_
-G_INLINE_FUNC void gst_event_unref (GstEvent * event);
-#endif
-
-static inline void
-gst_event_unref (GstEvent * event)
-{
-  gst_mini_object_unref (GST_MINI_OBJECT (event));
-}
+#define         gst_event_unref(ev)		gst_mini_object_unref (GST_MINI_OBJECT (ev))
 
 /* copy event */
 /**
  * gst_event_copy:
- * @event: The event to copy
+ * @ev: The event to copy
  *
  * Copy the event using the event specific copy function.
  */
-#ifdef _FOOL_GTK_DOC_
-G_INLINE_FUNC void gst_event_copy (GstEvent * event);
-#endif
-
-static inline GstEvent *
-gst_event_copy (const GstEvent * event)
-{
-  return GST_EVENT_CAST (gst_mini_object_copy (GST_MINI_OBJECT (event)));
-}
-
+#define         gst_event_copy(ev)		GST_EVENT_CAST (gst_mini_object_copy (GST_MINI_OBJECT (ev)))
 
 /* custom event */
 #ifdef __SYMBIAN32__
@@ -418,24 +387,6 @@ IMPORT_C
 
 const GstStructure *
 		gst_event_get_structure		(GstEvent *event);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-gboolean        gst_event_has_name              (GstEvent *event, const gchar *name);
-
-/* identifiers for events and messages */
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-guint32         gst_event_get_seqnum            (GstEvent *event);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void            gst_event_set_seqnum            (GstEvent *event, guint32 seqnum);
 
 /* flush events */
 #ifdef __SYMBIAN32__
@@ -569,20 +520,6 @@ IMPORT_C
 #endif
 
 void		gst_event_parse_latency		(GstEvent *event, GstClockTime *latency);
-
-/* step event */
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-GstEvent*	gst_event_new_step		(GstFormat format, guint64 amount, gdouble rate,
-                                                 gboolean flush, gboolean intermediate);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void		gst_event_parse_step		(GstEvent *event, GstFormat *format, guint64 *amount,
-                                                 gdouble *rate, gboolean *flush, gboolean *intermediate);
 
 G_END_DECLS
 

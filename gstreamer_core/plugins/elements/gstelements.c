@@ -25,6 +25,9 @@
 #  include "config.h"
 #endif
 
+#ifdef __SYMBIAN32__
+#include <gst_global.h>
+#endif
 #include <gst/gst.h>
 
 #include "gstcapsfilter.h"

@@ -20,7 +20,6 @@
 #include <glib.h>
 #include <math.h>
 
-#include "_kiss_fft_guts_f64.h"
 #include "kiss_fftr_f64.h"
 #include "gstfft.h"
 #include "gstfftf64.h"
@@ -79,18 +78,13 @@ GstFFTF64 *
 gst_fft_f64_new (gint len, gboolean inverse)
 {
   GstFFTF64 *self;
-  gsize subsize = 0, memneeded;
 
   g_return_val_if_fail (len > 0, NULL);
   g_return_val_if_fail (len % 2 == 0, NULL);
 
-  kiss_fftr_f64_alloc (len, (inverse) ? 1 : 0, NULL, &subsize);
-  memneeded = ALIGN_STRUCT (sizeof (GstFFTF64)) + subsize;
+  self = g_new (GstFFTF64, 1);
 
-  self = (GstFFTF64 *) g_malloc0 (memneeded);
-
-  self->cfg = (((guint8 *) self) + ALIGN_STRUCT (sizeof (GstFFTF64)));
-  self->cfg = kiss_fftr_f64_alloc (len, (inverse) ? 1 : 0, self->cfg, &subsize);
+  self->cfg = kiss_fftr_f64_alloc (len, (inverse) ? 1 : 0, NULL, NULL);
   g_assert (self->cfg);
 
   self->inverse = inverse;
@@ -174,6 +168,7 @@ EXPORT_C
 void
 gst_fft_f64_free (GstFFTF64 * self)
 {
+  kiss_fftr_f64_free (self->cfg);
   g_free (self);
 }
 

@@ -147,19 +147,19 @@ gst_net_time_provider_class_init (GstNetTimeProviderClass * klass)
   g_object_class_install_property (gobject_class, PROP_PORT,
       g_param_spec_int ("port", "port",
           "The port to receive the packets from, 0=allocate", 0, G_MAXUINT16,
-          DEFAULT_PORT, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          DEFAULT_PORT, G_PARAM_READWRITE));
   g_object_class_install_property (gobject_class, PROP_ADDRESS,
       g_param_spec_string ("address", "address",
           "The address to bind on, as a dotted quad (x.x.x.x)",
-          DEFAULT_ADDRESS, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          DEFAULT_ADDRESS, G_PARAM_READWRITE));
   g_object_class_install_property (gobject_class, PROP_CLOCK,
       g_param_spec_object ("clock", "Clock",
           "The clock to export over the network", GST_TYPE_CLOCK,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          G_PARAM_READWRITE));
   g_object_class_install_property (gobject_class, PROP_ACTIVE,
       g_param_spec_boolean ("active", "Active",
           "TRUE if the clock will respond to queries over the network", TRUE,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          G_PARAM_READWRITE));
 }
 
 static void
@@ -314,7 +314,7 @@ gst_net_time_provider_set_property (GObject * object, guint prop_id,
           (GstObject *) g_value_get_object (value));
       break;
     case PROP_ACTIVE:
-      g_atomic_int_set (&self->active.active, g_value_get_boolean (value));
+      gst_atomic_int_set (&self->active.active, g_value_get_boolean (value));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -384,13 +384,7 @@ gst_net_time_provider_start (GstNetTimeProvider * self)
     goto bind_error;
 
   len = sizeof (my_addr);
-#ifdef G_OS_WIN32
-  ret =
-      getsockname (self->priv->sock.fd, (struct sockaddr *) &my_addr,
-      (gint *) & len);
-#else
   ret = getsockname (self->priv->sock.fd, (struct sockaddr *) &my_addr, &len);
-#endif
   if (ret < 0)
     goto getsockname_error;
 

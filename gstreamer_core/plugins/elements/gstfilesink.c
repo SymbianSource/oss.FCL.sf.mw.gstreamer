@@ -22,6 +22,7 @@
  */
 /**
  * SECTION:element-filesink
+ * @short_description: write stream to a file
  * @see_also: #GstFileSrc
  *
  * Write incoming data to a file in the local file system.
@@ -29,6 +30,11 @@
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
+#endif
+#ifdef __SYMBIAN32__
+#include <gst_global.h>
+#include <gstpoll.h>
+#include <gstbasesink.h> //rj
 #endif
 
 #include "../../gst/gst-i18n-lib.h"
@@ -41,20 +47,8 @@
 #include <errno.h>
 #include "gstfilesink.h"
 #include <string.h>
-#include <sys/types.h>
-
-#ifdef G_OS_WIN32
-#include <io.h>                 /* lseek, open, close, read */
-#undef lseek
-#define lseek _lseeki64
-#undef off_t
-#define off_t guint64
-#ifdef _MSC_VER                 /* Check if we are using MSVC, fileno is deprecated in favour */
-#define fileno _fileno          /* of _fileno */
-#endif
-#endif
-
 #include <sys/stat.h>
+#include <sys/types.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -152,8 +146,7 @@ gst_file_sink_base_init (gpointer g_class)
 
   gst_element_class_set_details_simple (gstelement_class,
       "File Sink",
-      "Sink/File", "Write stream to a file",
-      "Thomas Vander Stichele <thomas at apestaart dot org>");
+      "Sink/File", "Write stream to a file", "Thomas <thomas@apestaart.org>");
   gst_element_class_add_pad_template (gstelement_class,
       gst_static_pad_template_get (&sinktemplate));
 }
@@ -171,19 +164,17 @@ gst_file_sink_class_init (GstFileSinkClass * klass)
 
   g_object_class_install_property (gobject_class, PROP_LOCATION,
       g_param_spec_string ("location", "File Location",
-          "Location of the file to write", NULL,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          "Location of the file to write", NULL, G_PARAM_READWRITE));
 
   g_object_class_install_property (gobject_class, PROP_BUFFER_MODE,
       g_param_spec_enum ("buffer-mode", "Buffering mode",
           "The buffering mode to use", GST_TYPE_BUFFER_MODE,
-          DEFAULT_BUFFER_MODE, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          DEFAULT_BUFFER_MODE, G_PARAM_READWRITE));
 
   g_object_class_install_property (gobject_class, PROP_BUFFER_SIZE,
       g_param_spec_uint ("buffer-size", "Buffering size",
           "Size of buffer in number of bytes for line or full buffer-mode", 0,
-          G_MAXUINT, DEFAULT_BUFFER_SIZE,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          G_MAXUINT, DEFAULT_BUFFER_SIZE, G_PARAM_READWRITE));
 
   gstbasesink_class->get_times = NULL;
   gstbasesink_class->start = GST_DEBUG_FUNCPTR (gst_file_sink_start);
@@ -240,10 +231,8 @@ gst_file_sink_set_location (GstFileSink * sink, const gchar * location)
   g_free (sink->filename);
   g_free (sink->uri);
   if (location != NULL) {
-    /* we store the filename as we received it from the application. On Windows
-     * this should be in UTF8 */
     sink->filename = g_strdup (location);
-    sink->uri = gst_uri_construct ("file", sink->filename);
+    sink->uri = gst_uri_construct ("file", location);
   } else {
     sink->filename = NULL;
     sink->uri = NULL;
@@ -254,12 +243,11 @@ gst_file_sink_set_location (GstFileSink * sink, const gchar * location)
   /* ERRORS */
 was_open:
   {
-    g_warning ("Changing the `location' property on filesink when a file is "
-        "open is not supported.");
+    g_warning ("Changing the `location' property on filesink when "
+        "a file is open not supported.");
     return FALSE;
   }
 }
-
 static void
 gst_file_sink_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec)
@@ -313,9 +301,6 @@ gst_file_sink_open_file (GstFileSink * sink)
   if (sink->filename == NULL || sink->filename[0] == '\0')
     goto no_filename;
 
-  /* FIXME, can we use g_fopen here? some people say that the FILE object is
-   * local to the .so that performed the fopen call, which would not be us when
-   * we use g_fopen. */
   sink->file = fopen (sink->filename, "wb");
   if (sink->file == NULL)
     goto open_failed;
@@ -422,10 +407,6 @@ gst_file_sink_query (GstPad * pad, GstQuery * query)
       gst_query_set_formats (query, 2, GST_FORMAT_DEFAULT, GST_FORMAT_BYTES);
       return TRUE;
 
-    case GST_QUERY_URI:
-      gst_query_set_uri (query, self->uri);
-      return TRUE;
-
     default:
       return gst_pad_query_default (pad, query);
   }
@@ -433,7 +414,7 @@ gst_file_sink_query (GstPad * pad, GstQuery * query)
 
 #ifdef HAVE_FSEEKO
 # define __GST_STDIO_SEEK_FUNCTION "fseeko"
-#elif defined (G_OS_UNIX) || defined (G_OS_WIN32)
+#elif defined (G_OS_UNIX)
 # define __GST_STDIO_SEEK_FUNCTION "lseek"
 #else
 # define __GST_STDIO_SEEK_FUNCTION "fseek"
@@ -451,7 +432,7 @@ gst_file_sink_do_seek (GstFileSink * filesink, guint64 new_offset)
 #ifdef HAVE_FSEEKO
   if (fseeko (filesink->file, (off_t) new_offset, SEEK_SET) != 0)
     goto seek_failed;
-#elif defined (G_OS_UNIX) || defined (G_OS_WIN32)
+#elif defined (G_OS_UNIX)
   if (lseek (fileno (filesink->file), (off_t) new_offset,
           SEEK_SET) == (off_t) - 1)
     goto seek_failed;
@@ -549,11 +530,11 @@ flush_failed:
 static gboolean
 gst_file_sink_get_current_offset (GstFileSink * filesink, guint64 * p_pos)
 {
-  off_t ret = -1;
+  off_t ret;
 
 #ifdef HAVE_FTELLO
   ret = ftello (filesink->file);
-#elif defined (G_OS_UNIX) || defined (G_OS_WIN32)
+#elif defined (G_OS_UNIX)
   if (fflush (filesink->file)) {
     GST_DEBUG_OBJECT (filesink, "Flush failed: %s", g_strerror (errno));
     /* ignore and continue */
@@ -574,18 +555,16 @@ gst_file_sink_render (GstBaseSink * sink, GstBuffer * buffer)
 {
   GstFileSink *filesink;
   guint size;
-  guint8 *data;
-
-  filesink = GST_FILE_SINK (sink);
 
   size = GST_BUFFER_SIZE (buffer);
-  data = GST_BUFFER_DATA (buffer);
+
+  filesink = GST_FILE_SINK (sink);
 
   GST_DEBUG_OBJECT (filesink, "writing %u bytes at %" G_GUINT64_FORMAT,
       size, filesink->current_pos);
 
-  if (size > 0 && data != NULL) {
-    if (fwrite (data, size, 1, filesink->file) != 1)
+  if (size > 0 && GST_BUFFER_DATA (buffer) != NULL) {
+    if (fwrite (GST_BUFFER_DATA (buffer), size, 1, filesink->file) != 1)
       goto handle_error;
 
     filesink->current_pos += size;
@@ -624,13 +603,15 @@ gst_file_sink_stop (GstBaseSink * basesink)
 }
 
 /*** GSTURIHANDLER INTERFACE *************************************************/
-
-static GstURIType
+#ifdef __SYMBIAN32__
+GstURIType
+#else
+static guint
+#endif 
 gst_file_sink_uri_get_type (void)
 {
   return GST_URI_SINK;
 }
-
 static gchar **
 gst_file_sink_uri_get_protocols (void)
 {
@@ -638,7 +619,6 @@ gst_file_sink_uri_get_protocols (void)
 
   return protocols;
 }
-
 static const gchar *
 gst_file_sink_uri_get_uri (GstURIHandler * handler)
 {

@@ -9,20 +9,11 @@
 
 void create_xml(int result)
 {
-
     if(result)
-    {
         assert_failed = 1;
-    } 
-
+    
     testResultXml(xmlfile);
     close_log_file();
-
-    if(result)
-    {
-        exit (-1);
-    }    
-
 }
 
 #include <gst/gst.h>
@@ -49,7 +40,7 @@ main (int   argc,
   gst_bin_add_many (GST_BIN (bin), source, sink, NULL);
   gst_bin_add (GST_BIN (pipeline), bin);
   gst_element_link (source, sink);
-  //getchar();
+  getchar();
 /*** block b  from ../../../docs/manual/basics-bins.xml ***/
   std_log(LOG_FILENAME_LINE, "Test Successful");
   create_xml(0); 

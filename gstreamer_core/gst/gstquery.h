@@ -46,11 +46,6 @@ G_BEGIN_DECLS
  * @GST_QUERY_SEGMENT: segment start/stop positions
  * @GST_QUERY_CONVERT: convert values between formats
  * @GST_QUERY_FORMATS: query supported formats for convert
- * @GST_QUERY_BUFFERING: query available media for efficient seeking. Since
- * 0.10.20.
- * @GST_QUERY_CUSTOM: a custom application or element defined query. Since
- * 0.10.22.
- * @GST_QUERY_URI: query the URI of the source or sink. Since 0.10.22.
  *
  * Standard predefined Query types
  */
@@ -66,27 +61,8 @@ typedef enum {
   GST_QUERY_SEEKING,
   GST_QUERY_SEGMENT,
   GST_QUERY_CONVERT,
-  GST_QUERY_FORMATS,
-  GST_QUERY_BUFFERING,
-  GST_QUERY_CUSTOM,
-  GST_QUERY_URI
+  GST_QUERY_FORMATS
 } GstQueryType;
-
-/**
- * GstBufferingMode:
- * @GST_BUFFERING_STREAM: a small amount of data is buffered
- * @GST_BUFFERING_DOWNLOAD: the stream is being downloaded
- * @GST_BUFFERING_TIMESHIFT: the stream is being downloaded in a ringbuffer
- * @GST_BUFFERING_LIVE: the stream is a live stream
- *
- * The different types of buffering methods.
- */
-typedef enum {
-  GST_BUFFERING_STREAM,
-  GST_BUFFERING_DOWNLOAD,
-  GST_BUFFERING_TIMESHIFT,
-  GST_BUFFERING_LIVE
-} GstBufferingMode;
 
 typedef struct _GstQueryTypeDefinition GstQueryTypeDefinition;
 typedef struct _GstQuery GstQuery;
@@ -114,9 +90,7 @@ struct _GstQueryTypeDefinition
 #define GST_IS_QUERY_CLASS(klass)              (G_TYPE_CHECK_CLASS_TYPE ((klass), GST_TYPE_QUERY))
 #define GST_QUERY_GET_CLASS(obj)               (G_TYPE_INSTANCE_GET_CLASS ((obj), GST_TYPE_QUERY, GstQueryClass))
 #define GST_QUERY(obj)                         (G_TYPE_CHECK_INSTANCE_CAST ((obj), GST_TYPE_QUERY, GstQuery))
-#define GST_QUERY_CAST(obj)                    ((GstQuery*)(obj)) /* only since 0.10.23 */
 #define GST_QUERY_CLASS(klass)                 (G_TYPE_CHECK_CLASS_CAST ((klass), GST_TYPE_QUERY, GstQueryClass))
-
 
 /**
  * GST_QUERY_TYPE:
@@ -154,14 +128,14 @@ struct _GstQuery
 
   GstStructure *structure;
 
-  /*< private >*/
+  /*< private > */
   gpointer _gst_reserved;
 };
 
 struct _GstQueryClass {
   GstMiniObjectClass mini_object_class;
 
-  /*< private >*/
+  /*< private > */
   gpointer _gst_reserved[GST_PADDING];
 };
 #ifdef __SYMBIAN32__
@@ -223,19 +197,8 @@ GstIterator*    gst_query_type_iterate_definitions (void);
  * @q: a #GstQuery to increase the refcount of.
  *
  * Increases the refcount of the given query by one.
- *
- * Returns: @q
  */
-#ifdef _FOOL_GTK_DOC_
-G_INLINE_FUNC GstQuery * gst_query_ref (GstQuery * q);
-#endif
-
-static inline GstQuery *
-gst_query_ref (GstQuery * q)
-{
-  return GST_QUERY (gst_mini_object_ref (GST_MINI_OBJECT_CAST (q)));
-}
-
+#define         gst_query_ref(q)		GST_QUERY (gst_mini_object_ref (GST_MINI_OBJECT (q)))
 /**
  * gst_query_unref:
  * @q: a #GstQuery to decrease the refcount of.
@@ -243,15 +206,7 @@ gst_query_ref (GstQuery * q)
  * Decreases the refcount of the query. If the refcount reaches 0, the query
  * will be freed.
  */
-#ifdef _FOOL_GTK_DOC_
-G_INLINE_FUNC void gst_query_unref (GstQuery * q);
-#endif
-
-static inline void
-gst_query_unref (GstQuery * q)
-{
-  gst_mini_object_unref (GST_MINI_OBJECT_CAST (q));
-}
+#define         gst_query_unref(q)		gst_mini_object_unref (GST_MINI_OBJECT (q))
 
 /* copy query */
 /**
@@ -260,19 +215,8 @@ gst_query_unref (GstQuery * q)
  *
  * Copies the given query using the copy function of the parent #GstData
  * structure.
- *
- * Returns: a new copy of @q.
  */
-#ifdef _FOOL_GTK_DOC_
-G_INLINE_FUNC GstQuery * gst_query_copy (const GstQuery * q);
-#endif
-
-static inline GstQuery *
-gst_query_copy (const GstQuery * q)
-{
-  return GST_QUERY (gst_mini_object_copy (GST_MINI_OBJECT_CAST (q)));
-}
-
+#define         gst_query_copy(q)		GST_QUERY (gst_mini_object_copy (GST_MINI_OBJECT (q)))
 /**
  * gst_query_make_writable:
  * @q: a #GstQuery to make writable
@@ -432,69 +376,6 @@ IMPORT_C
 #endif
 
 void            gst_query_parse_formats_nth     (GstQuery *query, guint nth, GstFormat *format);
-
-/* buffering query */
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-GstQuery*       gst_query_new_buffering           (GstFormat format);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void            gst_query_set_buffering_percent   (GstQuery *query, gboolean busy, gint percent);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void            gst_query_parse_buffering_percent (GstQuery *query, gboolean *busy, gint *percent);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-void            gst_query_set_buffering_stats     (GstQuery *query, GstBufferingMode mode,
-                                                   gint avg_in, gint avg_out, 
-						   gint64 buffering_left);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
- 
-void            gst_query_parse_buffering_stats    (GstQuery *query, GstBufferingMode *mode,
-                                                   gint *avg_in, gint *avg_out, 
-						   gint64 *buffering_left);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
- 
-
-void            gst_query_set_buffering_range     (GstQuery *query, GstFormat format,
-                                                   gint64 start, gint64 stop,
-						   gint64 estimated_total);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void            gst_query_parse_buffering_range   (GstQuery *query, GstFormat *format,
-                                                   gint64 *start, gint64 *stop,
-						   gint64 *estimated_total);
-/* URI query */
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-GstQuery *      gst_query_new_uri                 (void);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void            gst_query_parse_uri               (GstQuery *query, gchar **uri);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void            gst_query_set_uri                 (GstQuery *query, const gchar *uri);
 
 G_END_DECLS
 

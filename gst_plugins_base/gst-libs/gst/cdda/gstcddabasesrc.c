@@ -81,6 +81,7 @@
  * </refsect2>
  */
 
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -90,6 +91,10 @@
 
 #include "gstcddabasesrc.h"
 #include "gst/gst-i18n-plugin.h"
+
+#ifdef __SYMBIAN32__
+#include <glib_global.h>
+#endif
 
 GST_DEBUG_CATEGORY_STATIC (gst_cdda_base_src_debug);
 #define GST_CAT_DEFAULT gst_cdda_base_src_debug
@@ -103,6 +108,8 @@ GST_DEBUG_CATEGORY_STATIC (gst_cdda_base_src_debug);
 #define SAMPLES_PER_SECTOR                   (CD_FRAMESIZE_RAW >> 2)
 #define TIME_INTERVAL_FROM_SECTORS(sectors)  ((SAMPLES_PER_SECTOR * sectors * GST_SECOND) / 44100)
 #define SECTORS_FROM_TIME_INTERVAL(dtime)    (dtime * 44100 / (SAMPLES_PER_SECTOR * GST_SECOND))
+
+#define GST_TYPE_CDDA_BASE_SRC_MODE          (gst_cdda_base_src_mode_get_type ())
 
 enum
 {
@@ -157,12 +164,8 @@ GST_STATIC_PAD_TEMPLATE ("src",
 /* our two formats */
 static GstFormat track_format;
 static GstFormat sector_format;
-#ifdef __SYMBIAN32__
-EXPORT_C
-#endif
 
-
-GType
+static GType
 gst_cdda_base_src_mode_get_type (void)
 {
   static GType mode_type;       /* 0 */
@@ -223,15 +226,14 @@ gst_cdda_base_src_class_init (GstCddaBaseSrcClass * klass)
 
   g_object_class_install_property (G_OBJECT_CLASS (klass), ARG_DEVICE,
       g_param_spec_string ("device", "Device", "CD device location",
-          NULL, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          NULL, G_PARAM_READWRITE));
   g_object_class_install_property (G_OBJECT_CLASS (klass), ARG_MODE,
       g_param_spec_enum ("mode", "Mode", "Mode", GST_TYPE_CDDA_BASE_SRC_MODE,
-          GST_CDDA_BASE_SRC_MODE_NORMAL,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          GST_CDDA_BASE_SRC_MODE_NORMAL, G_PARAM_READWRITE));
 
   g_object_class_install_property (G_OBJECT_CLASS (klass), ARG_TRACK,
       g_param_spec_uint ("track", "Track", "Track", 1, 99, 1,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          G_PARAM_READWRITE));
 
 #if 0
   /* Do we really need this toc adjustment stuff as properties? does the user
@@ -242,13 +244,12 @@ gst_cdda_base_src_class_init (GstCddaBaseSrcClass * klass)
   g_object_class_install_property (G_OBJECT_CLASS (klass), ARG_TOC_OFFSET,
       g_param_spec_int ("toc-offset", "Table of contents offset",
           "Add <n> sectors to the values reported", G_MININT, G_MAXINT, 0,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          G_PARAM_READWRITE));
   g_object_class_install_property (G_OBJECT_CLASS (klass), ARG_TOC_BIAS,
       g_param_spec_boolean ("toc-bias", "Table of contents bias",
           "Assume that the beginning offset of track 1 as reported in the TOC "
           "will be addressed as LBA 0.  Necessary for some Toshiba drives to "
-          "get track boundaries", FALSE,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          "get track boundaries", FALSE, G_PARAM_READWRITE));
 #endif
 
   element_class->set_index = GST_DEBUG_FUNCPTR (gst_cdda_base_src_set_index);
@@ -879,6 +880,7 @@ gst_cdda_base_src_handle_event (GstBaseSrc * basesrc, GstEvent * event)
     }
     default:{
       GST_LOG_OBJECT (src, "let base class handle event");
+      event = gst_event_ref (event);
       ret = GST_BASE_SRC_CLASS (parent_class)->event (basesrc, event);
       break;
     }
@@ -1032,7 +1034,7 @@ gst_cdda_base_src_add_track (GstCddaBaseSrc * src, GstCddaBaseSrcTrack * track)
   if (src->num_tracks > 0) {
     guint end_of_previous_track = src->tracks[src->num_tracks - 1].end;
 
-    if (track->start <= end_of_previous_track) {
+    if (track->start < end_of_previous_track) {
       GST_WARNING ("track %2u overlaps with previous tracks", track->num);
       return FALSE;
     }
@@ -1089,35 +1091,36 @@ cddb_sum (gint n)
   return ret;
 }
 
+#include "base64.h"
+#include "sha1.h"
+
 static void
 gst_cddabasesrc_calculate_musicbrainz_discid (GstCddaBaseSrc * src)
 {
   GString *s;
-  GChecksum *sha;
-  guchar digest[20];
-  gchar *ptr;
+  SHA_INFO sha;
+  guchar digest[20], *ptr;
   gchar tmp[9];
   gulong i;
   guint leadout_sector;
-  gsize digest_len;
 
   s = g_string_new (NULL);
 
   leadout_sector = src->tracks[src->num_tracks - 1].end + 1 + CD_MSF_OFFSET;
 
   /* generate SHA digest */
-  sha = g_checksum_new (G_CHECKSUM_SHA1);
+  sha_init (&sha);
   g_snprintf (tmp, sizeof (tmp), "%02X", src->tracks[0].num);
   g_string_append_printf (s, "%02X", src->tracks[0].num);
-  g_checksum_update (sha, (guchar *) tmp, 2);
+  sha_update (&sha, (SHA_BYTE *) tmp, 2);
 
   g_snprintf (tmp, sizeof (tmp), "%02X", src->tracks[src->num_tracks - 1].num);
   g_string_append_printf (s, " %02X", src->tracks[src->num_tracks - 1].num);
-  g_checksum_update (sha, (guchar *) tmp, 2);
+  sha_update (&sha, (SHA_BYTE *) tmp, 2);
 
   g_snprintf (tmp, sizeof (tmp), "%08X", leadout_sector);
   g_string_append_printf (s, " %08X", leadout_sector);
-  g_checksum_update (sha, (guchar *) tmp, 8);
+  sha_update (&sha, (SHA_BYTE *) tmp, 8);
 
   for (i = 0; i < 99; i++) {
     if (i < src->num_tracks) {
@@ -1125,35 +1128,20 @@ gst_cddabasesrc_calculate_musicbrainz_discid (GstCddaBaseSrc * src)
 
       g_snprintf (tmp, sizeof (tmp), "%08X", frame_offset);
       g_string_append_printf (s, " %08X", frame_offset);
-      g_checksum_update (sha, (guchar *) tmp, 8);
+      sha_update (&sha, (SHA_BYTE *) tmp, 8);
     } else {
-      g_checksum_update (sha, (guchar *) "00000000", 8);
+      sha_update (&sha, (SHA_BYTE *) "00000000", 8);
     }
   }
-  digest_len = 20;
-  g_checksum_get_digest (sha, (guint8 *) & digest, &digest_len);
+  sha_final (digest, &sha);
 
   /* re-encode to base64 */
-  ptr = g_base64_encode (digest, digest_len);
-  g_checksum_free (sha);
-  i = strlen (ptr);
+  ptr = rfc822_binary (digest, 20, &i);
 
   g_assert (i < sizeof (src->mb_discid) + 1);
   memcpy (src->mb_discid, ptr, i);
   src->mb_discid[i] = '\0';
   free (ptr);
-
-  /* Replace '/', '+' and '=' by '_', '.' and '-' as specified on
-   * http://musicbrainz.org/doc/DiscIDCalculation
-   */
-  for (ptr = src->mb_discid; *ptr != '\0'; ptr++) {
-    if (*ptr == '/')
-      *ptr = '_';
-    else if (*ptr == '+')
-      *ptr = '.';
-    else if (*ptr == '=')
-      *ptr = '-';
-  }
 
   GST_DEBUG_OBJECT (src, "musicbrainz-discid      = %s", src->mb_discid);
   GST_DEBUG_OBJECT (src, "musicbrainz-discid-full = %s", s->str);
@@ -1280,7 +1268,7 @@ gst_cdda_base_src_add_tags (GstCddaBaseSrc * src)
         GST_FORMAT_TIME, &duration);
 
     gst_tag_list_add (src->tracks[i].tags,
-        GST_TAG_MERGE_REPLACE,
+        GST_TAG_MERGE_REPLACE_ALL,
         GST_TAG_TRACK_NUMBER, i + 1,
         GST_TAG_TRACK_COUNT, src->num_tracks, GST_TAG_DURATION, duration, NULL);
   }
@@ -1294,7 +1282,7 @@ gst_cdda_base_src_add_tags (GstCddaBaseSrc * src)
    * gst_tag_list_get_value_index() rather than use tag names incl.
    * the track number ?? *////////////////////////////////////////
 
-  gst_tag_list_add (src->tags, GST_TAG_MERGE_REPLACE,
+  gst_tag_list_add (src->tags, GST_TAG_MERGE_REPLACE_ALL,
       GST_TAG_TRACK_COUNT, src->num_tracks, NULL);
 #if 0
   for (i = 0; i < src->num_tracks; ++i) {
@@ -1523,10 +1511,10 @@ gst_cdda_base_src_create (GstPushSrc * pushsrc, GstBuffer ** buffer)
 
   switch (src->mode) {
     case GST_CDDA_BASE_SRC_MODE_NORMAL:
-      eos = (src->cur_sector > src->tracks[src->cur_track].end);
+      eos = (src->cur_sector >= src->tracks[src->cur_track].end);
       break;
     case GST_CDDA_BASE_SRC_MODE_CONTINUOUS:
-      eos = (src->cur_sector > src->tracks[src->num_tracks - 1].end);
+      eos = (src->cur_sector >= src->tracks[src->num_tracks - 1].end);
       src->cur_track = gst_cdda_base_src_get_track_from_sector (src,
           src->cur_sector);
       break;

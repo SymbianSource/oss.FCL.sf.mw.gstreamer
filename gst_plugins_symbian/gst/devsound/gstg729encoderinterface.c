@@ -54,7 +54,7 @@ EXPORT_C GType gst_g729_encoder_get_type(void)
 
   
     g729_encoder_type = g_type_register_static (G_TYPE_INTERFACE, "GstG729EncoderInterface",
-        &g729_encoder_info, (GTypeFlags)0);
+        &g729_encoder_info, 0);
   
   }
 

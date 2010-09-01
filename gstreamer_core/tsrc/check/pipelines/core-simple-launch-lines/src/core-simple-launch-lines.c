@@ -30,20 +30,11 @@
 
 void create_xml(int result)
 {
-
     if(result)
-    {
         assert_failed = 1;
-    } 
-
+    
     testResultXml(xmlfile);
     close_log_file();
-
-    if(result)
-    {
-        exit (-1);
-    }    
-
 }
 
 
@@ -61,21 +52,21 @@ extern GList *buffers = NULL;
 static GET_GLOBAL_VAR_FROM_TLS(raised_critical,gstcheck,gboolean)
 #define _gst_check_raised_critical (*GET_GSTREAMER_WSD_VAR_NAME(raised_critical,gstcheck,g)())
 #else 
-IMPORT_C extern gboolean _gst_check_raised_critical;
+extern gboolean _gst_check_raised_critical;
 #endif
 //gboolean _gst_check_raised_warning = FALSE;
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(raised_warning,gstcheck,gboolean)
 #define _gst_check_raised_warning (*GET_GSTREAMER_WSD_VAR_NAME(raised_warning,gstcheck,g)())
 #else 
-IMPORT_C extern gboolean _gst_check_raised_warning;
+extern gboolean _gst_check_raised_warning;
 #endif
 //gboolean _gst_check_expecting_log = FALSE;
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(expecting_log,gstcheck,gboolean)
 #define _gst_check_expecting_log (*GET_GSTREAMER_WSD_VAR_NAME(expecting_log,gstcheck,g)())
 #else 
-IMPORT_C extern gboolean _gst_check_expecting_log;
+extern gboolean _gst_check_expecting_log;
 #endif
 
 
@@ -112,13 +103,10 @@ run_pipeline (GstElement * pipeline, gchar * descr,
   bus = gst_element_get_bus (pipeline);
   fail_if (bus == NULL);
 
-  GST_DEBUG ("running pipeline %s", descr);
-  
   ret = gst_element_set_state (pipeline, GST_STATE_PLAYING);
   ret = gst_element_get_state (pipeline, NULL, NULL, GST_CLOCK_TIME_NONE);
 
   if (ret != GST_STATE_CHANGE_SUCCESS) {
-    GST_WARNING ("have failed state change %d", ret);
     g_critical ("Couldn't set pipeline to PLAYING");
     goto done;
   }
@@ -153,7 +141,7 @@ done:
   gst_object_unref (bus);
 }
 
-/*void test_2_elements()
+void test_2_elements()
 {
   gchar *s;
   GstElement *fakesrc, *fakesink, *pipeline;
@@ -234,44 +222,8 @@ done:
             std_log(LOG_FILENAME_LINE, "Test Successful");
 					  create_xml(0);  
 
-}*/
-void test_2_elements()
-{
-  gchar *s;
-  GstElement *fakesrc, *fakesink, *pipeline;
-
-  xmlfile = "test_2_elements";
-  std_log(LOG_FILENAME_LINE, "Test Started test_2_elements");
-s = "fakesrc can-activate-push=false ! fakesink can-activate-pull=true";
-run_pipeline (setup_pipeline (s), s,
-    GST_MESSAGE_NEW_CLOCK | GST_MESSAGE_STATE_CHANGED |
-    GST_MESSAGE_STREAM_STATUS | GST_MESSAGE_ASYNC_DONE, GST_MESSAGE_UNKNOWN);
-
-s = "fakesrc can-activate-push=true ! fakesink can-activate-pull=false";
-run_pipeline (setup_pipeline (s), s,
-    GST_MESSAGE_NEW_CLOCK | GST_MESSAGE_STATE_CHANGED |
-    GST_MESSAGE_STREAM_STATUS | GST_MESSAGE_ASYNC_DONE, GST_MESSAGE_UNKNOWN);
-
-s = "fakesrc can-activate-push=false num-buffers=10 ! fakesink can-activate-pull=true";
-run_pipeline (setup_pipeline (s), s,
-    GST_MESSAGE_NEW_CLOCK | GST_MESSAGE_STATE_CHANGED |
-    GST_MESSAGE_STREAM_STATUS | GST_MESSAGE_ASYNC_DONE, GST_MESSAGE_EOS);
-
-s = "fakesrc can-activate-push=true num-buffers=10 ! fakesink can-activate-pull=false";
-run_pipeline (setup_pipeline (s), s,
-    GST_MESSAGE_NEW_CLOCK | GST_MESSAGE_STATE_CHANGED |
-    GST_MESSAGE_STREAM_STATUS | GST_MESSAGE_ASYNC_DONE, GST_MESSAGE_EOS);
-
-s = "fakesrc can-activate-push=false ! fakesink can-activate-pull=false";
-ASSERT_CRITICAL (run_pipeline (setup_pipeline (s), s,
-        GST_MESSAGE_NEW_CLOCK | GST_MESSAGE_STATE_CHANGED |
-        GST_MESSAGE_STREAM_STATUS | GST_MESSAGE_ASYNC_DONE,
-        GST_MESSAGE_UNKNOWN));
-
-std_log(LOG_FILENAME_LINE, "Test Successful");
-                      create_xml(0);  
-
 }
+
 
 
 static void
@@ -341,18 +293,22 @@ void test_state_change_returns()
       
   //pipeline = gst_parse_launch (s, NULL);
   fail_unless (GST_IS_PIPELINE (pipeline));
-    check_state_change_return (pipeline, GST_STATE_READY,
-        GST_STATE_CHANGE_SUCCESS, GST_STATE_CHANGE_SUCCESS);
-    check_state_change_return (pipeline, GST_STATE_PAUSED,
-        GST_STATE_CHANGE_ASYNC, GST_STATE_CHANGE_SUCCESS);
-    check_state_change_return (pipeline, GST_STATE_PLAYING,
-        GST_STATE_CHANGE_SUCCESS, GST_STATE_CHANGE_SUCCESS);
-    /* can't check PAUSED, it's not deterministic */
-    check_state_change_return (pipeline, GST_STATE_READY,
-        GST_STATE_CHANGE_SUCCESS, GST_STATE_CHANGE_SUCCESS);
-    check_state_change_return (pipeline, GST_STATE_NULL, GST_STATE_CHANGE_SUCCESS,
-        GST_STATE_CHANGE_SUCCESS);
-    gst_object_unref (pipeline);
+
+
+
+  check_state_change_return (pipeline, GST_STATE_READY,
+      GST_STATE_CHANGE_SUCCESS, GST_STATE_CHANGE_SUCCESS);
+  check_state_change_return (pipeline, GST_STATE_PAUSED,
+      GST_STATE_CHANGE_SUCCESS, GST_STATE_CHANGE_SUCCESS);
+  check_state_change_return (pipeline, GST_STATE_PLAYING,
+      GST_STATE_CHANGE_SUCCESS, GST_STATE_CHANGE_SUCCESS);
+  check_state_change_return (pipeline, GST_STATE_PAUSED,
+      GST_STATE_CHANGE_SUCCESS, GST_STATE_CHANGE_SUCCESS);
+  check_state_change_return (pipeline, GST_STATE_READY,
+      GST_STATE_CHANGE_SUCCESS, GST_STATE_CHANGE_SUCCESS);
+  check_state_change_return (pipeline, GST_STATE_NULL, GST_STATE_CHANGE_SUCCESS,
+      GST_STATE_CHANGE_SUCCESS);
+  gst_object_unref (pipeline);
 
   std_log(LOG_FILENAME_LINE, "Test Successful");
   create_xml(0);

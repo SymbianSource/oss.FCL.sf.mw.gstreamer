@@ -54,7 +54,7 @@ EXPORT_C GType gst_error_concealment_get_type (void)
 
   
     error_concealment_type = g_type_register_static (G_TYPE_INTERFACE, "GstErrorConcealment",
-        &error_concealment_info, (GTypeFlags)0);
+        &error_concealment_info, 0);
 
   }
 

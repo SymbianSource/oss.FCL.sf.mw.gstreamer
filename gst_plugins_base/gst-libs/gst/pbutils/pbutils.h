@@ -28,9 +28,7 @@
 #include <gst/pbutils/pbutils-enumtypes.h>
 
 G_BEGIN_DECLS
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
+
 void    gst_pb_utils_init (void);
 
 G_END_DECLS

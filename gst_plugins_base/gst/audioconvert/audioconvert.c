@@ -66,6 +66,7 @@ MAKE_UNPACK_FUNC_NAME (name) (type * src, gint32 * dst, gint s, gint count)   \
   }                                                                           \
 }
 
+
 /* unpack from float to float 64 (double) */
 #define MAKE_UNPACK_FUNC_FF(name, type, FUNC)                                 \
 static void                                                                   \
@@ -417,8 +418,7 @@ EXPORT_C
 
 gboolean
 audio_convert_prepare_context (AudioConvertCtx * ctx, AudioConvertFmt * in,
-    AudioConvertFmt * out, GstAudioConvertDithering dither,
-    GstAudioConvertNoiseShaping ns)
+    AudioConvertFmt * out, DitherType dither, NoiseShapingType ns)
 {
   gint idx_in, idx_out;
 
@@ -428,9 +428,6 @@ audio_convert_prepare_context (AudioConvertCtx * ctx, AudioConvertFmt * in,
 
   /* first clean the existing context */
   audio_convert_clean_context (ctx);
-
-  g_return_val_if_fail (in->unpositioned_layout == out->unpositioned_layout,
-      FALSE);
 
   ctx->in = *in;
   ctx->out = *out;
@@ -537,9 +534,9 @@ gboolean
 audio_convert_convert (AudioConvertCtx * ctx, gpointer src,
     gpointer dst, gint samples, gboolean src_writable)
 {
-  guint insize, outsize, size;
+  gint insize, outsize, size;
   gpointer outbuf, tmpbuf;
-  guint intemp = 0, outtemp = 0, biggest;
+  gint intemp = 0, outtemp = 0, biggest;
 
   g_return_val_if_fail (ctx != NULL, FALSE);
   g_return_val_if_fail (src != NULL, FALSE);
@@ -557,9 +554,9 @@ audio_convert_convert (AudioConvertCtx * ctx, gpointer src,
       : sizeof (gint32);
 
   if (!ctx->in_default)
-    intemp = gst_util_uint64_scale (insize, size * 8, ctx->in.width);
+    intemp = insize * size * 8 / ctx->in.width;
   if (!ctx->mix_passthrough || !ctx->out_default)
-    outtemp = gst_util_uint64_scale (outsize, size * 8, ctx->out.width);
+    outtemp = outsize * size * 8 / ctx->out.width;
   biggest = MAX (intemp, outtemp);
 
   /* see if one of the buffers can be used as temp */

@@ -59,8 +59,7 @@ typedef enum {
  *               GST_PIPELINE_FLAG_FIXED_CLOCK is set.
  * @stream_time: The stream time of the pipeline. A better name for this
  *         property would be the running_time, the total time spent in the
- *         PLAYING state without being flushed. (deprecated, use the start_time
- *         on GstElement).
+ *         PLAYING state without being flushed.
  * @delay: Extra delay added to base_time to compensate for computing delays
  *         when setting elements to PLAYING.
  *
@@ -104,11 +103,10 @@ IMPORT_C
 
 
 GstBus*		gst_pipeline_get_bus		(GstPipeline *pipeline);
-
-#ifndef GST_DISABLE_DEPRECATED
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
+
 
 void		gst_pipeline_set_new_stream_time  (GstPipeline *pipeline, GstClockTime time);
 #ifdef __SYMBIAN32__
@@ -116,10 +114,10 @@ IMPORT_C
 #endif
 
 GstClockTime	gst_pipeline_get_last_stream_time (GstPipeline *pipeline);
-#endif
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
+
 
 void            gst_pipeline_use_clock          (GstPipeline *pipeline, GstClock *clock);
 #ifdef __SYMBIAN32__

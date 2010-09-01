@@ -26,7 +26,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <glib.h>
 #include <regex.h>
 
 #include "gstsubparse.h"
@@ -35,6 +34,9 @@
 #include "tmplayerparse.h"
 #include "mpl2parse.h"
 
+#ifdef __SYMBIAN32__
+#include <glib_global.h>
+#endif
 GST_DEBUG_CATEGORY (sub_parse_debug);
 
 #define DEFAULT_ENCODING   NULL
@@ -147,24 +149,11 @@ gst_sub_parse_dispose (GObject * object)
     g_free (subparse->encoding);
     subparse->encoding = NULL;
   }
-
-  if (subparse->detected_encoding) {
-    g_free (subparse->detected_encoding);
-    subparse->detected_encoding = NULL;
-  }
-
-  if (subparse->adapter) {
-    gst_object_unref (subparse->adapter);
-    subparse->adapter = NULL;
-  }
-
   if (subparse->textbuf) {
     g_string_free (subparse->textbuf, TRUE);
     subparse->textbuf = NULL;
   }
-#ifndef GST_DISABLE_XML
   sami_context_deinit (&subparse->state);
-#endif
 
   GST_CALL_PARENT (G_OBJECT_CLASS, dispose, (object));
 }
@@ -185,11 +174,10 @@ gst_sub_parse_class_init (GstSubParseClass * klass)
 
   g_object_class_install_property (object_class, PROP_ENCODING,
       g_param_spec_string ("subtitle-encoding", "subtitle charset encoding",
-          "Encoding to assume if input subtitles are not in UTF-8 or any other "
-          "Unicode encoding. If not set, the GST_SUBTITLE_ENCODING environment "
-          "variable will be checked for an encoding to use. If that is not set "
-          "either, ISO-8859-15 will be assumed.", DEFAULT_ENCODING,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          "Encoding to assume if input subtitles are not in UTF-8 encoding. "
+          "If not set, the GST_SUBTITLE_ENCODING environment variable will "
+          "be checked for an encoding to use. If that is not set either, "
+          "ISO-8859-15 will be assumed.", DEFAULT_ENCODING, G_PARAM_READWRITE));
 }
 
 static void
@@ -213,8 +201,6 @@ gst_sub_parse_init (GstSubParse * subparse)
   gst_segment_init (&subparse->segment, GST_FORMAT_TIME);
   subparse->need_segment = TRUE;
   subparse->encoding = g_strdup (DEFAULT_ENCODING);
-  subparse->detected_encoding = NULL;
-  subparse->adapter = gst_adapter_new ();
 }
 
 /*
@@ -322,113 +308,21 @@ gst_sub_parse_get_property (GObject * object, guint prop_id,
 }
 
 static gchar *
-gst_sub_parse_get_format_description (GstSubParseFormat format)
-{
-  switch (format) {
-    case GST_SUB_PARSE_FORMAT_MDVDSUB:
-      return "MicroDVD";
-    case GST_SUB_PARSE_FORMAT_SUBRIP:
-      return "SubRip";
-    case GST_SUB_PARSE_FORMAT_MPSUB:
-      return "MPSub";
-    case GST_SUB_PARSE_FORMAT_SAMI:
-      return "SAMI";
-    case GST_SUB_PARSE_FORMAT_TMPLAYER:
-      return "TMPlayer";
-    case GST_SUB_PARSE_FORMAT_MPL2:
-      return "MPL2";
-    case GST_SUB_PARSE_FORMAT_SUBVIEWER:
-      return "SubViewer";
-    default:
-    case GST_SUB_PARSE_FORMAT_UNKNOWN:
-      break;
-  }
-  return NULL;
-}
-
-static gchar *
-gst_convert_to_utf8 (const gchar * str, gsize len, const gchar * encoding,
-    gsize * consumed, GError ** err)
-{
-  gchar *ret = NULL;
-
-  *consumed = 0;
-  ret =
-      g_convert_with_fallback (str, len, "UTF-8", encoding, "*", consumed, NULL,
-      err);
-  if (ret == NULL)
-    return ret;
-
-  /* + 3 to skip UTF-8 BOM if it was added */
-  len = strlen (ret);
-  if (len >= 3 && (guint8) ret[0] == 0xEF && (guint8) ret[1] == 0xBB
-      && (guint8) ret[2] == 0xBF)
-    g_memmove (ret, ret + 3, len + 1 - 3);
-
-  return ret;
-}
-
-static gchar *
-detect_encoding (const gchar * str, gsize len)
-{
-  if (len >= 3 && (guint8) str[0] == 0xEF && (guint8) str[1] == 0xBB
-      && (guint8) str[2] == 0xBF)
-    return g_strdup ("UTF-8");
-
-  if (len >= 2 && (guint8) str[0] == 0xFE && (guint8) str[1] == 0xFF)
-    return g_strdup ("UTF-16BE");
-
-  if (len >= 2 && (guint8) str[0] == 0xFF && (guint8) str[1] == 0xFE)
-    return g_strdup ("UTF-16LE");
-
-  if (len >= 4 && (guint8) str[0] == 0x00 && (guint8) str[1] == 0x00
-      && (guint8) str[2] == 0xFE && (guint8) str[3] == 0xFF)
-    return g_strdup ("UTF-32BE");
-
-  if (len >= 4 && (guint8) str[0] == 0xFF && (guint8) str[1] == 0xFE
-      && (guint8) str[2] == 0x00 && (guint8) str[3] == 0x00)
-    return g_strdup ("UTF-32LE");
-
-  return NULL;
-}
-
-static gchar *
-convert_encoding (GstSubParse * self, const gchar * str, gsize len,
-    gsize * consumed)
+convert_encoding (GstSubParse * self, const gchar * str, gsize len)
 {
   const gchar *encoding;
   GError *err = NULL;
-  gchar *ret = NULL;
+  gchar *ret;
 
-  *consumed = 0;
-
-  /* First try any detected encoding */
-  if (self->detected_encoding) {
-    ret =
-        gst_convert_to_utf8 (str, len, self->detected_encoding, consumed, &err);
-
-    if (!err)
-      return ret;
-
-    GST_WARNING_OBJECT (self, "could not convert string from '%s' to UTF-8: %s",
-        self->detected_encoding, err->message);
-    g_free (self->detected_encoding);
-    self->detected_encoding = NULL;
-    g_error_free (err);
-  }
-
-  /* Otherwise check if it's UTF8 */
   if (self->valid_utf8) {
     if (g_utf8_validate (str, len, NULL)) {
       GST_LOG_OBJECT (self, "valid UTF-8, no conversion needed");
-      *consumed = len;
       return g_strndup (str, len);
     }
     GST_INFO_OBJECT (self, "invalid UTF-8!");
     self->valid_utf8 = FALSE;
   }
 
-  /* Else try fallback */
   encoding = self->encoding;
   if (encoding == NULL || *encoding == '\0') {
     encoding = g_getenv ("GST_SUBTITLE_ENCODING");
@@ -441,7 +335,8 @@ convert_encoding (GstSubParse * self, const gchar * str, gsize len,
     }
   }
 
-  ret = gst_convert_to_utf8 (str, len, encoding, consumed, &err);
+  ret = g_convert_with_fallback (str, len, "UTF-8", encoding, "*", NULL,
+      NULL, &err);
 
   if (err) {
     GST_WARNING_OBJECT (self, "could not convert string from '%s' to UTF-8: %s",
@@ -449,7 +344,8 @@ convert_encoding (GstSubParse * self, const gchar * str, gsize len,
     g_error_free (err);
 
     /* invalid input encoding, fall back to ISO-8859-15 (always succeeds) */
-    ret = gst_convert_to_utf8 (str, len, "ISO-8859-15", consumed, NULL);
+    ret = g_convert_with_fallback (str, len, "UTF-8", "ISO-8859-15", "*",
+        NULL, NULL, NULL);
   }
 
   GST_LOG_OBJECT (self,
@@ -481,7 +377,7 @@ get_next_line (GstSubParse * self)
   }
 
   line_len = line_end - self->textbuf->str;
-  line = g_strndup (self->textbuf->str, line_len);
+  line = convert_encoding (self, self->textbuf->str, line_len);
   self->textbuf = g_string_erase (self->textbuf, 0,
       line_len + (have_r ? 2 : 1));
   return line;
@@ -759,59 +655,11 @@ subrip_fix_up_markup (gchar ** p_txt)
   }
 }
 
-static gboolean
-parse_subrip_time (const gchar * ts_string, GstClockTime * t)
-{
-  gchar s[128] = { '\0', };
-  gchar *end, *p;
-  guint hour, min, sec, msec, len;
-
-  while (*ts_string == ' ')
-    ++ts_string;
-
-  g_strlcpy (s, ts_string, sizeof (s));
-  if ((end = strstr (s, "-->")))
-    *end = '\0';
-  g_strchomp (s);
-
-  /* ms may be in these formats:
-   * hh:mm:ss,500 = 500ms
-   * hh:mm:ss,  5 =   5ms
-   * hh:mm:ss, 5  =  50ms
-   * hh:mm:ss, 50 =  50ms
-   * hh:mm:ss,5   = 500ms
-   * and sscanf() doesn't differentiate between '  5' and '5' so munge
-   * the white spaces within the timestamp to '0' (I'm sure there's a
-   * way to make sscanf() do this for us, but how?)
-   */
-  g_strdelimit (s, " ", '0');
-
-  /* make sure we have exactly three digits after he comma */
-  p = strchr (s, ',');
-  g_assert (p != NULL);
-  ++p;
-  len = strlen (p);
-  if (len > 3) {
-    p[3] = '\0';
-  } else
-    while (len < 3) {
-      g_strlcat (&p[len], "0", 2);
-      ++len;
-    }
-
-  GST_LOG ("parsing timestamp '%s'", s);
-  if (sscanf (s, "%u:%u:%u,%u", &hour, &min, &sec, &msec) != 4) {
-    GST_WARNING ("failed to parse subrip timestamp string '%s'", s);
-    return FALSE;
-  }
-
-  *t = ((hour * 3600) + (min * 60) + sec) * GST_SECOND + msec * GST_MSECOND;
-  return TRUE;
-}
-
 static gchar *
 parse_subrip (ParserState * state, const gchar * line)
 {
+  guint h1, m1, s1, ms1;
+  guint h2, m2, s2, ms2;
   int subnum;
   gchar *ret;
 
@@ -822,24 +670,21 @@ parse_subrip (ParserState * state, const gchar * line)
         state->state = 1;
       return NULL;
     case 1:
-    {
-      GstClockTime ts_start, ts_end;
-      gchar *end_time;
-
       /* looking for start_time --> end_time */
-      if ((end_time = strstr (line, " --> ")) &&
-          parse_subrip_time (line, &ts_start) &&
-          parse_subrip_time (end_time + strlen (" --> "), &ts_end) &&
-          state->start_time <= ts_end) {
+      if (sscanf (line, "%u:%u:%u,%u --> %u:%u:%u,%u",
+              &h1, &m1, &s1, &ms1, &h2, &m2, &s2, &ms2) == 8) {
         state->state = 2;
-        state->start_time = ts_start;
-        state->duration = ts_end - ts_start;
+        state->start_time =
+            (((guint64) h1) * 3600 + m1 * 60 + s1) * GST_SECOND +
+            ms1 * GST_MSECOND;
+        state->duration =
+            (((guint64) h2) * 3600 + m2 * 60 + s2) * GST_SECOND +
+            ms2 * GST_MSECOND - state->start_time;
       } else {
-        GST_DEBUG ("error parsing subrip time line '%s'", line);
+        GST_DEBUG ("error parsing subrip time line");
         state->state = 0;
       }
       return NULL;
-    }
     case 2:
     {
       /* No need to parse that text if it's out of segment */
@@ -1031,7 +876,6 @@ parser_state_init (ParserState * state)
 
   state->start_time = 0;
   state->duration = 0;
-  state->max_duration = 0;      /* no limit */
   state->state = 0;
   state->segment = NULL;
 }
@@ -1043,49 +887,9 @@ parser_state_dispose (ParserState * state)
     g_string_free (state->buf, TRUE);
     state->buf = NULL;
   }
-#ifndef GST_DISABLE_XML
   if (state->user_data) {
     sami_context_reset (state);
   }
-#endif
-}
-
-/* regex type enum */
-typedef enum
-{
-  GST_SUB_PARSE_REGEX_UNKNOWN = 0,
-  GST_SUB_PARSE_REGEX_MDVDSUB = 1,
-  GST_SUB_PARSE_REGEX_SUBRIP = 2,
-} GstSubParseRegex;
-
-static gpointer
-gst_sub_parse_data_format_autodetect_regex_once (GstSubParseRegex regtype)
-{
-  gpointer result = NULL;
-  GError *gerr = NULL;
-  switch (regtype) {
-    case GST_SUB_PARSE_REGEX_MDVDSUB:
-      result =
-          (gpointer) g_regex_new ("^\\{[0-9]+\\}\\{[0-9]+\\}", 0, 0, &gerr);
-      if (result == NULL) {
-        g_warning ("Compilation of mdvd regex failed: %s", gerr->message);
-        g_error_free (gerr);
-      }
-      break;
-    case GST_SUB_PARSE_REGEX_SUBRIP:
-      result = (gpointer) g_regex_new ("^([ 0-9]){0,3}[0-9]\\s*(\x0d)?\x0a"
-          "[ 0-9][0-9]:[ 0-9][0-9]:[ 0-9][0-9],[ 0-9]{0,2}[0-9]"
-          " +--> +([ 0-9])?[0-9]:[ 0-9][0-9]:[ 0-9][0-9],[ 0-9]{0,2}[0-9]",
-          0, 0, &gerr);
-      if (result == NULL) {
-        g_warning ("Compilation of subrip regex failed: %s", gerr->message);
-        g_error_free (gerr);
-      }
-      break;
-    default:
-      GST_WARNING ("Trying to allocate regex of unknown type %u", regtype);
-  }
-  return result;
 }
 
 /*
@@ -1097,29 +901,33 @@ gst_sub_parse_data_format_autodetect_regex_once (GstSubParseRegex regtype)
 static GstSubParseFormat
 gst_sub_parse_data_format_autodetect (gchar * match_str)
 {
+  static gboolean need_init_regexps = TRUE;
+  static regex_t mdvd_rx;
+  static regex_t subrip_rx;
   guint n1, n2, n3;
 
-  static GOnce mdvd_rx_once = G_ONCE_INIT;
-  static GOnce subrip_rx_once = G_ONCE_INIT;
+  /* initialize the regexps used the first time around */
+  if (need_init_regexps) {
+    int err;
+    char errstr[128];
 
-  GRegex *mdvd_grx;
-  GRegex *subrip_grx;
+    need_init_regexps = FALSE;
+    if ((err = regcomp (&mdvd_rx, "^\\{[0-9]+\\}\\{[0-9]+\\}",
+                REG_EXTENDED | REG_NEWLINE | REG_NOSUB) != 0) ||
+        (err = regcomp (&subrip_rx, "^[0-9]([0-9]){0,3}(\x0d)?\x0a"
+                "[0-9][0-9]:[0-9][0-9]:[0-9][0-9],[0-9]{3}"
+                " --> [0-9][0-9]:[0-9][0-9]:[0-9][0-9],[0-9]{3}",
+                REG_EXTENDED | REG_NEWLINE | REG_NOSUB)) != 0) {
+      regerror (err, &subrip_rx, errstr, 127);
+      GST_WARNING ("Compilation of subrip regex failed: %s", errstr);
+    }
+  }
 
-  g_once (&mdvd_rx_once,
-      (GThreadFunc) gst_sub_parse_data_format_autodetect_regex_once,
-      (gpointer) GST_SUB_PARSE_REGEX_MDVDSUB);
-  g_once (&subrip_rx_once,
-      (GThreadFunc) gst_sub_parse_data_format_autodetect_regex_once,
-      (gpointer) GST_SUB_PARSE_REGEX_SUBRIP);
-
-  mdvd_grx = (GRegex *) mdvd_rx_once.retval;
-  subrip_grx = (GRegex *) subrip_rx_once.retval;
-
-  if (g_regex_match (mdvd_grx, match_str, 0, NULL) == TRUE) {
+  if (regexec (&mdvd_rx, match_str, 0, NULL, 0) == 0) {
     GST_LOG ("MicroDVD (frame based) format detected");
     return GST_SUB_PARSE_FORMAT_MDVDSUB;
   }
-  if (g_regex_match (subrip_grx, match_str, 0, NULL) == TRUE) {
+  if (regexec (&subrip_rx, match_str, 0, NULL, 0) == 0) {
     GST_LOG ("SubRip (time based) format detected");
     return GST_SUB_PARSE_FORMAT_SUBRIP;
   }
@@ -1128,13 +936,11 @@ gst_sub_parse_data_format_autodetect (gchar * match_str)
     GST_LOG ("MPSub (time based) format detected");
     return GST_SUB_PARSE_FORMAT_MPSUB;
   }
-#ifndef GST_DISABLE_XML
   if (strstr (match_str, "<SAMI>") != NULL ||
       strstr (match_str, "<sami>") != NULL) {
     GST_LOG ("SAMI (time based) format detected");
     return GST_SUB_PARSE_FORMAT_SAMI;
   }
-#endif
   /* we're boldly assuming the first subtitle appears within the first hour */
   if (sscanf (match_str, "0:%02u:%02u:", &n1, &n2) == 2 ||
       sscanf (match_str, "0:%02u:%02u=", &n1, &n2) == 2 ||
@@ -1163,7 +969,7 @@ gst_sub_parse_format_autodetect (GstSubParse * self)
   gchar *data;
   GstSubParseFormat format;
 
-  if (strlen (self->textbuf->str) < 30) {
+  if (strlen (self->textbuf->str) < 35) {
     GST_DEBUG ("File too small to be a subtitles file");
     return NULL;
   }
@@ -1173,7 +979,6 @@ gst_sub_parse_format_autodetect (GstSubParse * self)
   g_free (data);
 
   self->parser_type = format;
-  self->subtitle_codec = gst_sub_parse_get_format_description (format);
   parser_state_init (&self->state);
 
   switch (format) {
@@ -1186,15 +991,12 @@ gst_sub_parse_format_autodetect (GstSubParse * self)
     case GST_SUB_PARSE_FORMAT_MPSUB:
       self->parse_line = parse_mpsub;
       return gst_caps_new_simple ("text/plain", NULL);
-#ifndef GST_DISABLE_XML
     case GST_SUB_PARSE_FORMAT_SAMI:
       self->parse_line = parse_sami;
       sami_context_init (&self->state);
       return gst_caps_new_simple ("text/x-pango-markup", NULL);
-#endif
     case GST_SUB_PARSE_FORMAT_TMPLAYER:
       self->parse_line = parse_tmplayer;
-      self->state.max_duration = 5 * GST_SECOND;
       return gst_caps_new_simple ("text/plain", NULL);
     case GST_SUB_PARSE_FORMAT_MPL2:
       self->parse_line = parse_mpl2;
@@ -1214,48 +1016,19 @@ gst_sub_parse_format_autodetect (GstSubParse * self)
 static void
 feed_textbuf (GstSubParse * self, GstBuffer * buf)
 {
-  gboolean discont;
-  gsize consumed;
-  gchar *input = NULL;
-
-  discont = GST_BUFFER_IS_DISCONT (buf);
-
-  if (GST_BUFFER_OFFSET_IS_VALID (buf) &&
-      GST_BUFFER_OFFSET (buf) != self->offset) {
-    self->offset = GST_BUFFER_OFFSET (buf);
-    discont = TRUE;
-  }
-
-  if (discont) {
-    GST_INFO ("discontinuity");
+  if (GST_BUFFER_OFFSET (buf) != self->offset) {
     /* flush the parser state */
     parser_state_init (&self->state);
     g_string_truncate (self->textbuf, 0);
-    gst_adapter_clear (self->adapter);
-#ifndef GST_DISABLE_XML
     sami_context_reset (&self->state);
-#endif
-    /* we could set a flag to make sure that the next buffer we push out also
-     * has the DISCONT flag set, but there's no point really given that it's
-     * subtitles which are discontinuous by nature. */
   }
 
+  self->textbuf = g_string_append_len (self->textbuf,
+      (gchar *) GST_BUFFER_DATA (buf), GST_BUFFER_SIZE (buf));
   self->offset = GST_BUFFER_OFFSET (buf) + GST_BUFFER_SIZE (buf);
   self->next_offset = self->offset;
 
-  gst_adapter_push (self->adapter, buf);
-
-  input =
-      convert_encoding (self, (const gchar *) gst_adapter_peek (self->adapter,
-          gst_adapter_available (self->adapter)),
-      (gsize) gst_adapter_available (self->adapter), &consumed);
-
-  if (input && consumed > 0) {
-    self->textbuf = g_string_append (self->textbuf, input);
-    gst_adapter_flush (self->adapter, consumed);
-  }
-
-  g_free (input);
+  gst_buffer_unref (buf);
 }
 
 static GstFlowReturn
@@ -1264,13 +1037,6 @@ handle_buffer (GstSubParse * self, GstBuffer * buf)
   GstFlowReturn ret = GST_FLOW_OK;
   GstCaps *caps = NULL;
   gchar *line, *subtitle;
-
-  if (self->first_buffer) {
-    self->detected_encoding =
-        detect_encoding ((gchar *) GST_BUFFER_DATA (buf),
-        GST_BUFFER_SIZE (buf));
-    self->first_buffer = FALSE;
-  }
 
   feed_textbuf (self, buf);
 
@@ -1284,26 +1050,14 @@ handle_buffer (GstSubParse * self, GstBuffer * buf)
       return GST_FLOW_UNEXPECTED;
     }
     gst_caps_unref (caps);
-
-    /* push tags */
-    if (self->subtitle_codec != NULL) {
-      GstTagList *tags;
-
-      tags = gst_tag_list_new ();
-      gst_tag_list_add (tags, GST_TAG_MERGE_APPEND, GST_TAG_SUBTITLE_CODEC,
-          self->subtitle_codec, NULL);
-      gst_element_found_tags_for_pad (GST_ELEMENT (self), self->srcpad, tags);
-    }
   }
 
-  while (!self->flushing && (line = get_next_line (self))) {
-    guint offset = 0;
-
+  while ((line = get_next_line (self)) && !self->flushing) {
     /* Set segment on our parser state machine */
     self->state.segment = &self->segment;
     /* Now parse the line, out of segment lines will just return NULL */
-    GST_LOG_OBJECT (self, "Parsing line '%s'", line + offset);
-    subtitle = self->parse_line (&self->state, line + offset);
+    GST_LOG_OBJECT (self, "Parsing line '%s'", line);
+    subtitle = self->parse_line (&self->state, line);
     g_free (line);
 
     if (subtitle) {
@@ -1321,16 +1075,6 @@ handle_buffer (GstSubParse * self, GstBuffer * buf)
         GST_BUFFER_TIMESTAMP (buf) = self->state.start_time;
         GST_BUFFER_DURATION (buf) = self->state.duration;
 
-        /* in some cases (e.g. tmplayer) we can only determine the duration
-         * of a text chunk from the timestamp of the next text chunk; in those
-         * cases, we probably want to limit the duration to something
-         * reasonable, so we don't end up showing some text for e.g. 40 seconds
-         * just because nothing else is being said during that time */
-        if (self->state.max_duration > 0 && GST_BUFFER_DURATION_IS_VALID (buf)) {
-          if (GST_BUFFER_DURATION (buf) > self->state.max_duration)
-            GST_BUFFER_DURATION (buf) = self->state.max_duration;
-        }
-
         gst_segment_set_last_stop (&self->segment, GST_FORMAT_TIME,
             self->state.start_time);
 
@@ -1340,10 +1084,6 @@ handle_buffer (GstSubParse * self, GstBuffer * buf)
 
         ret = gst_pad_push (self->srcpad, buf);
       }
-
-      /* move this forward (the tmplayer parser needs this) */
-      if (self->state.duration != GST_CLOCK_TIME_NONE)
-        self->state.start_time += self->state.duration;
 
       g_free (subtitle);
       subtitle = NULL;
@@ -1368,9 +1108,10 @@ gst_sub_parse_chain (GstPad * sinkpad, GstBuffer * buf)
 
   /* Push newsegment if needed */
   if (self->need_segment) {
+#ifndef __SYMBIAN32__
     GST_LOG_OBJECT (self, "pushing newsegment event with %" GST_SEGMENT_FORMAT,
         &self->segment);
-
+#endif
     gst_pad_push_event (self->srcpad, gst_event_new_new_segment (FALSE,
             self->segment.rate, self->segment.format,
             self->segment.last_stop, self->segment.stop, self->segment.time));
@@ -1395,15 +1136,13 @@ gst_sub_parse_sink_event (GstPad * pad, GstEvent * event)
       /* Make sure the last subrip chunk is pushed out even
        * if the file does not have an empty line at the end */
       if (self->parser_type == GST_SUB_PARSE_FORMAT_SUBRIP ||
-          self->parser_type == GST_SUB_PARSE_FORMAT_TMPLAYER ||
           self->parser_type == GST_SUB_PARSE_FORMAT_MPL2) {
-        GstBuffer *buf = gst_buffer_new_and_alloc (2 + 1);
+        GstBuffer *buf = gst_buffer_new_and_alloc (1 + 1);
 
         GST_DEBUG ("EOS. Pushing remaining text (if any)");
         GST_BUFFER_DATA (buf)[0] = '\n';
-        GST_BUFFER_DATA (buf)[1] = '\n';
-        GST_BUFFER_DATA (buf)[2] = '\0';        /* play it safe */
-        GST_BUFFER_SIZE (buf) = 2;
+        GST_BUFFER_DATA (buf)[1] = '\0';        /* play it safe */
+        GST_BUFFER_SIZE (buf) = 1;
         GST_BUFFER_OFFSET (buf) = self->offset;
         gst_sub_parse_chain (pad, buf);
       }
@@ -1478,11 +1217,7 @@ gst_sub_parse_change_state (GstElement * element, GstStateChange transition)
       self->next_offset = 0;
       self->parser_type = GST_SUB_PARSE_FORMAT_UNKNOWN;
       self->valid_utf8 = TRUE;
-      self->first_buffer = TRUE;
-      g_free (self->detected_encoding);
-      self->detected_encoding = NULL;
       g_string_truncate (self->textbuf, 0);
-      gst_adapter_clear (self->adapter);
       break;
     default:
       break;
@@ -1512,19 +1247,15 @@ gst_sub_parse_change_state (GstElement * element, GstStateChange transition)
  * also, give different  subtitle formats really different types */
 static GstStaticCaps mpl2_caps =
 GST_STATIC_CAPS ("application/x-subtitle-mpl2");
-#define SUB_CAPS (gst_static_caps_get (&sub_caps))
-
 static GstStaticCaps tmp_caps =
 GST_STATIC_CAPS ("application/x-subtitle-tmplayer");
-#define TMP_CAPS (gst_static_caps_get (&tmp_caps))
-
-static GstStaticCaps sub_caps = GST_STATIC_CAPS ("application/x-subtitle");
-#define MPL2_CAPS (gst_static_caps_get (&mpl2_caps))
-
-#ifndef GST_DISABLE_XML
 static GstStaticCaps smi_caps = GST_STATIC_CAPS ("application/x-subtitle-sami");
+static GstStaticCaps sub_caps = GST_STATIC_CAPS ("application/x-subtitle");
+
+#define SUB_CAPS (gst_static_caps_get (&sub_caps))
 #define SAMI_CAPS (gst_static_caps_get (&smi_caps))
-#endif
+#define TMP_CAPS (gst_static_caps_get (&tmp_caps))
+#define MPL2_CAPS (gst_static_caps_get (&mpl2_caps))
 
 static void
 gst_subparse_type_find (GstTypeFind * tf, gpointer private)
@@ -1533,62 +1264,12 @@ gst_subparse_type_find (GstTypeFind * tf, gpointer private)
   const guint8 *data;
   GstCaps *caps;
   gchar *str;
-  gchar *encoding = NULL;
-  const gchar *end;
 
-  if (!(data = gst_type_find_peek (tf, 0, 129)))
+  if (!(data = gst_type_find_peek (tf, 0, 36)))
     return;
 
   /* make sure string passed to _autodetect() is NUL-terminated */
-  str = g_malloc0 (129);
-  memcpy (str, data, 128);
-
-  if ((encoding = detect_encoding (str, 128)) != NULL) {
-    gchar *converted_str;
-    GError *err = NULL;
-    gsize tmp;
-
-    converted_str = gst_convert_to_utf8 (str, 128, encoding, &tmp, &err);
-    if (converted_str == NULL) {
-      GST_DEBUG ("Encoding '%s' detected but conversion failed: %s", encoding,
-          err->message);
-      g_error_free (err);
-      g_free (encoding);
-    } else {
-      g_free (str);
-      str = converted_str;
-      g_free (encoding);
-    }
-  }
-
-  /* Check if at least the first 120 chars are valid UTF8,
-   * otherwise convert as always */
-  if (!g_utf8_validate (str, 128, &end) && (end - str) < 120) {
-    gchar *converted_str;
-    GError *err = NULL;
-    gsize tmp;
-    const gchar *enc;
-
-    enc = g_getenv ("GST_SUBTITLE_ENCODING");
-    if (enc == NULL || *enc == '\0') {
-      /* if local encoding is UTF-8 and no encoding specified
-       * via the environment variable, assume ISO-8859-15 */
-      if (g_get_charset (&enc)) {
-        enc = "ISO-8859-15";
-      }
-    }
-    converted_str = gst_convert_to_utf8 (str, 128, enc, &tmp, &err);
-    if (converted_str == NULL) {
-      GST_DEBUG ("Charset conversion failed: %s", err->message);
-      g_error_free (err);
-      g_free (str);
-      return;
-    } else {
-      g_free (str);
-      str = converted_str;
-    }
-  }
-
+  str = g_strndup ((gchar *) data, 35);
   format = gst_sub_parse_data_format_autodetect (str);
   g_free (str);
 
@@ -1605,12 +1286,10 @@ gst_subparse_type_find (GstTypeFind * tf, gpointer private)
       GST_DEBUG ("MPSub format detected");
       caps = SUB_CAPS;
       break;
-#ifndef GST_DISABLE_XML
     case GST_SUB_PARSE_FORMAT_SAMI:
       GST_DEBUG ("SAMI (time-based) format detected");
       caps = SAMI_CAPS;
       break;
-#endif
     case GST_SUB_PARSE_FORMAT_TMPLAYER:
       GST_DEBUG ("TMPlayer (time based) format detected");
       caps = TMP_CAPS;

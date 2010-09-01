@@ -31,46 +31,6 @@
 /**
  * SECTION:gsttuner
  * @short_description: Interface for elements providing tuner operations
- * 
- * <refsect2>
- * <para>
- * The GstTuner interface is provided by elements that have the ability to
- * tune into multiple input signals, for example TV or radio capture cards.
- * </para><para>
- * The interpretation of 'tuning into' an input stream depends on the element
- * implementing the interface. For v4lsrc, it might imply selection of an
- * input source and/or frequency to be configured on a TV card. Another 
- * GstTuner implementation might be to allow selection of an active input pad
- * from multiple input pads.
- * </para><para>
- * That said, the GstTuner interface functions are biased toward the
- * TV capture scenario.
- * </para><para>
- * The general parameters provided are for configuration are:
- * <itemizedlist>
- * <listitem>Selection of a current #GstTunerChannel. The current channel
- * represents the input source (e.g. Composite, S-Video etc for TV capture).
- * </listitem>
- * <listitem>The #GstTunerNorm for the channel. The norm chooses the
- * interpretation of the incoming signal for the current channel. For example,
- * PAL or NTSC, or more specific variants there-of.
- * </listitem>
- * <listitem>Channel frequency. If the current channel has the ability to tune
- * between multiple frequencies (if it has the GST_TUNER_CHANNEL_FREQUENCY flag)
- * then the frequency can be changed/
-#ifdef __SYMBIAN32__
-EXPORT_C
-#endif
-retrieved via the
- * gst_tuner_set_frequency() and gst_tuner_get_frequency() methods.
- * </listitem>
- * </itemizedlist>
- * </para>
- * <para>
- * Where applicable, the signal strength can be retrieved and/or monitored
- * via a signal.
- * </para>
- * </refsect2>
  */
 
 enum
@@ -123,26 +83,12 @@ gst_tuner_class_init (GstTunerClass * klass)
   static gboolean initialized = FALSE;
 
   if (!initialized) {
-    /**
-     * GstTuner::norm-changed:
-     * @tuner: The element providing the GstTuner interface
-     * @norm: The new configured norm.
-     *
-     * Reports that the current #GstTunerNorm has changed.
-     */
     gst_tuner_signals[NORM_CHANGED] =
         g_signal_new ("norm-changed",
         GST_TYPE_TUNER, G_SIGNAL_RUN_LAST,
         G_STRUCT_OFFSET (GstTunerClass, norm_changed),
         NULL, NULL,
         g_cclosure_marshal_VOID__OBJECT, G_TYPE_NONE, 1, GST_TYPE_TUNER_NORM);
-    /**
-     * GstTuner::channel-changed:
-     * @tuner: The element providing the GstTuner interface
-     * @channel: The new configured channel.
-     *
-     * Reports that the current #GstTunerChannel has changed.
-     */
     gst_tuner_signals[CHANNEL_CHANGED] =
         g_signal_new ("channel-changed",
         GST_TYPE_TUNER, G_SIGNAL_RUN_LAST,
@@ -150,13 +96,6 @@ gst_tuner_class_init (GstTunerClass * klass)
         NULL, NULL,
         g_cclosure_marshal_VOID__OBJECT, G_TYPE_NONE, 1,
         GST_TYPE_TUNER_CHANNEL);
-    /**
-     * GstTuner::frequency-changed:
-     * @tuner: The element providing the GstTuner interface
-     * @frequency: The new frequency (an unsigned long)
-     *
-     * Reports that the current frequency has changed.
-     */
     gst_tuner_signals[FREQUENCY_CHANGED] =
         g_signal_new ("frequency-changed",
         GST_TYPE_TUNER, G_SIGNAL_RUN_LAST,
@@ -164,16 +103,6 @@ gst_tuner_class_init (GstTunerClass * klass)
         NULL, NULL,
         gst_interfaces_marshal_VOID__OBJECT_ULONG, G_TYPE_NONE, 2,
         GST_TYPE_TUNER_CHANNEL, G_TYPE_ULONG);
-    /**
-     * GstTuner::signal-changed:
-     * @tuner: The element providing the GstTuner interface
-     * @channel: The current #GstTunerChannel
-     * @signal: The new signal strength (an integer)
-     *
-     * Reports that the signal strength has changed.
-     *
-     * See Also: gst_tuner_signal_strength()
-     */
     gst_tuner_signals[SIGNAL_CHANGED] =
         g_signal_new ("signal-changed",
         GST_TYPE_TUNER, G_SIGNAL_RUN_LAST,
@@ -203,15 +132,15 @@ gst_tuner_class_init (GstTunerClass * klass)
  * gst_tuner_list_channels:
  * @tuner: the #GstTuner (a #GstElement) to get the channels from.
  *
- * Retrieve a #GList of #GstTunerChannels available
- * (e.g. 'composite', 's-video', ...) from the given tuner object.
+ * Retrieve a list of channels (e.g. 'composite', 's-video', ...)
+ * from the given tuner object.
  *
- * Returns: A list of channels available on this tuner. The list is
- *          owned by the GstTuner and must not be freed.
+ * Returns: a list of channels available on this tuner.
  */
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
+
 
 const GList *
 gst_tuner_list_channels (GstTuner * tuner)
@@ -254,7 +183,7 @@ gst_tuner_set_channel (GstTuner * tuner, GstTunerChannel * channel)
 }
 
 /**
- * gst_tuner_get_channel:
+ * gst_Tuner_get_channel:
  * @tuner: the #GstTuner (a #GstElement) to get the current channel from.
  *
  * Retrieve the current channel from the tuner.
@@ -282,15 +211,14 @@ gst_tuner_get_channel (GstTuner * tuner)
 }
 
 /**
- * gst_tuner_list_norms:
+ * gst_tuner_get_norms_list:
  * @tuner: the #GstTuner (*a #GstElement) to get the list of norms from.
  *
- * Retrieve a GList of available #GstTunerNorm settings for the currently
- * tuned channel on the given tuner object.
+ * Retrieve a list of available norms on the currently tuned channel
+ * from the given tuner object.
  *
  * Returns: A list of norms available on the current channel for this
- *          tuner object. The list is owned by the GstTuner and must not
- *          be freed.
+ *          tuner object.
  */
 #ifdef __SYMBIAN32__
 EXPORT_C
@@ -368,23 +296,19 @@ gst_tuner_get_norm (GstTuner * tuner)
 
 /**
  * gst_tuner_set_frequency:
- * @tuner: The #Gsttuner (a #GstElement) that owns the given channel.
- * @channel: The #GstTunerChannel to set the frequency on.
- * @frequency: The frequency to tune in to.
+ * @tuner: the #Gsttuner (a #GstElement) that owns the given channel.
+ * @channel: the #GstTunerChannel to set the frequency on.
+ * @frequency: the frequency to tune in to.
  *
  * Sets a tuning frequency on the given tuner/channel. Note that this
  * requires the given channel to be a "tuning" channel, which can be
  * checked using GST_TUNER_CHANNEL_HAS_FLAG (), with the proper flag
  * being GST_TUNER_CHANNEL_FREQUENCY.
- *
- * The frequency is in Hz, with minimum steps indicated by the 
- * frequency_multiplicator provided in the #GstTunerChannel. The
- * valid range is provided in the min_frequency and max_frequency properties
- * of the #GstTunerChannel.
  */
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
+
 
 void
 gst_tuner_set_frequency (GstTuner * tuner,
@@ -405,14 +329,13 @@ gst_tuner_set_frequency (GstTuner * tuner,
 
 /**
  * gst_tuner_get_frequency:
- * @tuner: The #GstTuner (a #GstElement) that owns the given channel.
- * @channel: The #GstTunerChannel to retrieve the frequency from.
+ * @tuner: the #GstTuner (a #GstElement) that owns the given channel.
+ * @channel: the #GstTunerChannel to retrieve the frequency from.
  *
- * Retrieve the current frequency from the given channel. As for
- * gst_tuner_set_frequency(), the #GstTunerChannel must support frequency
- * operations, as indicated by the GST_TUNER_CHANNEL_FREQUENCY flag.
+ * Retrieve the current frequency from the given channel. The same
+ * applies as for set_frequency (): check the flag.
  *
- * Returns: The current frequency, or 0 on error.
+ * Returns: the current frequency, or 0 on error.
  */
 #ifdef __SYMBIAN32__
 EXPORT_C
@@ -439,24 +362,22 @@ gst_tuner_get_frequency (GstTuner * tuner, GstTunerChannel * channel)
 }
 
 /**
- * gst_tuner_signal_strength:
+ * gst_tuner_get_signal_strength:
  * @tuner: the #GstTuner (a #GstElement) that owns the given channel.
  * @channel: the #GstTunerChannel to get the signal strength from.
  *
- * Get the strength of the signal on this channel. Note that this
- * requires the current channel to be a "tuning" channel, i.e. a
+ * get the strength of the signal on this channel. Note that this
+ * requires the current channel to be a "tuning" channel, e.g. a
  * channel on which frequency can be set. This can be checked using
  * GST_TUNER_CHANNEL_HAS_FLAG (), and the appropriate flag to check
  * for is GST_TUNER_CHANNEL_FREQUENCY.
  *
- * The valid range of the signal strength is indicated in the 
- * min_signal and max_signal properties of the #GstTunerChannel.
- *
- * Returns: Signal strength, or 0 on error.
+ * Returns: signal strength, or 0 on error.
  */
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
+
 
 gint
 gst_tuner_signal_strength (GstTuner * tuner, GstTunerChannel * channel)
@@ -475,20 +396,10 @@ gst_tuner_signal_strength (GstTuner * tuner, GstTunerChannel * channel)
 
   return 0;
 }
-
-/**
- * gst_tuner_find_norm_by_name:
- * @tuner: A #GstTuner instance
- * @norm: A string containing the name of a #GstTunerNorm
- * 
- * Look up a #GstTunerNorm by name.
- *
- * Returns: A #GstTunerNorm, or NULL if no norm with the provided name
- * is available.
- */
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
+
 
 GstTunerNorm *
 gst_tuner_find_norm_by_name (GstTuner * tuner, gchar * norm)
@@ -506,20 +417,10 @@ gst_tuner_find_norm_by_name (GstTuner * tuner, gchar * norm)
   }
   return NULL;
 }
-
-/**
- * gst_tuner_find_channel_by_name:
- * @tuner: A #GstTuner instance
- * @channel: A string containing the name of a #GstTunerChannel
- * 
- * Look up a #GstTunerChannel by name.
- *
- * Returns: A #GstTunerChannel, or NULL if no channel with the provided name
- * is available.
- */
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
+
 
 GstTunerChannel *
 gst_tuner_find_channel_by_name (GstTuner * tuner, gchar * channel)
@@ -537,18 +438,10 @@ gst_tuner_find_channel_by_name (GstTuner * tuner, gchar * channel)
   }
   return NULL;
 }
-
-/**
- * gst_tuner_channel_changed:
- * @tuner: A #GstTuner instance
- * @channel: A #GstTunerChannel instance
- *
- * Called by elements implementing the #GstTuner interface when the
- * current channel changes. Fires the #GstTuner::channel-changed signal.
- */
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
+
 
 void
 gst_tuner_channel_changed (GstTuner * tuner, GstTunerChannel * channel)
@@ -559,19 +452,10 @@ gst_tuner_channel_changed (GstTuner * tuner, GstTunerChannel * channel)
   g_signal_emit (G_OBJECT (tuner),
       gst_tuner_signals[CHANNEL_CHANGED], 0, channel);
 }
-
-/**
- * gst_tuner_norm_changed:
- * @tuner: A #GstTuner instance
- * @norm: A #GstTunerNorm instance
- *
- * Called by elements implementing the #GstTuner interface when the
- * current norm changes. Fires the #GstTuner::norm-changed signal.
- * 
- */
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
+
 
 void
 gst_tuner_norm_changed (GstTuner * tuner, GstTunerNorm * norm)
@@ -581,21 +465,10 @@ gst_tuner_norm_changed (GstTuner * tuner, GstTunerNorm * norm)
 
   g_signal_emit (G_OBJECT (tuner), gst_tuner_signals[NORM_CHANGED], 0, norm);
 }
-
-/**
- * gst_tuner_frequency_changed:
- * @tuner: A #GstTuner instance
- * @channel: The current #GstTunerChannel
- * @frequency: The new frequency setting
- *
- * Called by elements implementing the #GstTuner interface when the
- * configured frequency changes. Fires the #GstTuner::frequency-changed
- * signal on the tuner, and the #GstTunerChannel::frequency-changed signal
- * on the channel.
- */
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
+
 
 void
 gst_tuner_frequency_changed (GstTuner * tuner,
@@ -609,21 +482,10 @@ gst_tuner_frequency_changed (GstTuner * tuner,
 
   g_signal_emit_by_name (G_OBJECT (channel), "frequency_changed", frequency);
 }
-
-/**
- * gst_tuner_signal_changed:
- * @tuner: A #GstTuner instance
- * @channel: The current #GstTunerChannel
- * @signal: The new signal strength
- *
- * Called by elements implementing the #GstTuner interface when the
- * incoming signal strength changes. Fires the #GstTuner::signal-changed
- * signal on the tuner and the #GstTunerChannel::signal-changed signal on 
- * the channel.
- */
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
+
 
 void
 gst_tuner_signal_changed (GstTuner * tuner,

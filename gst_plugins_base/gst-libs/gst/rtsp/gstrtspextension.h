@@ -64,11 +64,8 @@ struct _GstRTSPExtensionInterface {
   /* signals */
   GstRTSPResult (*send)             (GstRTSPExtension *ext, GstRTSPMessage *req, GstRTSPMessage *resp);
 
-  /* ABI: more vfunctions added later */
-  GstRTSPResult (*receive_request)  (GstRTSPExtension *ext, GstRTSPMessage *req);
-
   /*< private >*/
-  gpointer                 _gst_reserved[GST_PADDING - 1];
+  gpointer                 _gst_reserved[GST_PADDING];
 };
 
 GType           gst_rtsp_extension_get_type          (void);
@@ -86,7 +83,6 @@ gboolean        gst_rtsp_extension_configure_stream  (GstRTSPExtension *ext, Gst
 GstRTSPResult   gst_rtsp_extension_get_transports    (GstRTSPExtension *ext, GstRTSPLowerTrans protocols,
                                                       gchar **transport);
 GstRTSPResult   gst_rtsp_extension_stream_select     (GstRTSPExtension *ext, GstRTSPUrl *url);
-GstRTSPResult   gst_rtsp_extension_receive_request   (GstRTSPExtension *ext, GstRTSPMessage *req);
 
 /* signal emision */
 GstRTSPResult   gst_rtsp_extension_send              (GstRTSPExtension *ext, GstRTSPMessage *req,

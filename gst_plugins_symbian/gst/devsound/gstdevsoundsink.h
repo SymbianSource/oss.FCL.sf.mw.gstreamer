@@ -28,6 +28,7 @@ playback sound from the Symbian Devsound.
 #ifndef __GST_DEVSOUNDSINK_H__
 #define __GST_DEVSOUNDSINK_H__
 
+
 #include <gst/gst.h>
 #include <gst/base/gstbasesink.h>
 
@@ -40,7 +41,7 @@ G_BEGIN_DECLS
 #define GST_IS_DEVSOUND_SINK(obj)       (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_DEVSOUND_SINK))
 #define GST_IS_DEVSOUND_SINK_CLASS(obj) (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_DEVSOUND_SINK))
 
-//#define AV_SYNC
+
 
 typedef struct _GstDevsoundSink GstDevsoundSink;
 typedef struct _GstDevsoundSinkClass GstDevsoundSinkClass;
@@ -48,55 +49,51 @@ typedef struct _GstDevsoundSinkClass GstDevsoundSinkClass;
 typedef struct _GstDevsoundUpdate GstDevsoundUpdate;
 
 struct _GstDevsoundUpdate{
-    gboolean  channelsupdate;
-    gboolean  rateupdate;
-    gboolean  volumeupdate;
-    gboolean  volumerampupdate;
-    gboolean  leftbalanceupdate;
-    gboolean  rightbalanceupdate;
-    gboolean  preferenceupdate;
-    gboolean  priorityupdate;
-    gboolean  fourccupdate;
-    gboolean  outputupdate;
+gboolean  channelsupdate;
+gboolean  rateupdate;
+gboolean  volumeupdate;
+gboolean  volumerampupdate;
+gboolean  leftbalanceupdate;
+gboolean  rightbalanceupdate;
+gboolean  preferenceupdate;
+gboolean  priorityupdate;
+gboolean  fourccupdate;
+gboolean  outputupdate;
 };
 
 struct _GstDevsoundSink {
-    GstBaseSink    sink;	
+  GstBaseSink    sink;	
+  
+  void *handle;	
+  void *dataptr;
+  gchar *device;
+  gint   bytes_per_sample;
+  GstCaps *probed_caps;
 
-    void *handle;	
-    void *dataptr;
-    gchar *device;
-    gint   bytes_per_sample;
-    GstCaps *probed_caps;
+  GstDevsoundUpdate pending;
 
-    GstDevsoundUpdate pending;
-
-    //properties
-    gint   channels;
-    gint   rate;
-    gint   volume;
-    gint   volumeramp;
-    gint   maxvolume;
-    gint   leftbalance;
-    gint   rightbalance;
-    gint   priority;
-    gint   preference;
-    gint   output;
-    gulong fourcc;
-    gchar  *mimetype;
-    GList   *fmt;
-
-    gboolean eosreceived;
-    
-#ifdef AV_SYNC
-    gboolean timeplayedavailable;
-    gulong time_or_samples_played;
-    GstClock *clock;		/* The clock for this element. */
-#endif /*AV_SYNC*/
+  //properties
+  gint   channels;
+  gint   rate;
+  gint   volume;
+  gint   volumeramp;
+  gint   maxvolume;
+  gint   leftbalance;
+  gint   rightbalance;
+  gint   priority;
+  gint   preference;
+  gint   samplesplayed;
+  gint   output;
+  gulong fourcc;
+  gchar  *mimetype;
+  GList   *fmt;
+  gboolean framemodereq;
+  gboolean g711cng;
+  gboolean ilbccng;  
 };
 
 struct _GstDevsoundSinkClass {
-    GstBaseSinkClass parent_class;
+  GstBaseSinkClass parent_class;
 };
 
 GType gst_devsound_sink_get_type(void);
@@ -104,4 +101,3 @@ GType gst_devsound_sink_get_type(void);
 G_END_DECLS
 
 #endif /* __GST_DEVSOUNDSINK_H__ */
-

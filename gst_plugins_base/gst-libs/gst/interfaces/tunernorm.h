@@ -37,28 +37,18 @@ G_BEGIN_DECLS
 #define GST_IS_TUNER_NORM_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_TYPE ((klass), GST_TYPE_TUNER_NORM))
 
-typedef struct _GstTunerNorm GstTunerNorm;
-typedef struct _GstTunerNormClass GstTunerNormClass;
-
-/**
- * GstTunerNorm:
- * @label: A string containing a descriptive name for the norm
- * @framerate: A GValue containing the framerate associated with this norm,
- *             if any. (May be unset).
- */
-struct _GstTunerNorm {
+typedef struct _GstTunerNorm {
   GObject parent;
 
-  /*< public >*/
   gchar  *label;
   GValue  framerate;
-};
+} GstTunerNorm;
 
-struct _GstTunerNormClass {
+typedef struct _GstTunerNormClass {
   GObjectClass parent;
 
   gpointer _gst_reserved[GST_PADDING];
-};
+} GstTunerNormClass;
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif

@@ -25,7 +25,7 @@
 
 TARGET          libgstbase.dll
 TARGETTYPE      DLL
-UID             0x1000008d 0x2001F420
+UID             0x20004c45 0x2001F420
 
 #ifdef EKA2
 LANG            SC
@@ -50,17 +50,24 @@ OS_LAYER_LIBC_SYSTEMINCLUDE
 
 OS_LAYER_GLIB_SYSTEMINCLUDE
 
-MW_LAYER_GSTREAMER_SYSTEMINCLUDE
+USERINCLUDE		../../include/gstreamer
+USERINCLUDE		../../include/gstreamer/gst
+USERINCLUDE		../../include/gstreamer/gst/base
+USERINCLUDE		../../include/gstreamer/gst/controller
+USERINCLUDE		../../include/gstreamer/gst/dataprotocol
+USERINCLUDE		../../include/gstreamer/gst/net
 
-USERINCLUDE		../libs/
 
-SOURCEPATH ../libs/gst/base
-SOURCE gstadapter.c gstbasesink.c 
-SOURCE gstbasesrc.c gstbasetransform.c 
-SOURCE gstbitreader.c gstbytereader.c 
-SOURCE gstcollectpads.c gstdataqueue.c 
-SOURCE gstpushsrc.c gsttypefindhelper.c
+SOURCEPATH      ../libs/gst/base
 
+SOURCE          gstadapter.c
+SOURCE          gstbasesink.c
+SOURCE          gstbasesrc.c
+SOURCE          gstbasetransform.c
+SOURCE          gstcollectpads.c
+SOURCE          gstpushsrc.c
+SOURCE          gsttypefindhelper.c
+SOURCE          gstdataqueue.c
 
 LIBRARY         euser.lib
 LIBRARY         libc.lib

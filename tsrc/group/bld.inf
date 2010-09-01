@@ -25,10 +25,8 @@ DEFAULT
 PRJ_EXPORTS
 
 PRJ_TESTMMPFILES
-#ifdef FF_GSTREAMER
-#include "../../gst_plugins_base/tsrc/group/bld.inf"
 #include "../../gstreamer_core/tsrc/group/bld.inf"
-#endif
+#include "../../gst_plugins_base/tsrc/group/bld.inf"
 
 //  End of File
 										

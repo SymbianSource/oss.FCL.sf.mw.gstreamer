@@ -20,8 +20,10 @@
 *
 */
 
-PRJ_TESTEXPORTS
-khuda.wav       /epoc32/winscw/c/data/gstreamer/khuda.wav
+PRJ_EXPORTS
+//warning.wav       /epoc32/winscw/c/data/gstreamer/warning.wav
+
+//khuda.wav       /epoc32/winscw/c/data/gstreamer/khuda.wav
 
 PRJ_TESTMMPFILES
 

@@ -119,13 +119,6 @@ GstStructure *          gst_structure_new_valist           (const gchar *       
 IMPORT_C
 #endif
 
-GstStructure *          gst_structure_id_new               (GQuark                   name_quark,
-                                                            GQuark                   field_quark,
-                                                            ...);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
 GstStructure *          gst_structure_copy                 (const GstStructure      *structure);
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -211,37 +204,6 @@ void                    gst_structure_id_set_valist         (GstStructure       
 IMPORT_C
 #endif
 
-
-gboolean                gst_structure_get_valist           (GstStructure            *structure,
-                                                            const char              *first_fieldname,
-                                                            va_list                  args);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-gboolean                gst_structure_get                  (GstStructure            *structure,
-                                                            const char              *first_fieldname,
-                                                            ...) G_GNUC_NULL_TERMINATED;
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-gboolean                gst_structure_id_get_valist        (GstStructure            *structure,
-                                                            GQuark                   first_field_id,
-                                                            va_list                  args);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-gboolean                gst_structure_id_get               (GstStructure            *structure,
-                                                            GQuark                   first_field_id,
-                                                            ...) G_GNUC_NULL_TERMINATED;
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
 
 
 G_CONST_RETURN GValue * gst_structure_id_get_value         (const GstStructure      *structure,

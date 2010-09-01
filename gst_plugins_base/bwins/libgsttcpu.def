@@ -15,8 +15,8 @@ EXPORTS
 	gst_tcp_gdp_write_caps @ 14 NONAME
 	gst_tcp_host_to_ip @ 15 NONAME
 	gst_tcp_marshal_BOXED__INT @ 16 NONAME
-	gst_tcp_marshal_VOID__INT_BOXED @ 17 NONAME
-	gst_tcp_marshal_VOID__INT_ENUM_INT_UINT64_INT_UINT64 @ 18 NONAME
+	gst_tcp_marshal_VOID__INT_BOOLEAN_INT_UINT64_INT_UINT64 @ 17 NONAME
+	gst_tcp_marshal_VOID__INT_BOXED @ 18 NONAME
 	gst_tcp_marshal_VOID__STRING_UINT @ 19 NONAME
 	gst_tcp_protocol_get_type @ 20 NONAME
 	gst_tcp_read_buffer @ 21 NONAME

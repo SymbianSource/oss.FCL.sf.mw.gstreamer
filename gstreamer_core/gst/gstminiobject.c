@@ -37,9 +37,7 @@
 #include "gst/gstminiobject.h"
 #include "gst/gstinfo.h"
 #include <gobject/gvaluecollector.h>
-#ifdef __SYMBIAN32__
-#include <glib_global.h>
-#endif
+
 #ifndef GST_DISABLE_TRACE
 #include "gsttrace.h"
 static GstAllocTrace *_gst_mini_object_trace;
@@ -165,14 +163,6 @@ static void
 gst_mini_object_finalize (GstMiniObject * obj)
 {
   /* do nothing */
-
-  /* WARNING: if anything is ever put in this method, make sure that the
-   * following sub-classes' finalize method chains up to this one:
-   * gstbuffer
-   * gstevent
-   * gstmessage
-   * gstquery
-   */
 }
 
 /**
@@ -297,8 +287,6 @@ gst_mini_object_make_writable (GstMiniObject * mini_object)
   if (gst_mini_object_is_writable (mini_object)) {
     ret = (GstMiniObject *) mini_object;
   } else {
-    GST_CAT_DEBUG (GST_CAT_PERFORMANCE, "copy %s miniobject",
-        g_type_name (G_TYPE_FROM_INSTANCE (mini_object)));
     ret = gst_mini_object_copy (mini_object);
     gst_mini_object_unref ((GstMiniObject *) mini_object);
   }
@@ -458,8 +446,8 @@ gst_value_mini_object_copy (const GValue * src_value, GValue * dest_value)
 {
   if (src_value->data[0].v_pointer) {
     dest_value->data[0].v_pointer =
-        gst_mini_object_ref (GST_MINI_OBJECT_CAST (src_value->
-            data[0].v_pointer));
+        gst_mini_object_ref (GST_MINI_OBJECT_CAST (src_value->data[0].
+            v_pointer));
   } else {
     dest_value->data[0].v_pointer = NULL;
   }
@@ -577,31 +565,18 @@ gst_value_get_mini_object (const GValue * value)
   return value->data[0].v_pointer;
 }
 
-/**
- * gst_value_dup_mini_object:
- * @value:   a valid #GValue of %GST_TYPE_MINI_OBJECT derived type
- *
- * Get the contents of a %GST_TYPE_MINI_OBJECT derived #GValue,
- * increasing its reference count.
- *
- * Returns: mini object contents of @value
- *
- * Since: 0.10.20
- */
-#ifdef __SYMBIAN32__
-EXPORT_C
-#endif
-
-GstMiniObject *
-gst_value_dup_mini_object (const GValue * value)
-{
-  g_return_val_if_fail (GST_VALUE_HOLDS_MINI_OBJECT (value), NULL);
-
-  return gst_mini_object_ref (value->data[0].v_pointer);
-}
-
-
 /* param spec */
+
+static GType gst_param_spec_mini_object_get_type (void);
+
+#define GST_TYPE_PARAM_SPEC_MINI_OBJECT (gst_param_spec_mini_object_get_type())
+#define GST_PARAM_SPEC_MINI_OBJECT(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), GST_TYPE_PARAM_SPEC_MINI_OBJECT, GstParamSpecMiniObject))
+
+typedef struct _GstParamSpecMiniObject GstParamSpecMiniObject;
+struct _GstParamSpecMiniObject
+{
+  GParamSpec parent_instance;
+};
 
 static void
 param_mini_object_init (GParamSpec * pspec)
@@ -644,12 +619,8 @@ param_mini_object_values_cmp (GParamSpec * pspec,
 
   return p1 < p2 ? -1 : p1 > p2;
 }
-#ifdef __SYMBIAN32__
-EXPORT_C
-#endif
 
-
-GType
+static GType
 gst_param_spec_mini_object_get_type (void)
 {
   static GType type;
@@ -696,7 +667,7 @@ gst_param_spec_mini_object (const char *name, const char *nick,
 
   g_return_val_if_fail (g_type_is_a (object_type, GST_TYPE_MINI_OBJECT), NULL);
 
-  ospec = g_param_spec_internal (GST_TYPE_PARAM_MINI_OBJECT,
+  ospec = g_param_spec_internal (GST_TYPE_PARAM_SPEC_MINI_OBJECT,
       name, nick, blurb, flags);
   G_PARAM_SPEC (ospec)->value_type = object_type;
 

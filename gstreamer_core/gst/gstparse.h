@@ -27,9 +27,6 @@
 
 G_BEGIN_DECLS
 
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
 GQuark gst_parse_error_quark (void);
 /**
  * GST_PARSE_ERROR:
@@ -60,87 +57,18 @@ typedef enum
   GST_PARSE_ERROR_EMPTY_BIN,
   GST_PARSE_ERROR_EMPTY
 } GstParseError;
-
-/**
- * GstParseFlags:
- * @GST_PARSE_FLAG_NONE: Do not use any special parsing options.
- * @GST_PARSE_FLAG_FATAL_ERRORS: Always return NULL when an error occurs
- *     (default behaviour is to return partially constructed bins or elements
- *      in some cases)
- *
- * Parsing options.
- *
- * Since: 0.10.20
- */
-typedef enum
-{
-  GST_PARSE_FLAG_NONE = 0,
-  GST_PARSE_FLAG_FATAL_ERRORS = (1 << 0)
-} GstParseFlags;
-
-/**
- * GstParseContext:
- *
- * Opaque structure.
- *
- * Since: 0.10.20
- */
-typedef struct _GstParseContext GstParseContext;
-
-/* create, process and free a parse context */
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
 
 
-GstParseContext * gst_parse_context_new (void);
+
+GstElement*	gst_parse_launch	(const gchar *pipeline_description, GError **error);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
 
-
-gchar          ** gst_parse_context_get_missing_elements (GstParseContext * context);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-void              gst_parse_context_free (GstParseContext * context);
-
-
-/* parse functions */
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-GstElement      * gst_parse_launch       (const gchar      * pipeline_description,
-                                          GError          ** error);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-GstElement      * gst_parse_launchv      (const gchar     ** argv,
-                                          GError          ** error);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-GstElement      * gst_parse_launch_full  (const gchar      * pipeline_description,
-                                          GstParseContext  * context,
-                                          GstParseFlags      flags,
-                                          GError          ** error);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-GstElement      * gst_parse_launchv_full (const gchar     ** argv,
-                                          GstParseContext  * context,
-                                          GstParseFlags      flags,
-                                          GError          ** error);
+GstElement*	gst_parse_launchv	(const gchar **argv, GError **error);
 
 G_END_DECLS
 

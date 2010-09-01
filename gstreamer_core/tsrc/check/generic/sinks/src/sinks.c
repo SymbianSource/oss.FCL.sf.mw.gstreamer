@@ -67,7 +67,7 @@ FILE* fp_std_log_t=NULL;
 GET_GLOBAL_VAR_FROM_TLS(buffers,gstcheck,GList*)
 #define buffers (*GET_GSTREAMER_WSD_VAR_NAME(buffers,gstcheck,g)())
 #else 
-IMPORT_C extern GList *buffers;
+extern GList *buffers;
 #endif
 
 
@@ -105,20 +105,11 @@ extern GCond *sync_cond;
 
 void create_xml(int result)
 {
-
     if(result)
-    {
         assert_failed = 1;
-    } 
-
+    
     testResultXml(xmlfile);
     close_log_file();
-
-    if(result)
-    {
-        exit (-1);
-    }    
-
 }
 
 

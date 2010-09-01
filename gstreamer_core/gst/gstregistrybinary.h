@@ -45,16 +45,6 @@
  * length of the header tag.
  */
 #define GST_MAGIC_BINARY_REGISTRY_LEN (4)
-
-/*
- * GST_MAGIC_BINARY_VERSION_STR:
- *
- * The current version of the binary registry format.
- * This _must_ be updated whenever the registry format changes,
- * we currently use the core version where this change happened.
- */
-#define GST_MAGIC_BINARY_VERSION_STR ("0.10.23.1")
-
 /*
  * GST_MAGIC_BINARY_VERSION_LEN:
  *
@@ -104,23 +94,9 @@ typedef struct _GstBinaryPluginElement
   gulong file_size;
   gulong file_mtime;
 
-  guint n_deps;
-
   guint nfeatures;
 } GstBinaryPluginElement;
 
-/* GstBinaryDep:
- */
-typedef struct _GstBinaryDep
-{
-  guint flags;
-  guint n_env_vars;
-  guint n_paths;
-  guint n_names;
-
-  guint env_hash;
-  guint stat_hash;
-} GstBinaryDep;
 
 /*
  * GstBinaryPluginFeature:

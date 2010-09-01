@@ -66,12 +66,6 @@ IMPORT_C
 #endif
 
 
-void		gst_tag_setter_reset_tags             (GstTagSetter * setter);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
 void		gst_tag_setter_merge_tags	    (GstTagSetter *	setter,
 						     const GstTagList *	list,
 						     GstTagMergeMode	mode);
@@ -110,15 +104,6 @@ void            gst_tag_setter_add_tag_valist_values(GstTagSetter *	setter,
 						     GstTagMergeMode	mode,
 						     const gchar *	tag,
 						     va_list		var_args);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-void		gst_tag_setter_add_tag_value	    (GstTagSetter *	setter,
-						     GstTagMergeMode	mode,
-						     const gchar *	tag,
-						     const GValue *     value);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif

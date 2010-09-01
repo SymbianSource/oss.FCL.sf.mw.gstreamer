@@ -24,9 +24,9 @@
 #include <gst/gst_global.h>
 #include <gst/gststructure.h>
 #include <gst/check/gstcheck.h>
-#include <glib.h>
 #include <glib_global.h>
-//#include <glib/gstdio.h>
+#include <glib.h>
+#include <glib/gstdio.h>
 
 #include "libgstreamer_wsd_solution.h" 
 #include <libgstreamer_wsd_macros.h>
@@ -36,25 +36,28 @@
 #define xmlfile *(get_xmlfile())
 #endif
 
+
+
+
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(raised_critical,gstcheck,gboolean)
 #define _gst_check_raised_critical (*GET_GSTREAMER_WSD_VAR_NAME(raised_critical,gstcheck,g)())
 #else 
-IMPORT_C extern gboolean _gst_check_raised_critical;
+extern gboolean _gst_check_raised_critical;
 #endif
 //gboolean _gst_check_raised_warning = FALSE;
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(raised_warning,gstcheck,gboolean)
 #define _gst_check_raised_warning (*GET_GSTREAMER_WSD_VAR_NAME(raised_warning,gstcheck,g)())
 #else 
-IMPORT_C extern gboolean _gst_check_raised_warning;
+extern gboolean _gst_check_raised_warning;
 #endif
 //gboolean _gst_check_expecting_log = FALSE;
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(expecting_log,gstcheck,gboolean)
 #define _gst_check_expecting_log (*GET_GSTREAMER_WSD_VAR_NAME(expecting_log,gstcheck,g)())
 #else 
-IMPORT_C extern gboolean _gst_check_expecting_log;
+extern gboolean _gst_check_expecting_log;
 #endif
 
 //gboolean _gst_check_expecting_log = FALSE;
@@ -62,7 +65,7 @@ IMPORT_C extern gboolean _gst_check_expecting_log;
 static GET_GLOBAL_VAR_FROM_TLS(threads_running,gstcheck,gboolean)
 #define _gst_check_threads_running (*GET_GSTREAMER_WSD_VAR_NAME(threads_running,gstcheck,g)())
 #else 
-IMPORT_C extern gboolean _gst_check_threads_running;
+extern gboolean _gst_check_threads_running;
 #endif
 
 
@@ -78,26 +81,17 @@ IMPORT_C extern gboolean _gst_check_threads_running;
 GET_GLOBAL_VAR_FROM_TLS(buffers,gstcheck,GList*)
 #define buffers (*GET_GSTREAMER_WSD_VAR_NAME(buffers,gstcheck,g)())
 #else 
-IMPORT_C extern GList *buffers;
+extern GList *buffers;
 #endif
 
 
 void create_xml(int result)
 {
-
     if(result)
-    {
         assert_failed = 1;
-    } 
-
+    
     testResultXml(xmlfile);
     close_log_file();
-
-    if(result)
-    {
-        exit (-1);
-    }    
-
 }
 
 
@@ -450,229 +444,43 @@ void test_structure_nested()
   gchar *str;
 	xmlfile = "gststructure_test_structure_nested";
 	std_log(LOG_FILENAME_LINE, "Test Started test_structure_nested");
-	  sc1 = gst_structure_new ("Camera",
-	      "XResolution", G_TYPE_INT, 72, "YResolution", G_TYPE_INT, 73, NULL);
-	  fail_unless (sc1 != NULL);
+  sc1 =
+      gst_structure_new ("Camera", "XResolution", G_TYPE_INT, 72, "YResolution",
+      G_TYPE_INT, 73, NULL);
+  fail_unless (sc1 != NULL);
 
-	  sc2 = gst_structure_new ("Image-Data",
-	      "Orientation", G_TYPE_STRING, "top-left",
-	      "Comment", G_TYPE_STRING, "super photo", NULL);
-	  fail_unless (sc2 != NULL);
+  sc2 =
+      gst_structure_new ("Image-Data", "Orientation", G_TYPE_STRING, "top-left",
+      NULL);
+  fail_unless (sc2 != NULL);
 
-	  sp = gst_structure_new ("Exif", "Camera", GST_TYPE_STRUCTURE, sc1,
-	      "Image Data", GST_TYPE_STRUCTURE, sc2, NULL);
-	  fail_unless (sp != NULL);
+  sp = gst_structure_new ("Exif", "Camera", GST_TYPE_STRUCTURE, sc1,
+      "Image Data", GST_TYPE_STRUCTURE, sc2, NULL);
+  fail_unless (sp != NULL);
 
-	  fail_unless (gst_structure_n_fields (sp) == 2);
+  fail_unless (gst_structure_has_field_typed (sp, "Camera",
+          GST_TYPE_STRUCTURE));
 
-	  fail_unless (gst_structure_has_field_typed (sp, "Camera",
-	          GST_TYPE_STRUCTURE));
+  str = gst_structure_to_string (sp);
+  fail_unless (str != NULL);
 
-	  str = gst_structure_to_string (sp);
-	  fail_unless (str != NULL);
+  fail_unless (g_str_equal (str,
+          "Exif"
+          ", Camera=(GstStructure)Camera, XResolution=(int)72, YResolution=(int)73;"
+          ", Image Data=(GstStructure)Image-Data, Orientation=(string)top-left;;"));
 
-	  GST_DEBUG ("serialized to '%s'", str);
+  g_free (str);
+  str = NULL;
 
-	  fail_unless (g_str_equal (str,
-	          "Exif"
-	          ", Camera=(GstStructure)\"Camera\\,\\ XResolution\\=\\(int\\)72\\,\\ YResolution\\=\\(int\\)73\\;\""
-	          ", Image Data=(GstStructure)\"Image-Data\\,\\ Orientation\\=\\(string\\)top-left\\,\\ Comment\\=\\(string\\)\\\"super\\\\\\ photo\\\"\\;\";"));
-
-	  g_free (str);
-	  str = NULL;
-
-	  gst_structure_free (sc1);
-	  gst_structure_free (sc2);
-	  gst_structure_free (sp);
-	  
+  gst_structure_free (sc1);
+  gst_structure_free (sc2);
+  gst_structure_free (sp);
 	std_log(LOG_FILENAME_LINE, "Test Successful");
 	create_xml(0);
 }
 
-void test_string_properties()
-{
-  GstCaps *caps1, *caps2;
-  GstStructure *st1, *st2;
-  gchar *str, *res1, *res2;
-
-  xmlfile = "test_string_properties";
-    std_log(LOG_FILENAME_LINE, "Test Started test_string_properties");
-  /* test escaping/unescaping */
-  st1 = gst_structure_new ("RandomStructure", "prop1", G_TYPE_STRING, "foo",
-      "prop2", G_TYPE_STRING, "", "prop3", G_TYPE_STRING, NULL,
-      "prop4", G_TYPE_STRING, "NULL", NULL);
-  str = gst_structure_to_string (st1);
-  st2 = gst_structure_from_string (str, NULL);
-  g_free (str);
-
-  fail_unless (st2 != NULL);
-
-  /* need to put stuctures into caps to compare */
-  caps1 = gst_caps_new_empty ();
-  gst_caps_append_structure (caps1, st1);
-  caps2 = gst_caps_new_empty ();
-  gst_caps_append_structure (caps2, st2);
-  res1 = gst_caps_to_string (caps1);
-  res2 = gst_caps_to_string (caps2);
-  fail_unless (gst_caps_is_equal (caps1, caps2),
-      "Structures did not match:\n\tStructure 1: %s\n\tStructure 2: %s\n",
-      res1, res2);
-  gst_caps_unref (caps1);
-  gst_caps_unref (caps2);
-  g_free (res1);
-  g_free (res2);
-  
-  std_log(LOG_FILENAME_LINE, "Test Successful");
-    create_xml(0);
-}
-
-void test_structure_nested_from_and_to_string()
-{
-  GstStructure *s;
-  gchar *str1, *str2, *end = NULL;
-
-  xmlfile = "test_structure_nested_from_and_to_string";
-    std_log(LOG_FILENAME_LINE, "Test Started test_structure_nested_from_and_to_string");
-    
-    str1 = "main"
-          ", main-sub1=(GstStructure)\"type-b\\,\\ machine-type\\=\\(int\\)0\\;\""
-          ", main-sub2=(GstStructure)\"type-a\\,\\ plugin-filename\\=\\(string\\)\\\"/home/user/lib/lib\\\\\\ with\\\\\\ spaces.dll\\\"\\,\\ machine-type\\=\\(int\\)1\\;\""
-          ";";
-//      ", main-sub3=(GstStructure)\"type-b\\,\\ plugin-filename\\=\\(string\\)\\home\\user\\lib\\lib_no_spaces.so\\,\\ machine-type\\=\\(int\\)1\\;\""
-//      ";";
-
-  s = gst_structure_from_string (str1, &end);
-  fail_unless (s != NULL);
-
-  GST_DEBUG ("not parsed part : %s", end);
-  fail_unless (*end == '\0');
-
-  fail_unless (gst_structure_n_fields (s) == 2);
-
-  fail_unless (gst_structure_has_field_typed (s, "main-sub1",
-          GST_TYPE_STRUCTURE));
-
-  str2 = gst_structure_to_string (s);
-  fail_unless (str2 != NULL);
-
-  fail_unless (g_str_equal (str1, str2));
-
-  g_free (str2);
-
-  gst_structure_free (s);
-  
-  std_log(LOG_FILENAME_LINE, "Test Successful");
-    create_xml(0);
-}
-
-
-void test_vararg_getters()
-{
-  GstStructure *s;
-  GstBuffer *buf, *buf2;
-  gboolean ret;
-  GstCaps *caps, *caps2;
-  gdouble d;
-  gint64 i64;
-  gchar *c;
-  gint i, num, denom;
-
-  xmlfile = "test_vararg_getters";
-    std_log(LOG_FILENAME_LINE, "Test Started test_vararg_getters");
-  
-  buf = gst_buffer_new_and_alloc (3);
-  GST_BUFFER_DATA (buf)[0] = 0xf0;
-  GST_BUFFER_DATA (buf)[1] = 0x66;
-  GST_BUFFER_DATA (buf)[2] = 0x0d;
-
-  caps = gst_caps_new_simple ("video/x-foo", NULL);
-
-  s = gst_structure_new ("test", "int", G_TYPE_INT, 12345678, "string",
-      G_TYPE_STRING, "Hello World!", "buf", GST_TYPE_BUFFER, buf, "caps",
-      GST_TYPE_CAPS, caps, "int64", G_TYPE_INT64, G_GINT64_CONSTANT (-99),
-      "double", G_TYPE_DOUBLE, G_MAXDOUBLE, "frag", GST_TYPE_FRACTION, 39, 14,
-      NULL);
-
-  /* first the plain one */
-  ret = gst_structure_get (s, "double", G_TYPE_DOUBLE, &d, "string",
-      G_TYPE_STRING, &c, "caps", GST_TYPE_CAPS, &caps2, "buf",
-      GST_TYPE_BUFFER, &buf2, "frag", GST_TYPE_FRACTION, &num, &denom, "int",
-      G_TYPE_INT, &i, "int64", G_TYPE_INT64, &i64, NULL);
-
-  fail_unless (ret);
-  fail_unless_equals_string (c, "Hello World!");
-  fail_unless_equals_int (i, 12345678);
-  fail_unless_equals_float (d, G_MAXDOUBLE);
-  fail_unless_equals_int (num, 39);
-  fail_unless_equals_int (denom, 14);
-  fail_unless (i64 == -99);
-  fail_unless (caps == caps2);
-  fail_unless (buf == buf2);
-
-  /* expected failures */
-  ASSERT_CRITICAL (gst_structure_get (s, NULL, G_TYPE_INT, &i, NULL));
-  fail_if (gst_structure_get (s, "int", G_TYPE_INT, &i, "double",
-          G_TYPE_FLOAT, &d, NULL));
-  fail_if (gst_structure_get (s, "int", G_TYPE_INT, &i, "dooble",
-          G_TYPE_DOUBLE, &d, NULL));
-
-  g_free (c);
-  c = NULL;
-  gst_caps_unref (caps2);
-  caps2 = NULL;
-  gst_buffer_unref (buf2);
-  buf2 = NULL;
-
-  /* and now the _id variant */
-  ret = gst_structure_id_get (s, g_quark_from_static_string ("double"),
-      G_TYPE_DOUBLE, &d, g_quark_from_static_string ("string"), G_TYPE_STRING,
-      &c, g_quark_from_static_string ("caps"), GST_TYPE_CAPS, &caps2,
-      g_quark_from_static_string ("buf"), GST_TYPE_BUFFER, &buf2,
-      g_quark_from_static_string ("int"), G_TYPE_INT, &i,
-      g_quark_from_static_string ("int64"), G_TYPE_INT64, &i64, NULL);
-
-  fail_unless (ret);
-  fail_unless_equals_string (c, "Hello World!");
-  fail_unless_equals_int (i, 12345678);
-  fail_unless_equals_float (d, G_MAXDOUBLE);
-  fail_unless (i64 == -99);
-  fail_unless (caps == caps2);
-  fail_unless (buf == buf2);
-
-  /* expected failures */
-  ASSERT_CRITICAL (gst_structure_get (s, 0, G_TYPE_INT, &i, NULL));
-  fail_if (gst_structure_id_get (s, g_quark_from_static_string ("int"),
-          G_TYPE_INT, &i, g_quark_from_static_string ("double"), G_TYPE_FLOAT,
-          &d, NULL));
-  fail_if (gst_structure_id_get (s, g_quark_from_static_string ("int"),
-          G_TYPE_INT, &i, g_quark_from_static_string ("dooble"), G_TYPE_DOUBLE,
-          &d, NULL));
-
-  g_free (c);
-  gst_caps_unref (caps2);
-  gst_buffer_unref (buf2);
-
-  /* finally make sure NULL as return location is handled gracefully */
-  ret = gst_structure_get (s, "double", G_TYPE_DOUBLE, NULL, "string",
-      G_TYPE_STRING, NULL, "caps", GST_TYPE_CAPS, NULL, "buf",
-      GST_TYPE_BUFFER, NULL, "int", G_TYPE_INT, &i, "frag", GST_TYPE_FRACTION,
-      NULL, NULL, "int64", G_TYPE_INT64, &i64, NULL);
-
-  ASSERT_WARNING (gst_structure_get (s, "frag", GST_TYPE_FRACTION, NULL,
-          &denom, NULL));
-  ASSERT_WARNING (gst_structure_get (s, "frag", GST_TYPE_FRACTION, &num,
-          NULL, NULL));
-
-  /* clean up */
-  gst_caps_unref (caps);
-  gst_buffer_unref (buf);
-  gst_structure_free (s);
-  
-  std_log(LOG_FILENAME_LINE, "Test Successful");
-    create_xml(0);
-}
 #if 1
-void (*fn[]) (void) = {
+void (*fn[9]) (void) = {
 	  		test_from_string_int,
 	  		test_from_string,
 				test_to_string,
@@ -681,10 +489,7 @@ void (*fn[]) (void) = {
 				test_structure_new,
 				test_fixate,
 				test_fixate_frac_list,
-				test_structure_nested,
-				test_string_properties,
-				test_structure_nested_from_and_to_string,
-				test_vararg_getters
+				test_structure_nested
 };
 
 char *args[] = {
@@ -696,10 +501,7 @@ char *args[] = {
 				"test_structure_new",
 				"test_fixate",
 				"test_fixate_frac_list",
-				"test_structure_nested",
-				"test_string_properties",
-				"test_structure_nested_from_and_to_string",
-				"test_vararg_getters"
+				"test_structure_nested"
 				
 };
 
@@ -709,25 +511,25 @@ GST_CHECK_MAIN (gst_structure);
 #endif
 
 
-//#if 0
-//int main()
-//{
-//    
-//    
-//	gst_check_init (NULL, NULL);
-//	test_from_string_int();
-//	test_from_string();
-//	test_to_string();
-//	test_to_from_string();
-//	test_complete_structure();
-//	test_structure_new();
-//	test_fixate();
-//	test_fixate_frac_list();
-//	test_structure_nested();
-//
-//
-//}
-//#endif
+#if 0
+int main()
+{
+    
+    
+	gst_check_init (NULL, NULL);
+	test_from_string_int();
+	test_from_string();
+	test_to_string();
+	test_to_from_string();
+	test_complete_structure();
+	test_structure_new();
+	test_fixate();
+	test_fixate_frac_list();
+	test_structure_nested();
+
+
+}
+#endif
 
 
 

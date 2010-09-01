@@ -44,8 +44,10 @@ USERINCLUDE     ../gst/devsound
 MW_LAYER_SYSTEMINCLUDE
 OS_LAYER_LIBC_SYSTEMINCLUDE
 OS_LAYER_GLIB_SYSTEMINCLUDE
-MW_LAYER_GSTREAMER_SYSTEMINCLUDE
 
+USERINCLUDE		../../include/gstreamer
+USERINCLUDE		../../include/gstreamer/gst
+USERINCLUDE		../../include/gstreamer/gst/audio
 
 SOURCEPATH      ../gst/devsound
 SOURCE          gstdevsoundsinkaudio.c

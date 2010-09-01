@@ -36,9 +36,6 @@
 ;*"rd-key.pem","rd.cer"
 
 ;Files to install
-
-
-
 "\epoc32\release\armv5\urel\GStreamerTestClass.dll"-"c:\sys\bin\GStreamerTestClass.dll"
 "..\Conf\GStreamerTestClass.cfg"-"c:\TestFramework\GStreamerTestClass.cfg"
 "..\init\GStreamerTestClass.ini"-"c:\TestFramework\GStreamerTestClass.ini"

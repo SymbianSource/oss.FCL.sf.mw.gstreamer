@@ -5,25 +5,25 @@ EXPORTS
 	av_free_static @ 4 NONAME
 	av_freep @ 5 NONAME
 	av_malloc @ 6 NONAME
-	av_mallocz @ 7 NONAME
-	av_mallocz_static @ 8 NONAME
-	av_realloc @ 9 NONAME
-	av_strdup @ 10 NONAME
-	avcodec_alloc_context @ 11 NONAME
-	avcodec_find_best_pix_fmt @ 12 NONAME
-	avcodec_get_chroma_sub_sample @ 13 NONAME
-	avcodec_get_context_defaults @ 14 NONAME
-	avcodec_get_pix_fmt @ 15 NONAME
-	avcodec_get_pix_fmt_loss @ 16 NONAME
-	avcodec_get_pix_fmt_name @ 17 NONAME
-	avcodec_init @ 18 NONAME
-	avpicture_get_size @ 19 NONAME
-	dsputil_static_init @ 20 NONAME
-	get_pix_fmt_info @ 21 NONAME
-	gst_ffmpegcolorspace_register @ 22 NONAME
-	gst_ffmpegcsp_avpicture_fill @ 23 NONAME
-	gst_ffmpegcsp_caps_with_codectype @ 24 NONAME
-	gst_ffmpegcsp_codectype_to_caps @ 25 NONAME
-	img_convert @ 26 NONAME
-	img_get_alpha_info @ 27 NONAME
+	av_mallocz_static @ 7 NONAME
+	av_realloc @ 8 NONAME
+	av_strdup @ 9 NONAME
+	avcodec_alloc_context @ 10 NONAME
+	avcodec_find_best_pix_fmt @ 11 NONAME
+	avcodec_get_chroma_sub_sample @ 12 NONAME
+	avcodec_get_context_defaults @ 13 NONAME
+	avcodec_get_pix_fmt @ 14 NONAME
+	avcodec_get_pix_fmt_loss @ 15 NONAME
+	avcodec_get_pix_fmt_name @ 16 NONAME
+	avcodec_init @ 17 NONAME
+	dsputil_static_init @ 18 NONAME
+	get_pix_fmt_info @ 19 NONAME
+	gst_ffmpegcolorspace_register @ 20 NONAME
+	gst_ffmpegcsp_avpicture_fill @ 21 NONAME
+	gst_ffmpegcsp_caps_with_codectype @ 22 NONAME
+	gst_ffmpegcsp_codectype_to_caps @ 23 NONAME
+	img_convert @ 24 NONAME
+	img_get_alpha_info @ 25 NONAME
+	av_mallocz @ 26 NONAME
+	avpicture_get_size @ 27 NONAME
 

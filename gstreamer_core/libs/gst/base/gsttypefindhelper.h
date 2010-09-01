@@ -28,9 +28,6 @@
 
 G_BEGIN_DECLS
 
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
 GstCaps * gst_type_find_helper (GstPad *src, guint64 size);
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -40,13 +37,6 @@ IMPORT_C
 GstCaps * gst_type_find_helper_for_buffer (GstObject              *obj,
                                            GstBuffer              *buf,
                                            GstTypeFindProbability *prob);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-GstCaps * gst_type_find_helper_for_extension (GstObject * obj,
-                                              const gchar * extension);
 
 /**
  * GstTypeFindHelperGetRangeFunction:

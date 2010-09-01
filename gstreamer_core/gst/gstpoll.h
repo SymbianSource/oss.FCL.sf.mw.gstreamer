@@ -72,11 +72,6 @@ GstPoll*        gst_poll_new              (gboolean controllable);
 IMPORT_C
 #endif
 
-GstPoll*        gst_poll_new_timer        (void);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
 void            gst_poll_free             (GstPoll *set);
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -154,17 +149,6 @@ IMPORT_C
 #endif
 
 void            gst_poll_set_flushing     (GstPoll *set, gboolean flushing);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-gboolean        gst_poll_write_control    (GstPoll *set);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-gboolean        gst_poll_read_control     (GstPoll *set);
 
 G_END_DECLS
 

@@ -59,7 +59,6 @@ struct _GstTypeFindElement {
   GstBuffer *		store;
 
   GList *               cached_events;
-  GstCaps *             force_caps;
 };
 
 struct _GstTypeFindElementClass {

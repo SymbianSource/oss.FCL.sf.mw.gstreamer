@@ -48,8 +48,8 @@ struct _GstAudioConvert
 
   AudioConvertCtx ctx;
 
-  GstAudioConvertDithering dither;
-  GstAudioConvertNoiseShaping ns;
+  DitherType dither;
+  NoiseShapingType ns;
 };
 
 struct _GstAudioConvertClass

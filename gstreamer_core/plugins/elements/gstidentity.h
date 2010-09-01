@@ -73,7 +73,6 @@ struct _GstIdentity {
   gchar 	*last_message;
   guint64        offset;
   gboolean       signal_handoffs;
-  GStaticRecMutex  notify_lock;
 };
 
 struct _GstIdentityClass {

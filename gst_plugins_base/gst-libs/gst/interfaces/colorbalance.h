@@ -46,27 +46,14 @@ G_BEGIN_DECLS
 #define GST_COLOR_BALANCE_TYPE(klass) (klass->balance_type)
 
 typedef struct _GstColorBalance GstColorBalance;
-typedef struct _GstColorBalanceClass GstColorBalanceClass;
   
-/**
- * GstColorBalanceType:
- * @GST_COLOR_BALANCE_HARDWARE: Color balance is implemented with dedicated
- *         hardware.
- * @GST_COLOR_BALANCE_SOFTWARE: Color balance is implemented via software
- *         processing.
- * 
- * An enumeration indicating whether an element implements color balancing
- * operations in software or in dedicated hardware. In general, dedicated
- * hardware implementations (such as those provided by xvimagesink) are
- * preferred.
- */
 typedef enum
 {
   GST_COLOR_BALANCE_HARDWARE,
   GST_COLOR_BALANCE_SOFTWARE
 } GstColorBalanceType;
 
-struct _GstColorBalanceClass {
+typedef struct _GstColorBalanceClass {
   GTypeInterface klass;
 
   GstColorBalanceType balance_type;
@@ -86,7 +73,7 @@ struct _GstColorBalanceClass {
                           gint                    value);
 
   gpointer _gst_reserved[GST_PADDING];
-};
+} GstColorBalanceClass;
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -114,12 +101,6 @@ IMPORT_C
 
 gint    gst_color_balance_get_value     (GstColorBalance        *balance,
                                          GstColorBalanceChannel *channel);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-GstColorBalanceType
-        gst_color_balance_get_balance_type (GstColorBalance        *balance);
 
 /* trigger signal */
 #ifdef __SYMBIAN32__

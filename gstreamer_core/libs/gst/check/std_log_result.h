@@ -21,7 +21,6 @@
 */
 
 
-
 #ifndef _STD_LOG_FILE_H__
 #define _STD_LOG_FILE_H__
 
@@ -29,10 +28,8 @@
 #include <time.h>
 #include <string.h>
 #include <stdarg.h>
-#include <stdlib.h>
 #ifdef __SYMBIAN32__
 #include "libgstreamer_wsd_solution.h" 
-#include <check.h>
 
 #ifndef EMULATOR
 #define assert_failed *(get_assert_failed())
@@ -53,7 +50,7 @@
 static	GET_GLOBAL_VAR_FROM_TLS(fp_std_log,std_log_result,FILE *)
 #define fp_std_log (*GET_GSTREAMER_WSD_VAR_NAME(fp_std_log,std_log_result,g)())
 #else 
-IMPORT_C extern FILE *fp_std_log;
+extern FILE *fp_std_log;
 #endif
 
 //int assert_failed = 0;
@@ -61,14 +58,14 @@ IMPORT_C extern FILE *fp_std_log;
 static GET_GLOBAL_VAR_FROM_TLS(assert_failed,std_log_result,int)
 #define assert_failed (*GET_GSTREAMER_WSD_VAR_NAME(assert_failed,std_log_result,g)())
 #else 
-IMPORT_C extern int assert_failed;
+extern int assert_failed;
 #endif
 
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(xmlfile,std_log_result,char*)
 #define xmlfile (*GET_GSTREAMER_WSD_VAR_NAME(xmlfile,std_log_result,g)())
 #else 
-IMPORT_C extern char* xmlfile;
+extern char* xmlfile;
 #endif
 
 #ifdef __SYMBIAN32__
@@ -79,35 +76,25 @@ int gnutest = 1;
 # define VERIFY(fn) gnutest &= (fn)
 
 #ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-void std_log(const char *filename,const int lineno,const char* aformat,...);
-
-#ifdef __SYMBIAN32__
 EXPORT_C
 #endif
 void std_log(const char *filename,const int lineno,const char* aformat,...)
 {
-    /* commented for helium setup memory issue , error value -4*/
-//	va_list va;
-//	if(fp_std_log==NULL)
-//	{
-//		fp_std_log = fopen(LOG_FILE,"a");
-//	}
-//	
-//	va_start(va,aformat);    
-//    {
-//		fprintf(fp_std_log,"%s - [%d] : ",filename,lineno);
-//		vfprintf(fp_std_log,aformat,va);
-//		fprintf(fp_std_log,"\n");
-//		fflush(fp_std_log);
-//	}
-//	va_end(va);
+	va_list va;
+	if(fp_std_log==NULL)
+	{
+		fp_std_log = fopen(LOG_FILE,"a");
+	}
+	
+	va_start(va,aformat);    
+    {
+		fprintf(fp_std_log,"%s - [%d] : ",filename,lineno);
+		vfprintf(fp_std_log,aformat,va);
+		fprintf(fp_std_log,"\n");
+		fflush(fp_std_log);
+	}
+	va_end(va);
 }
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-void init_log_file();
 
 #ifdef __SYMBIAN32__
 EXPORT_C
@@ -121,37 +108,21 @@ void init_log_file()
 }
 
 #ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-void close_log_file();
-
-#ifdef __SYMBIAN32__
 EXPORT_C
 #endif
 void close_log_file()
 {
-   /* commented for helium setup memory issue , error value -4*/
-  // fclose(fp_std_log);  
-  // fp_std_log = NULL;
+   fclose(fp_std_log);
+   fp_std_log = NULL;
 }
 
 // This function is used to generate the xml file used bt ATS
-
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void testResultXml(char *filename);
-
 #ifdef __SYMBIAN32__
 EXPORT_C
 #endif
-
 void testResultXml(char *filename)
 {
-    
-    /* commented for helium setup memory issue , error value -4*/
-	/*char time_buf[50];     
+	char time_buf[50];
 
 	char result[10];
 
@@ -226,7 +197,6 @@ void testResultXml(char *filename)
 
 		fclose(fp_result);
 	}
-	*/
 }
 
 #endif

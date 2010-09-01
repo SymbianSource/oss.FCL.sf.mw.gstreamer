@@ -27,17 +27,7 @@
 #include <gst/gst-i18n-plugin.h>
 #include <gst/pbutils/pbutils.h>
 
-#include "gststreamselector.h"
-#include "gststreaminfo.h"
-
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
 gboolean gst_play_bin_plugin_init (GstPlugin * plugin);
-
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
 gboolean gst_play_bin2_plugin_init (GstPlugin * plugin);
 
 static gboolean
@@ -51,13 +41,7 @@ plugin_init (GstPlugin * plugin)
   GST_DEBUG ("binding text domain %s to locale dir %s", GETTEXT_PACKAGE,
       LOCALEDIR);
   bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
-  bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 #endif /* ENABLE_NLS */
-
-  /* ref class from a thread-safe context to work around missing bit of
-   * thread-safety in GObject */
-  g_type_class_ref (GST_TYPE_STREAM_INFO);
-  g_type_class_ref (GST_TYPE_STREAM_SELECTOR);
 
   res = gst_play_bin_plugin_init (plugin);
   res &= gst_play_bin2_plugin_init (plugin);

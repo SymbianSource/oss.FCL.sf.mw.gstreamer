@@ -36,20 +36,6 @@ IMPORT_C
 GType gst_mixer_track_flags_get_type (void);
 #define GST_TYPE_MIXER_TRACK_FLAGS (gst_mixer_track_flags_get_type())
 
-/* enumerations from "navigation.h" */
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-GType gst_navigation_command_get_type (void);
-#define GST_TYPE_NAVIGATION_COMMAND (gst_navigation_command_get_type())
-GType gst_navigation_query_type_get_type (void);
-#define GST_TYPE_NAVIGATION_QUERY_TYPE (gst_navigation_query_type_get_type())
-GType gst_navigation_message_type_get_type (void);
-#define GST_TYPE_NAVIGATION_MESSAGE_TYPE (gst_navigation_message_type_get_type())
-GType gst_navigation_event_type_get_type (void);
-#define GST_TYPE_NAVIGATION_EVENT_TYPE (gst_navigation_event_type_get_type())
-
 /* enumerations from "tunerchannel.h" */
 #ifdef __SYMBIAN32__
 IMPORT_C

@@ -263,21 +263,10 @@ typedef enum
 #define GST_ELEMENT_PADS(elem)			(GST_ELEMENT_CAST(elem)->pads)
 
 /**
- * GST_ELEMENT_START_TIME:
- * @elem: a #GstElement to return the start time for.
- *
- * This macro returns the start_time of the @elem. The start_time is the
- * running_time of the pipeline when the element went to PAUSED.
- *
- * Since: 0.10.24
- */
-#define GST_ELEMENT_START_TIME(elem)		(GST_ELEMENT_CAST(elem)->abidata.ABI.start_time)
-
-/**
  * GST_ELEMENT_ERROR:
  * @el:     the element that generates the error
- * @domain: like CORE, LIBRARY, RESOURCE or STREAM (see #gstreamer-GstGError)
- * @code:   error code defined for that domain (see #gstreamer-GstGError)
+ * @domain: like CORE, LIBRARY, RESOURCE or STREAM (see #GstGError)
+ * @code:   error code defined for that domain (see #GstGError)
  * @text:   the message to display (format string and args enclosed in
             parentheses)
  * @debug:  debugging information for the message (format string and args
@@ -405,7 +394,7 @@ G_STMT_START {								\
  * element by the toplevel #GstPipeline.
  * @base_time: the time of the clock right before the element is set to
  * PLAYING. Subtracting @base_time from the current clock time in the PLAYING
- * state will yield the running_time against the clock.
+ * state will yield the stream time.
  * @numpads: number of pads of the element, includes both source and sink pads.
  * @pads: list of pads
  * @numsrcpads: number of source pads of the element.
@@ -452,8 +441,6 @@ struct _GstElement
     struct {
       /* state set by application */
       GstState              target_state;
-      /* running time of the last PAUSED state */
-      GstClockTime          start_time;
     } ABI;
     /* adding + 0 to mark ABI change to be undone later */
     gpointer _gst_reserved[GST_PADDING + 0];
@@ -651,16 +638,6 @@ IMPORT_C
 #endif
 
 GstClockTime		gst_element_get_base_time	(GstElement *element);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void			gst_element_set_start_time	(GstElement *element, GstClockTime time);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-GstClockTime		gst_element_get_start_time	(GstElement *element);
 
 /* indexes */
 #ifdef __SYMBIAN32__
@@ -707,13 +684,12 @@ IMPORT_C
 #endif
 
 void			gst_element_no_more_pads	(GstElement *element);
-
-#ifndef GST_DISABLE_DEPRECATED
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
+
+
 GstPad*			gst_element_get_pad		(GstElement *element, const gchar *name);
-#endif /* GST_DISABLE_DEPRECATED */
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -782,11 +758,11 @@ gboolean		gst_element_post_message	(GstElement * element, GstMessage * message);
 /* error handling */
 /* gcc versions < 3.3 warn about NULL being passed as format to printf */
 #if (defined(GST_USING_PRINTF_EXTENSION) || !defined(__GNUC__) || (__GNUC__ < 3) || (__GNUC__ == 3 && __GNUC_MINOR__ < 3))
-IMPORT_C gchar *			_gst_element_error_printf	(const gchar *format, ...);
+gchar *			_gst_element_error_printf	(const gchar *format, ...);
 #else
-IMPORT_C gchar *			_gst_element_error_printf	(const gchar *format, ...) G_GNUC_PRINTF (1, 2);
+gchar *			_gst_element_error_printf	(const gchar *format, ...) G_GNUC_PRINTF (1, 2);
 #endif
-IMPORT_C void			gst_element_message_full	(GstElement * element, GstMessageType type,
+void			gst_element_message_full	(GstElement * element, GstMessageType type,
 							 GQuark domain, gint code, gchar * text,
 							 gchar * debug, const gchar * file,
 							 const gchar * function, gint line);
@@ -844,11 +820,6 @@ IMPORT_C
 #endif
 
 void			gst_element_lost_state	        (GstElement * element);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void			gst_element_lost_state_full     (GstElement * element, gboolean new_base_time);
 
 /* factory management */
 #ifdef __SYMBIAN32__

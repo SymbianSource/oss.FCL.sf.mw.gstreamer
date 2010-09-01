@@ -29,20 +29,11 @@
 
 void create_xml(int result)
 {
-
     if(result)
-    {
         assert_failed = 1;
-    } 
-
+    
     testResultXml(xmlfile);
     close_log_file();
-
-    if(result)
-    {
-        exit (-1);
-    }    
-
 }
 
 /*
@@ -164,7 +155,7 @@ void test_pipeline_unref()
 
   run_pipeline (pipeline, s,
       GST_MESSAGE_NEW_CLOCK | GST_MESSAGE_STATE_CHANGED |
-      GST_MESSAGE_STREAM_STATUS | GST_MESSAGE_ASYNC_DONE, GST_MESSAGE_EOS);
+      GST_MESSAGE_ASYNC_DONE, GST_MESSAGE_EOS);
   while (GST_OBJECT_REFCOUNT_VALUE (src) > 1)
     THREAD_SWITCH ();
   ASSERT_OBJECT_REFCOUNT (src, "src", 1);

@@ -24,9 +24,6 @@
 
 G_BEGIN_DECLS
 
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
 gchar * parse_mpl2 (ParserState * state, const gchar * line);
 
 G_END_DECLS

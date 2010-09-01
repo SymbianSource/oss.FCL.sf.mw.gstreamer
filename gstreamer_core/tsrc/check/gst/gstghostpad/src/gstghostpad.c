@@ -49,20 +49,11 @@ extern GList *buffers = NULL;
 
 void create_xml(int result)
 {
-
     if(result)
-    {
         assert_failed = 1;
-    } 
-
+    
     testResultXml(xmlfile);
     close_log_file();
-
-    if(result)
-    {
-        exit (-1);
-    }    
-
 }
 
 
@@ -405,9 +396,9 @@ void test_ghost_pads()
   ASSERT_OBJECT_REFCOUNT (fsink, "fsink", 1);
 
   ASSERT_OBJECT_REFCOUNT (gisrc, "gisrc", 2);   /* gsink */
-  ASSERT_OBJECT_REFCOUNT (isink, "isink", 1);   /* gsink */
+  ASSERT_OBJECT_REFCOUNT (isink, "isink", 2);   /* gsink */
   ASSERT_OBJECT_REFCOUNT (gisink, "gisink", 2); /* gsrc */
-  ASSERT_OBJECT_REFCOUNT (isrc, "isrc", 1);     /* gsrc */
+  ASSERT_OBJECT_REFCOUNT (isrc, "isrc", 2);     /* gsrc */
 
   gst_object_unref (gsink);
   ASSERT_OBJECT_REFCOUNT (isink, "isink", 1);
@@ -599,8 +590,6 @@ void test_ghost_pads_new_from_template()
   GstPad *sinkpad, *ghostpad;
   GstPadTemplate *padtempl, *ghosttempl;
   GstCaps *padcaps, *ghostcaps, *newcaps;
-  GstCaps *copypadcaps;
-  
 	xmlfile = "gstghostpad_test_ghost_pads_new_from_template";
   std_log(LOG_FILENAME_LINE, "Test Started test_ghost_pads_new_from_template");  
   padcaps = gst_caps_from_string ("some/caps");
@@ -608,9 +597,8 @@ void test_ghost_pads_new_from_template()
   ghostcaps = gst_caps_from_string ("some/caps;some/other-caps");
   fail_unless (ghostcaps != NULL);
 
-  copypadcaps = gst_caps_copy (padcaps);
   padtempl = gst_pad_template_new ("padtempl", GST_PAD_SINK,
-      GST_PAD_ALWAYS, copypadcaps);
+      GST_PAD_ALWAYS, padcaps);
   fail_unless (padtempl != NULL);
   ghosttempl = gst_pad_template_new ("ghosttempl", GST_PAD_SINK,
       GST_PAD_ALWAYS, ghostcaps);
@@ -630,12 +618,6 @@ void test_ghost_pads_new_from_template()
   fail_unless (gst_caps_is_equal (newcaps, padcaps));
   gst_caps_unref (newcaps);
   gst_caps_unref (padcaps);
-  
-  gst_object_unref (sinkpad);
-  gst_object_unref (ghostpad);
-
-  gst_object_unref (padtempl);
-  gst_object_unref (ghosttempl);
   std_log(LOG_FILENAME_LINE, "Test Successful");
 	create_xml(0);
 }
@@ -647,8 +629,6 @@ void test_ghost_pads_new_no_target_from_template()
   GstPad *sinkpad, *ghostpad;
   GstPadTemplate *padtempl, *ghosttempl;
   GstCaps *padcaps, *ghostcaps, *newcaps;
-  GstCaps *copypadcaps, *copyghostcaps;
-  
 	xmlfile = "gstghostpad_test_ghost_pads_new_no_target_from_template";
   std_log(LOG_FILENAME_LINE, "Test Started test_ghost_pads_new_no_target_from_template");  
   padcaps = gst_caps_from_string ("some/caps");
@@ -656,14 +636,11 @@ void test_ghost_pads_new_no_target_from_template()
   ghostcaps = gst_caps_from_string ("some/caps;some/other-caps");
   fail_unless (ghostcaps != NULL);
 
-  copypadcaps = gst_caps_copy (padcaps);
-   copyghostcaps = gst_caps_copy (ghostcaps);
-   
   padtempl = gst_pad_template_new ("padtempl", GST_PAD_SINK,
-      GST_PAD_ALWAYS, copypadcaps);
+      GST_PAD_ALWAYS, padcaps);
   fail_unless (padtempl != NULL);
   ghosttempl = gst_pad_template_new ("ghosttempl", GST_PAD_SINK,
-      GST_PAD_ALWAYS, copyghostcaps);
+      GST_PAD_ALWAYS, ghostcaps);
 
   sinkpad = gst_pad_new_from_template (padtempl, "sinkpad");
   fail_unless (sinkpad != NULL);
@@ -687,16 +664,6 @@ void test_ghost_pads_new_no_target_from_template()
   fail_unless (newcaps != NULL);
   fail_unless (gst_caps_is_equal (newcaps, padcaps));
   gst_caps_unref (newcaps);
-  
-  gst_object_unref (sinkpad);
-  gst_object_unref (ghostpad);
-
-  gst_object_unref (padtempl);
-  gst_object_unref (ghosttempl);
-
-  gst_caps_unref (padcaps);
-  gst_caps_unref (ghostcaps);
-  
   std_log(LOG_FILENAME_LINE, "Test Successful");
 	create_xml(0);
 }

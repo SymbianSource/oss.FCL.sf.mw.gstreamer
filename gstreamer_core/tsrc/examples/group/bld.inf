@@ -19,11 +19,8 @@
 * Description:
 *
 */
-#include "../amr_record/group/bld.inf"
-#include "../wav_record/group/bld.inf"
 
-#include "../aac_record/group/bld.inf"
-#include "../gstseek/group/bld.inf"
+
 #include "../helloworld/group/bld.inf"
 #include "../controller/group/bld.inf"
 #include "../adapter/group/bld.inf"				

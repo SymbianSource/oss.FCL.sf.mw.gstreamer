@@ -20,7 +20,3 @@ libgstvolume.dll
 libgstplaybin.dll
 libgstgdp.dll
 libgstapp.dll
-gstqtmux.dll
-libgstnokiaaacenc.dll
-libgstamrmux.dll
-

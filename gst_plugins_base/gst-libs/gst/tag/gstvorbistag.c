@@ -62,7 +62,7 @@ static const GstTagEntryMatch tag_matches[] = {
   {GST_TAG_COPYRIGHT, "COPYRIGHT"},
   {GST_TAG_LICENSE, "LICENSE"},
   {GST_TAG_LICENSE_URI, "LICENSE"},
-  {GST_TAG_GEO_LOCATION_NAME, "LOCATION"},
+  {GST_TAG_LOCATION, "LOCATION"},
   {GST_TAG_ORGANIZATION, "ORGANIZATION"},
   {GST_TAG_DESCRIPTION, "DESCRIPTION"},
   {GST_TAG_GENRE, "GENRE"},
@@ -90,10 +90,7 @@ static const GstTagEntryMatch tag_matches[] = {
   {GST_TAG_LANGUAGE_CODE, "LANGUAGE"},
   {GST_TAG_CDDA_MUSICBRAINZ_DISCID, "MUSICBRAINZ_DISCID"},
   {GST_TAG_CDDA_CDDB_DISCID, "DISCID"},
-  /* For the apparent de-facto standard for coverart in vorbis comments, see:
-   * http://www.hydrogenaudio.org/forums/lofiversion/index.php/t48386.html */
-  {GST_TAG_PREVIEW_IMAGE, "COVERART"},
-  /* some evidence that "BPM" is used elsewhere:
+  /* some incidence that this makes sense:
    * http://mail.kde.org/pipermail/amarok/2006-May/000090.html
    */
   {GST_TAG_BEATS_PER_MINUTE, "BPM"},
@@ -320,62 +317,6 @@ gst_vorbis_tag_add (GstTagList * list, const gchar * tag, const gchar * value)
   }
 }
 
-static void
-gst_vorbis_tag_add_coverart (GstTagList * tags, gchar * img_data_base64,
-    gint base64_len)
-{
-  GstBuffer *img;
-  gsize img_len;
-  guchar *out;
-  guint save = 0;
-  gint state = 0;
-
-  if (base64_len < 2)
-    goto not_enough_data;
-
-  /* img_data_base64 points to a temporary copy of the base64 encoded data, so
-   * it's safe to do inpace decoding here
-   * TODO: glib 2.20 and later provides g_base64_decode_inplace, so change this
-   * to use glib's API instead once it's in wider use:
-   *  http://bugzilla.gnome.org/show_bug.cgi?id=564728
-   *  http://svn.gnome.org/viewvc/glib?view=revision&revision=7807 */
-  out = (guchar *) img_data_base64;
-  img_len = g_base64_decode_step (img_data_base64, base64_len,
-      out, &state, &save);
-
-  if (img_len == 0)
-    goto decode_failed;
-
-  img = gst_tag_image_data_to_image_buffer (out, img_len,
-      GST_TAG_IMAGE_TYPE_NONE);
-
-  if (img == NULL)
-    goto convert_failed;
-
-  gst_tag_list_add (tags, GST_TAG_MERGE_APPEND,
-      GST_TAG_PREVIEW_IMAGE, img, NULL);
-
-  gst_buffer_unref (img);
-  return;
-
-/* ERRORS */
-not_enough_data:
-  {
-    GST_WARNING ("COVERART tag with too little base64-encoded data");
-    return;
-  }
-decode_failed:
-  {
-    GST_WARNING ("Couldn't decode base64 image data from COVERART tag");
-    return;
-  }
-convert_failed:
-  {
-    GST_WARNING ("Couldn't extract image or image type from COVERART tag");
-    return;
-  }
-}
-
 /**
  * gst_tag_list_from_vorbiscomment_buffer:
  * @buffer: buffer to convert
@@ -412,7 +353,7 @@ gst_tag_list_from_vorbiscomment_buffer (const GstBuffer * buffer,
   guint cur_size;
   guint iterations;
   guint8 *data;
-  guint size, value_len;
+  guint size;
   GstTagList *list;
 
   g_return_val_if_fail (GST_IS_BUFFER (buffer), NULL);
@@ -424,19 +365,14 @@ gst_tag_list_from_vorbiscomment_buffer (const GstBuffer * buffer,
 
   if (size < 11 || size <= id_data_length + 4)
     goto error;
-
   if (id_data_length > 0 && memcmp (data, id_data, id_data_length) != 0)
     goto error;
-
   ADVANCE (id_data_length);
-
   if (vendor_string)
     *vendor_string = g_strndup (cur, cur_size);
-
   ADVANCE (cur_size);
   iterations = cur_size;
   cur_size = 0;
-
   while (iterations) {
     ADVANCE (cur_size);
     iterations--;
@@ -448,19 +384,11 @@ gst_tag_list_from_vorbiscomment_buffer (const GstBuffer * buffer,
     }
     *value = '\0';
     value++;
-    value_len = strlen (value);
-    if (value_len == 0 || !g_utf8_validate (value, value_len, NULL)) {
+    if (!g_utf8_validate (value, -1, NULL)) {
       g_free (cur);
       continue;
     }
-    /* we'll just ignore COVERARTMIME and typefind the image data */
-    if (g_ascii_strcasecmp (cur, "COVERARTMIME") == 0) {
-      continue;
-    } else if (g_ascii_strcasecmp (cur, "COVERART") == 0) {
-      gst_vorbis_tag_add_coverart (list, value, value_len);
-    } else {
-      gst_vorbis_tag_add (list, cur, value);
-    }
+    gst_vorbis_tag_add (list, cur, value);
     g_free (cur);
   }
 
@@ -471,7 +399,6 @@ error:
   return NULL;
 #undef ADVANCE
 }
-
 typedef struct
 {
   guint count;
@@ -479,39 +406,6 @@ typedef struct
   GList *entries;
 }
 MyForEach;
-
-static GList *
-gst_tag_to_coverart (const GValue * image_value)
-{
-  gchar *coverart_data, *data_result, *mime_result;
-  const gchar *mime_type;
-  GstStructure *mime_struct;
-  GstBuffer *buffer;
-  GList *l = NULL;
-
-  g_return_val_if_fail (image_value != NULL, NULL);
-
-  buffer = gst_value_get_buffer (image_value);
-  g_return_val_if_fail (gst_caps_is_fixed (buffer->caps), NULL);
-  mime_struct = gst_caps_get_structure (buffer->caps, 0);
-  mime_type = gst_structure_get_name (mime_struct);
-
-  if (strcmp (mime_type, "text/uri-list") == 0) {
-    /* URI reference */
-    coverart_data = g_strndup ((gchar *) buffer->data, buffer->size);
-  } else {
-    coverart_data = g_base64_encode (buffer->data, buffer->size);
-  }
-
-  data_result = g_strdup_printf ("COVERART=%s", coverart_data);
-  mime_result = g_strdup_printf ("COVERARTMIME=%s", mime_type);
-  g_free (coverart_data);
-
-  l = g_list_append (l, data_result);
-  l = g_list_append (l, mime_result);
-
-  return l;
-}
 
 /**
  * gst_tag_to_vorbis_comments:
@@ -537,18 +431,6 @@ gst_tag_to_vorbis_comments (const GstTagList * list, const gchar * tag)
 
   g_return_val_if_fail (list != NULL, NULL);
   g_return_val_if_fail (tag != NULL, NULL);
-
-  /* Special case: cover art is split into two tags to store data and
-   * MIME-type. Even if the tag list contains multiple entries, there is
-   * no reasonable way to save more than one.
-   * If both, preview image and image, are present we prefer the
-   * image tag.
-   */
-  if ((strcmp (tag, GST_TAG_PREVIEW_IMAGE) == 0 &&
-          gst_tag_list_get_tag_size (list, GST_TAG_IMAGE) == 0) ||
-      strcmp (tag, GST_TAG_IMAGE) == 0) {
-    return gst_tag_to_coverart (gst_tag_list_get_value_index (list, tag, 0));
-  }
 
   if (strcmp (tag, GST_TAG_EXTENDED_COMMENT) != 0) {
     vorbis_tag = gst_tag_to_vorbis_tag (tag);

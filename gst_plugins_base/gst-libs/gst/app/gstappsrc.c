@@ -113,6 +113,9 @@
 
 #include "gstapp-marshal.h"
 #include "gstappsrc.h"
+#ifdef __SYMBIAN32__
+#include <glib_global.h>
+#endif
 
 struct _GstAppSrcPrivate
 {
@@ -222,6 +225,7 @@ static void gst_app_src_base_init (gpointer g_class);
 static void gst_app_src_class_init (GstAppSrcClass * klass);
 static void gst_app_src_init (GstAppSrc * appsrc, GstAppSrcClass * klass);
 #endif
+
 static void gst_app_src_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
 static void gst_app_src_get_property (GObject * object, guint prop_id,
@@ -263,6 +267,7 @@ _do_init (GType filesrc_type)
 GST_BOILERPLATE_FULL (GstAppSrc, gst_app_src, GstBaseSrc, GST_TYPE_BASE_SRC,
     _do_init);
 #else
+
 static GstBaseSrcClass *parent_class = NULL;           
 static void
 gst_app_src_class_init_trampoline (gpointer g_class,
@@ -272,6 +277,7 @@ gst_app_src_class_init_trampoline (gpointer g_class,
       g_type_class_peek_parent (g_class);              
       gst_app_src_class_init ((GstAppSrcClass *)g_class);       
 }
+
 EXPORT_C GType
 gst_app_src_get_type (void)
 {
@@ -295,6 +301,8 @@ static GType object_type = 0;
  return object_type;               
 }
 #endif
+
+
 
 static void
 gst_app_src_base_init (gpointer g_class)
@@ -332,7 +340,7 @@ gst_app_src_class_init (GstAppSrcClass * klass)
   g_object_class_install_property (gobject_class, PROP_CAPS,
       g_param_spec_boxed ("caps", "Caps",
           "The allowed caps for the src pad", GST_TYPE_CAPS,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          G_PARAM_READWRITE));
   /**
    * GstAppSrc::format
    *
@@ -342,7 +350,7 @@ gst_app_src_class_init (GstAppSrcClass * klass)
   g_object_class_install_property (gobject_class, PROP_FORMAT,
       g_param_spec_enum ("format", "Format",
           "The format of the segment events and seek", GST_TYPE_FORMAT,
-          DEFAULT_PROP_FORMAT, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          DEFAULT_PROP_FORMAT, G_PARAM_READWRITE));
   /**
    * GstAppSrc::size
    *
@@ -353,7 +361,7 @@ gst_app_src_class_init (GstAppSrcClass * klass)
       g_param_spec_int64 ("size", "Size",
           "The size of the data stream in bytes (-1 if unknown)",
           -1, G_MAXINT64, DEFAULT_PROP_SIZE,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          G_PARAM_READWRITE));
   /**
    * GstAppSrc::stream-type
    *
@@ -364,7 +372,7 @@ gst_app_src_class_init (GstAppSrcClass * klass)
       g_param_spec_enum ("stream-type", "Stream Type",
           "the type of the stream", GST_TYPE_APP_STREAM_TYPE,
           DEFAULT_PROP_STREAM_TYPE,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          G_PARAM_READWRITE));
   /**
    * GstAppSrc::max-bytes
    *
@@ -376,7 +384,7 @@ gst_app_src_class_init (GstAppSrcClass * klass)
       g_param_spec_uint64 ("max-bytes", "Max bytes",
           "The maximum number of bytes to queue internally (0 = unlimited)",
           0, G_MAXUINT64, DEFAULT_PROP_MAX_BYTES,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          G_PARAM_READWRITE));
   /**
    * GstAppSrc::block
    *
@@ -387,7 +395,7 @@ gst_app_src_class_init (GstAppSrcClass * klass)
   g_object_class_install_property (gobject_class, PROP_BLOCK,
       g_param_spec_boolean ("block", "Block",
           "Block push-buffer when max-bytes are queued",
-          DEFAULT_PROP_BLOCK, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          DEFAULT_PROP_BLOCK, G_PARAM_READWRITE));
 
   /**
    * GstAppSrc::is-live
@@ -398,7 +406,7 @@ gst_app_src_class_init (GstAppSrcClass * klass)
   g_object_class_install_property (gobject_class, PROP_IS_LIVE,
       g_param_spec_boolean ("is-live", "Is Live",
           "Whether to act as a live source",
-          DEFAULT_PROP_IS_LIVE, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          DEFAULT_PROP_IS_LIVE, G_PARAM_READWRITE ));
   /**
    * GstAppSrc::min-latency
    *
@@ -409,7 +417,7 @@ gst_app_src_class_init (GstAppSrcClass * klass)
       g_param_spec_int64 ("min-latency", "Min Latency",
           "The minimum latency (-1 = default)",
           -1, G_MAXINT64, DEFAULT_PROP_MIN_LATENCY,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          G_PARAM_READWRITE));
   /**
    * GstAppSrc::max-latency
    *
@@ -420,7 +428,7 @@ gst_app_src_class_init (GstAppSrcClass * klass)
       g_param_spec_int64 ("max-latency", "Max Latency",
           "The maximum latency (-1 = unlimited)",
           -1, G_MAXINT64, DEFAULT_PROP_MAX_LATENCY,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          G_PARAM_READWRITE));
 
   /**
    * GstAppSrc::emit-signals
@@ -434,7 +442,7 @@ gst_app_src_class_init (GstAppSrcClass * klass)
   g_object_class_install_property (gobject_class, PROP_EMIT_SIGNALS,
       g_param_spec_boolean ("emit-signals", "Emit signals",
           "Emit new-preroll and new-buffer signals", DEFAULT_PROP_EMIT_SIGNALS,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          G_PARAM_READWRITE));
 
   /**
    * GstAppSrc::need-data:

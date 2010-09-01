@@ -31,6 +31,8 @@
 #include "gstcheck.h"
 #include <glib_global.h>
 
+//#include "libgstreamer_wsd_solution.h"
+
 GST_DEBUG_CATEGORY (check_debug);
 
 /* logging function for tests
@@ -41,13 +43,6 @@ GST_DEBUG_CATEGORY (check_debug);
 
 //gboolean _gst_check_threads_running = FALSE;
 //GList *thread_list = NULL;
-#ifdef __SYMBIAN32__
-EXPORT_C
-GstDebugCategory ** _check_debug()
-{
-    return &check_debug;
-}
-#endif
 #if EMULATOR
 GET_GLOBAL_VAR_FROM_TLS(thread_list,gstcheck,GList*)
 #define thread_list (*GET_GSTREAMER_WSD_VAR_NAME(thread_list,gstcheck,g)())
@@ -104,6 +99,7 @@ GET_GLOBAL_VAR_FROM_TLS(check_cond,gstcheck,GCond *)
 EXPORT_C GCond *check_cond = NULL;
 #endif
 
+
 /* FIXME 0.11: shouldn't _gst_check_debug be static? Not used anywhere */
 EXPORT_C gboolean _gst_check_debug = FALSE;
 #if EMULATOR
@@ -142,6 +138,7 @@ static void gst_check_log_message_func(const gchar * log_domain, GLogLevelFlags 
     g_print ("%s", message);
   }
 }
+
 
 static void gst_check_log_critical_func
     (const gchar * log_domain, GLogLevelFlags log_level,
@@ -276,22 +273,6 @@ GstPad *
 gst_check_setup_src_pad (GstElement * element,
     GstStaticPadTemplate * template, GstCaps * caps)
 {
-  GstPad *srcpad;
-
-  srcpad = gst_check_setup_src_pad_by_name (element, template, "sink");
-  if (caps)
-    fail_unless (gst_pad_set_caps (srcpad, caps), "could not set caps on pad");
-  return srcpad;
-}
-#ifdef __SYMBIAN32__
-EXPORT_C
-#endif
-
-
-GstPad *
-gst_check_setup_src_pad_by_name (GstElement * element,
-    GstStaticPadTemplate * template, gchar * name)
-{
   GstPad *srcpad, *sinkpad;
 
   /* sending pad */
@@ -300,12 +281,12 @@ gst_check_setup_src_pad_by_name (GstElement * element,
   fail_if (srcpad == NULL, "Could not create a srcpad");
   ASSERT_OBJECT_REFCOUNT (srcpad, "srcpad", 1);
 
-  sinkpad = gst_element_get_static_pad (element, name);
-  if (sinkpad == NULL)
-    sinkpad = gst_element_get_request_pad (element, name);
+  sinkpad = gst_element_get_pad (element, "sink");
   fail_if (sinkpad == NULL, "Could not get sink pad from %s",
       GST_ELEMENT_NAME (element));
   ASSERT_OBJECT_REFCOUNT (sinkpad, "sinkpad", 2);
+  if (caps)
+    fail_unless (gst_pad_set_caps (srcpad, caps), "could not set caps on pad");
   fail_unless (gst_pad_link (srcpad, sinkpad) == GST_PAD_LINK_OK,
       "Could not link source and %s sink pads", GST_ELEMENT_NAME (element));
   gst_object_unref (sinkpad);   /* because we got it higher up */
@@ -319,46 +300,29 @@ EXPORT_C
 
 
 void
-gst_check_teardown_pad_by_name (GstElement * element, gchar * name)
-{
-  GstPad *pad_peer, *pad_element;
-
-  /* clean up floating src pad */
-  pad_element = gst_element_get_static_pad (element, name);
-  ASSERT_OBJECT_REFCOUNT (pad_element, "pad", 2);
-  pad_peer = gst_pad_get_peer (pad_element);
-
-  if (pad_peer) {
-    if (gst_pad_get_direction (pad_element) == GST_PAD_SINK)
-      gst_pad_unlink (pad_peer, pad_element);
-    else
-      gst_pad_unlink (pad_element, pad_peer);
-
-    /* caps could have been set, make sure they get unset */
-    gst_pad_set_caps (pad_peer, NULL);
-  }
-
-  /* pad refs held by both creator and this function (through _get) */
-  ASSERT_OBJECT_REFCOUNT (pad_element, "element pad_element", 2);
-  gst_object_unref (pad_element);
-  /* one more ref is held by element itself */
-
-  if (pad_peer) {
-    /* pad refs held by both creator and this function (through _get_peer) */
-    ASSERT_OBJECT_REFCOUNT (pad_peer, "check pad_peer", 2);
-    gst_object_unref (pad_peer);
-    gst_object_unref (pad_peer);
-  }
-}
-#ifdef __SYMBIAN32__
-EXPORT_C
-#endif
-
-
-void
 gst_check_teardown_src_pad (GstElement * element)
 {
-  gst_check_teardown_pad_by_name (element, "sink");
+  GstPad *srcpad, *sinkpad;
+
+  /* clean up floating src pad */
+  sinkpad = gst_element_get_pad (element, "sink");
+  ASSERT_OBJECT_REFCOUNT (sinkpad, "sinkpad", 2);
+  srcpad = gst_pad_get_peer (sinkpad);
+
+  gst_pad_unlink (srcpad, sinkpad);
+
+  /* caps could have been set, make sure they get unset */
+  gst_pad_set_caps (srcpad, NULL);
+
+  /* pad refs held by both creator and this function (through _get) */
+  ASSERT_OBJECT_REFCOUNT (sinkpad, "element sinkpad", 2);
+  gst_object_unref (sinkpad);
+  /* one more ref is held by element itself */
+
+  /* pad refs held by both creator and this function (through _get_peer) */
+  ASSERT_OBJECT_REFCOUNT (srcpad, "check srcpad", 2);
+  gst_object_unref (srcpad);
+  gst_object_unref (srcpad);
 }
 
 /* FIXME: set_caps isn't that useful; might want to check if fixed,
@@ -371,22 +335,6 @@ GstPad *
 gst_check_setup_sink_pad (GstElement * element, GstStaticPadTemplate * template,
     GstCaps * caps)
 {
-  GstPad *sinkpad;
-
-  sinkpad = gst_check_setup_sink_pad_by_name (element, template, "src");
-  if (caps)
-    fail_unless (gst_pad_set_caps (sinkpad, caps), "Could not set pad caps");
-  return sinkpad;
-}
-#ifdef __SYMBIAN32__
-EXPORT_C
-#endif
-
-
-GstPad *
-gst_check_setup_sink_pad_by_name (GstElement * element,
-    GstStaticPadTemplate * template, gchar * name)
-{
   GstPad *srcpad, *sinkpad;
 
   /* receiving pad */
@@ -394,11 +342,11 @@ gst_check_setup_sink_pad_by_name (GstElement * element,
   GST_DEBUG_OBJECT (element, "setting up receiving pad %p", sinkpad);
   fail_if (sinkpad == NULL, "Could not create a sinkpad");
 
-  srcpad = gst_element_get_static_pad (element, name);
-  if (srcpad == NULL)
-    srcpad = gst_element_get_request_pad (element, name);
+  srcpad = gst_element_get_pad (element, "src");
   fail_if (srcpad == NULL, "Could not get source pad from %s",
       GST_ELEMENT_NAME (element));
+  if (caps)
+    fail_unless (gst_pad_set_caps (sinkpad, caps), "Could not set pad caps");
   gst_pad_set_chain_function (sinkpad, gst_check_chain_func);
 
   GST_DEBUG_OBJECT (element, "Linking element src pad and receiving sink pad");
@@ -418,7 +366,23 @@ EXPORT_C
 void
 gst_check_teardown_sink_pad (GstElement * element)
 {
-  gst_check_teardown_pad_by_name (element, "src");
+  GstPad *srcpad, *sinkpad;
+
+  /* clean up floating sink pad */
+  srcpad = gst_element_get_pad (element, "src");
+  sinkpad = gst_pad_get_peer (srcpad);
+
+  gst_pad_unlink (srcpad, sinkpad);
+
+  /* pad refs held by both creator and this function (through _get_pad) */
+  ASSERT_OBJECT_REFCOUNT (srcpad, "element srcpad", 2);
+  gst_object_unref (srcpad);
+  /* one more ref is held by element itself */
+
+  /* pad refs held by both creator and this function (through _get_peer) */
+  ASSERT_OBJECT_REFCOUNT (sinkpad, "check sinkpad", 2);
+  gst_object_unref (sinkpad);
+  gst_object_unref (sinkpad);
 }
 
 /**
@@ -447,6 +411,7 @@ gst_check_drop_buffers (void)
 
 /**
  * gst_check_caps_equal:
+ *
  * @caps1: first caps to compare
  * @caps2: second caps to compare
  *
@@ -518,8 +483,8 @@ gst_check_element_push_buffer_list (const gchar * element_name,
   src_caps = GST_BUFFER_CAPS (buffer);
   src_pad = gst_pad_new (NULL, GST_PAD_SRC);
   gst_pad_set_caps (src_pad, src_caps);
-  pad_peer = gst_element_get_static_pad (element, "sink");
-  fail_if (pad_peer == NULL);
+  pad_peer = gst_element_get_pad (element, "sink");
+  fail_if (pad_peer == NULL, "");
   fail_unless (gst_pad_link (src_pad, pad_peer) == GST_PAD_LINK_OK,
       "Could not link source and %s sink pads", GST_ELEMENT_NAME (element));
   gst_object_unref (pad_peer);
@@ -540,11 +505,11 @@ gst_check_element_push_buffer_list (const gchar * element_name,
     g_free (temp);
     fail_unless (gst_caps_is_fixed (sink_caps), "we need fixed caps");
     /* get the sink pad */
-    sink_pad = gst_pad_new (NULL, GST_PAD_SINK);
-    fail_unless (GST_IS_PAD (sink_pad));
+    sink_pad = gst_pad_new ('\0', GST_PAD_SINK);
+    fail_unless (GST_IS_PAD (sink_pad), "");
     gst_pad_set_caps (sink_pad, sink_caps);
     /* get the peer pad */
-    pad_peer = gst_element_get_static_pad (element, "src");
+    pad_peer = gst_element_get_pad (element, "src");
     fail_unless (gst_pad_link (pad_peer, sink_pad) == GST_PAD_LINK_OK,
         "Could not link sink and %s source pads", GST_ELEMENT_NAME (element));
     gst_object_unref (pad_peer);
@@ -603,7 +568,7 @@ gst_check_element_push_buffer_list (const gchar * element_name,
 
 /**
  * gst_check_element_push_buffer:
- * @element_name: name of the element that needs to be created
+ * @element: name of the element that needs to be created
  * @buffer_in: push this buffer to the element
  * @buffer_out: compare the result with this buffer
  *
@@ -629,6 +594,9 @@ gst_check_element_push_buffer (const gchar * element_name,
   out = g_list_append (out, buffer_out);
 
   gst_check_element_push_buffer_list (element_name, in, out, GST_FLOW_OK);
+
+  g_list_free (in);
+  g_list_free (out);
 }
 #ifdef __SYMBIAN32__
 EXPORT_C

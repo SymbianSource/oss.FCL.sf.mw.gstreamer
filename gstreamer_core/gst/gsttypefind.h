@@ -29,7 +29,7 @@
 
 G_BEGIN_DECLS
 
-#define GST_TYPE_TYPE_FIND  (gst_type_find_get_type())
+#define GST_TYPE_TYPE_FIND	(gst_type_find_get_type())
 
 typedef struct _GstTypeFind GstTypeFind;
 
@@ -72,18 +72,17 @@ typedef enum {
  */
 struct _GstTypeFind {
   /* private to the caller of the typefind function */
-  guint8 *  (* peek)       (gpointer         data,
-                            gint64           offset,
-                            guint            size);
+  guint8 *	(* peek)	(gpointer		data,
+				 gint64	         	offset,
+				 guint			size);
+  void		(* suggest)	(gpointer		data,
+				 guint			probability,
+				 const GstCaps *	caps);
 
-  void      (* suggest)    (gpointer         data,
-                            guint            probability,
-                            const GstCaps *  caps);
-
-  gpointer     data;
+  gpointer	data;
 
   /* optional */
-  guint64   (* get_length) (gpointer data);
+  guint64	(* get_length)	(gpointer		data);
 
   /* <private> */
   gpointer _gst_reserved[GST_PADDING];
@@ -93,53 +92,42 @@ IMPORT_C
 #endif
 
 
-GType     gst_type_find_get_type   (void);
+GType		gst_type_find_get_type			(void);
 
 /* typefind function interface */
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
 
-guint8 *  gst_type_find_peek       (GstTypeFind   * find,
-                                    gint64          offset,
-                                    guint           size);
+guint8 *	gst_type_find_peek			(GstTypeFind *		find,
+							 gint64			offset,
+							 guint			size);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
 
-
-void      gst_type_find_suggest    (GstTypeFind   * find,
-                                    guint           probability,
-                                    const GstCaps * caps);
+void		gst_type_find_suggest			(GstTypeFind *		find,
+							 guint			probability,
+							 const GstCaps *     	caps);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
 
-
-void      gst_type_find_suggest_simple (GstTypeFind * find,
-                                        guint         probability,
-                                        const char  * media_type,
-                                        const char  * fieldname, ...);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-guint64   gst_type_find_get_length (GstTypeFind   * find);
+guint64		gst_type_find_get_length		(GstTypeFind *		find);
 
 /* registration interface */
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
 
-gboolean  gst_type_find_register   (GstPlugin            * plugin,
-                                    const gchar          * name,
-                                    guint                  rank,
-                                    GstTypeFindFunction    func,
-                                    gchar               ** extensions,
-                                    const GstCaps        * possible_caps,
-                                    gpointer               data,
-                                    GDestroyNotify         data_notify);
+gboolean	gst_type_find_register			(GstPlugin *		plugin,
+							 const gchar *		name,
+							 guint			rank,
+							 GstTypeFindFunction	func,
+							 gchar **		extensions,
+							 const GstCaps *	possible_caps,
+							 gpointer		data,
+							 GDestroyNotify		data_notify);
 
 G_END_DECLS
 

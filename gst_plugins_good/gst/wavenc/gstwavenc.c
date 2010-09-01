@@ -24,17 +24,24 @@
 #include "config.h"
 #endif
 
+
+
 #include <string.h>
 #include "gstwavenc.h"
-#include "riff.h"
+//#include "riff.h" rj
 
+#include "gst/riff/riff-ids.h"
+#include "gst/riff/riff-media.h"
+#include <gst/gst-i18n-plugin.h>
 
 #ifdef __SYMBIAN32__
 #include<gst/gstinfo.h>
 #endif
 
 GST_DEBUG_CATEGORY_STATIC (wavenc_debug);
-#define GST_CAT_DEFAULT wavenc_debug
+#define GST_CAT_DEFAULT (wavenc_debug) //rj
+
+#define WAVE_FORMAT_PCM 0x0001
 
 struct riff_struct
 {
@@ -81,22 +88,6 @@ GST_ELEMENT_DETAILS ("WAV audio muxer",
     "rate = (int) [ 1, MAX ], "          \
     "channels = (int) [ 1, 2 ], "        \
     "endianness = (int) LITTLE_ENDIAN, " \
-    "width = (int) 32, "                 \
-    "depth = (int) 32, "                 \
-    "signed = (boolean) true"            \
-    "; "                                 \
-    "audio/x-raw-int, "                  \
-    "rate = (int) [ 1, MAX ], "          \
-    "channels = (int) [ 1, 2 ], "        \
-    "endianness = (int) LITTLE_ENDIAN, " \
-    "width = (int) 24, "                 \
-    "depth = (int) 24, "                 \
-    "signed = (boolean) true"            \
-    "; "                                 \
-    "audio/x-raw-int, "                  \
-    "rate = (int) [ 1, MAX ], "          \
-    "channels = (int) [ 1, 2 ], "        \
-    "endianness = (int) LITTLE_ENDIAN, " \
     "width = (int) 16, "                 \
     "depth = (int) 16, "                 \
     "signed = (boolean) true"            \
@@ -105,25 +96,6 @@ GST_ELEMENT_DETAILS ("WAV audio muxer",
     "rate = (int) [ 1, MAX ], "          \
     "channels = (int) [ 1, 2 ], "        \
     "width = (int) 8, "                  \
-    "depth = (int) 8, "                  \
-    "signed = (boolean) false"           \
-    "; "                                 \
-    "audio/x-raw-float, "                \
-    "rate = (int) [ 1, MAX ], "          \
-    "channels = (int) [ 1, 2 ], "        \
-    "endianness = (int) LITTLE_ENDIAN, " \
-    "width = (int) { 32, 64 }; "         \
-    "audio/x-alaw, "                     \
-    "rate = (int) [ 8000, 192000 ], "    \
-    "channels = (int) [ 1, 2 ], "        \
-    "width = (int) 8, "                  \
-    "depth = (int) 8, "                  \
-    "signed = (boolean) false; "         \
-    "audio/x-mulaw, "                    \
-    "rate = (int) [ 8000, 192000 ], "    \
-    "channels = (int) [ 1, 2 ], "        \
-    "width = (int) 8, "                  \
-    "depth = (int) 8, "                  \
     "signed = (boolean) false"
 
 static GstStaticPadTemplate sink_factory = GST_STATIC_PAD_TEMPLATE ("sink",
@@ -138,13 +110,50 @@ static GstStaticPadTemplate src_factory = GST_STATIC_PAD_TEMPLATE ("src",
     GST_STATIC_CAPS ("audio/x-wav")
     );
 
+#ifndef __SYMBIAN32__  //rj
 GST_BOILERPLATE (GstWavEnc, gst_wavenc, GstElement, GST_TYPE_ELEMENT);
+#endif
+
+//rj
+static void gst_wavenc_base_init (gpointer g_class);
+static void gst_wavenc_class_init (GstWavEncClass * klass);
+static void gst_wavenc_init (GstWavEnc * wavenc, GstWavEncClass * klass);
+static GstElementClass *parent_class = NULL;
+//rj
 
 static GstFlowReturn gst_wavenc_chain (GstPad * pad, GstBuffer * buf);
 static gboolean gst_wavenc_event (GstPad * pad, GstEvent * event);
 static GstStateChangeReturn gst_wavenc_change_state (GstElement * element,
     GstStateChange transition);
 static gboolean gst_wavenc_sink_setcaps (GstPad * pad, GstCaps * caps);
+
+
+
+
+GType gst_wavenc_get_type (void)
+{
+  static GType wavenc_type = 0;
+
+  if (!wavenc_type) {
+    static const GTypeInfo wavenc_info = {
+      sizeof (GstWavEncClass),
+      gst_wavenc_base_init,
+      NULL,
+      (GClassInitFunc) gst_wavenc_class_init,
+      NULL,
+      NULL,
+      sizeof (GstWavEnc),
+      0,
+      (GInstanceInitFunc) gst_wavenc_init,
+    };
+
+    wavenc_type =
+        g_type_register_static (GST_TYPE_ELEMENT, "GstWavEnc",
+        &wavenc_info, 0);
+  }
+  return wavenc_type;
+}
+
 
 static void
 gst_wavenc_base_init (gpointer g_class)
@@ -167,6 +176,8 @@ gst_wavenc_class_init (GstWavEncClass * klass)
   GstElementClass *element_class;
 
   element_class = (GstElementClass *) klass;
+  
+  parent_class = g_type_class_peek_parent (klass);//rj
 
   element_class->change_state = GST_DEBUG_FUNCPTR (gst_wavenc_change_state);
 }
@@ -192,6 +203,7 @@ gst_wavenc_init (GstWavEnc * wavenc, GstWavEncClass * klass)
 
 #define WAV_HEADER_LEN 44
 
+/* FIXME: we are probably not handling depth != width correctly here */
 static GstBuffer *
 gst_wavenc_create_header_buf (GstWavEnc * wavenc, guint audio_data_size)
 {
@@ -204,23 +216,23 @@ gst_wavenc_create_header_buf (GstWavEnc * wavenc, guint audio_data_size)
   memset (header, 0, WAV_HEADER_LEN);
 
   wave.common.wChannels = wavenc->channels;
-  wave.common.wBitsPerSample = wavenc->width;
+  wave.common.wBitsPerSample = wavenc->depth;
   wave.common.dwSamplesPerSec = wavenc->rate;
 
   /* Fill out our wav-header with some information */
   memcpy (wave.riff.id, "RIFF", 4);
-  //g_printf("before wave.riff.len %d \n" ,wave.riff.len);
   wave.riff.len = audio_data_size + WAV_HEADER_LEN - 8;
-  //g_printf("after wave.riff.len %d \n" ,wave.riff.len);
   memcpy (wave.riff.wav_id, "WAVE", 4);
 
   memcpy (wave.format.id, "fmt ", 4);
   wave.format.len = 16;
 
-  wave.common.wFormatTag = wavenc->format;
-  wave.common.wBlockAlign = (wavenc->width / 8) * wave.common.wChannels;
+  wave.common.wFormatTag = WAVE_FORMAT_PCM;
   wave.common.dwAvgBytesPerSec =
-      wave.common.wBlockAlign * wave.common.dwSamplesPerSec;
+      wave.common.wChannels * wave.common.dwSamplesPerSec *
+      (wave.common.wBitsPerSample >> 3);
+  wave.common.wBlockAlign =
+      wave.common.wChannels * (wave.common.wBitsPerSample >> 3);
 
   memcpy (wave.data.id, "data", 4);
   wave.data.len = audio_data_size;
@@ -275,8 +287,7 @@ gst_wavenc_sink_setcaps (GstPad * pad, GstCaps * caps)
 {
   GstWavEnc *wavenc;
   GstStructure *structure;
-  const gchar *name;
-  gint chans, rate, width;
+  gint chans, rate, width, depth;
 
   wavenc = GST_WAVENC (gst_pad_get_parent (pad));
 
@@ -288,45 +299,21 @@ gst_wavenc_sink_setcaps (GstPad * pad, GstCaps * caps)
   GST_DEBUG_OBJECT (wavenc, "got caps: %" GST_PTR_FORMAT, caps);
 
   structure = gst_caps_get_structure (caps, 0);
-  name = gst_structure_get_name (structure);
-
   if (!gst_structure_get_int (structure, "channels", &chans) ||
-      !gst_structure_get_int (structure, "rate", &rate)) {
+      !gst_structure_get_int (structure, "rate", &rate) ||
+      !gst_structure_get_int (structure, "width", &width) ||
+      (width != 8 && !gst_structure_get_int (structure, "depth", &depth))) {
     GST_WARNING_OBJECT (wavenc, "caps incomplete");
     goto fail;
   }
 
-  if (strcmp (name, "audio/x-raw-int") == 0) {
-    if (!gst_structure_get_int (structure, "width", &width)) {
-      GST_WARNING_OBJECT (wavenc, "caps incomplete");
-      goto fail;
-    }
-    wavenc->format = GST_RIFF_WAVE_FORMAT_PCM;
-    wavenc->width = width;
-  } else if (strcmp (name, "audio/x-raw-float") == 0) {
-    if (!gst_structure_get_int (structure, "width", &width)) {
-      GST_WARNING_OBJECT (wavenc, "caps incomplete");
-      goto fail;
-    }
-    wavenc->format = GST_RIFF_WAVE_FORMAT_FLOAT;
-    wavenc->width = width;
-  } else if (strcmp (name, "audio/x-alaw") == 0) {
-    wavenc->format = GST_RIFF_WAVE_FORMAT_ALAW;
-    wavenc->width = 8;
-  } else if (strcmp (name, "audio/x-mulaw") == 0) {
-    wavenc->format = GST_RIFF_WAVE_FORMAT_MULAW;
-    wavenc->width = 8;
-  } else {
-    GST_WARNING_OBJECT (wavenc, "Unsupported format %s", name);
-    goto fail;
-  }
-
   wavenc->channels = chans;
+  wavenc->width = width;
+  wavenc->depth = (width == 8) ? 8 : depth;
   wavenc->rate = rate;
 
-  GST_LOG_OBJECT (wavenc,
-      "accepted caps: format=0x%04x chans=%u width=%u rate=%u",
-      wavenc->format, wavenc->channels, wavenc->width, wavenc->rate);
+  GST_LOG_OBJECT (wavenc, "accepted caps: chans=%u width=%u depth=%u rate=%u",
+      wavenc->channels, wavenc->width, wavenc->depth, wavenc->rate);
 
   gst_object_unref (wavenc);
   return TRUE;
@@ -638,9 +625,6 @@ gst_wavenc_event (GstPad * pad, GstEvent * event)
       /* write header with correct length values */
       gst_wavenc_push_header (wavenc, wavenc->length);
 
-      /* we're done with this file */
-      wavenc->finished_properly = TRUE;
-
       /* and forward the EOS event */
       res = gst_pad_event_default (pad, event);
       break;
@@ -672,15 +656,14 @@ gst_wavenc_chain (GstPad * pad, GstBuffer * buf)
      * header when we get EOS and know the exact length */
     flow = gst_wavenc_push_header (wavenc, 0x7FFF0000);
 
-    /* starting a file, means we have to finish it properly */
-    wavenc->finished_properly = FALSE;
-
     if (flow != GST_FLOW_OK)
       return flow;
 
     GST_DEBUG_OBJECT (wavenc, "wrote dummy header");
     wavenc->sent_header = TRUE;
   }
+
+  wavenc->length += GST_BUFFER_SIZE (buf);
 
   GST_LOG_OBJECT (wavenc, "pushing %u bytes raw audio, ts=%" GST_TIME_FORMAT,
       GST_BUFFER_SIZE (buf), GST_TIME_ARGS (GST_BUFFER_TIMESTAMP (buf)));
@@ -689,8 +672,6 @@ gst_wavenc_chain (GstPad * pad, GstBuffer * buf)
   gst_buffer_set_caps (buf, GST_PAD_CAPS (wavenc->srcpad));
   GST_BUFFER_OFFSET (buf) = WAV_HEADER_LEN + wavenc->length;
   GST_BUFFER_OFFSET_END (buf) = GST_BUFFER_OFFSET_NONE;
-
-  wavenc->length += GST_BUFFER_SIZE (buf);
 
   flow = gst_pad_push (wavenc->srcpad, buf);
 
@@ -705,14 +686,12 @@ gst_wavenc_change_state (GstElement * element, GstStateChange transition)
 
   switch (transition) {
     case GST_STATE_CHANGE_NULL_TO_READY:
-      wavenc->format = 0;
       wavenc->channels = 0;
       wavenc->width = 0;
+      wavenc->depth = 0;
       wavenc->rate = 0;
       wavenc->length = 0;
       wavenc->sent_header = FALSE;
-      /* its true because we haven't writen anything */
-      wavenc->finished_properly = TRUE;
       break;
     default:
       break;
@@ -722,26 +701,13 @@ gst_wavenc_change_state (GstElement * element, GstStateChange transition)
   if (ret != GST_STATE_CHANGE_SUCCESS)
     return ret;
 
-  switch (transition) {
-    case GST_STATE_CHANGE_PAUSED_TO_READY:
-      if (!wavenc->finished_properly) {
-        GST_ELEMENT_WARNING (wavenc, STREAM, MUX,
-            ("Wav stream not finished properly"),
-            ("Wav stream not finished properly, no EOS received "
-                "before shutdown"));
-      }
-      break;
-    default:
-      break;
-  }
-
   return ret;
 }
 
 static gboolean
 plugin_init (GstPlugin * plugin)
 {
-  return gst_element_register (plugin, "wavenc", GST_RANK_PRIMARY,
+  return gst_element_register (plugin, "wavenc", GST_RANK_NONE,
       GST_TYPE_WAVENC);
 }
 

@@ -29,25 +29,7 @@ static const gchar *_quark_strings[] = {
   "format", "current", "duration", "rate",
   "seekable", "segment-start", "segment-end",
   "src_format", "src_value", "dest_format", "dest_value",
-  "start_format", "start_value", "stop_format", "stop_value",
-  "gerror", "debug", "buffer-percent", "buffering-mode",
-  "avg-in-rate", "avg-out-rate", "buffering-left",
-  "estimated-total", "old-state", "new-state", "pending-state",
-  "clock", "ready", "position", "new-base-time", "live", "min-latency",
-  "max-latency", "busy", "type", "owner", "update", "applied-rate",
-  "start", "stop", "minsize", "maxsize", "async", "proportion",
-  "diff", "timestamp", "flags", "cur-type", "cur", "stop-type",
-  "latency", "uri", "object", "taglist", "GstEventNewsegment",
-  "GstEventBufferSize", "GstEventQOS", "GstEventSeek", "GstEventLatency",
-  "GstMessageError", "GstMessageWarning", "GstMessageInfo",
-  "GstMessageBuffering", "GstMessageState", "GstMessageClockProvide",
-  "GstMessageClockLost", "GstMessageNewClock", "GstMessageStructureChange",
-  "GstMessageSegmentStart", "GstMessageSegmentDone", "GstMessageDuration",
-  "GstMessageAsyncStart", "GstMessageRequestState", "GstMessageStreamStatus",
-  "GstQueryPosition", "GstQueryDuration", "GstQueryLatency", "GstQueryConvert",
-  "GstQuerySegment", "GstQuerySeeking", "GstQueryFormats", "GstQueryBuffering",
-  "GstQueryURI", "GstEventStep", "GstMessageStepDone", "amount", "flush",
-  "intermediate", "GstMessageStepStart", "active", "eos"
+  "start_format", "start_value", "stop_format", "stop_value"
 };
 
 GQuark _priv_gst_quark_table[GST_QUARK_MAX];
@@ -60,10 +42,6 @@ void
 _priv_gst_quarks_initialize (void)
 {
   gint i;
-
-  if (G_N_ELEMENTS (_quark_strings) != GST_QUARK_MAX)
-    g_warning ("the quark table is not consistent! %d != %d",
-        (int) G_N_ELEMENTS (_quark_strings), GST_QUARK_MAX);
 
   for (i = 0; i < GST_QUARK_MAX; i++) {
     _priv_gst_quark_table[i] = g_quark_from_static_string (_quark_strings[i]);

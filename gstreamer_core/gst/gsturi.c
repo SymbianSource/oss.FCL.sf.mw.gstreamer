@@ -64,10 +64,9 @@ EXPORT_C
 GType
 gst_uri_handler_get_type (void)
 {
-  static volatile gsize urihandler_type = 0;
+  static GType urihandler_type = 0;
 
-  if (g_once_init_enter (&urihandler_type)) {
-    GType _type;
+  if (G_UNLIKELY (urihandler_type == 0)) {
     static const GTypeInfo urihandler_info = {
       sizeof (GstURIHandlerInterface),
       gst_uri_handler_base_init,
@@ -81,16 +80,14 @@ gst_uri_handler_get_type (void)
       NULL
     };
 
-    _type = g_type_register_static (G_TYPE_INTERFACE,
+    urihandler_type = g_type_register_static (G_TYPE_INTERFACE,
         "GstURIHandler", &urihandler_info, 0);
 
     GST_DEBUG_CATEGORY_INIT (gst_uri_handler_debug, "GST_URI", GST_DEBUG_BOLD,
         "handling of URIs");
-    g_once_init_leave (&urihandler_type, _type);
   }
   return urihandler_type;
 }
-
 static void
 gst_uri_handler_base_init (gpointer g_class)
 {
@@ -242,7 +239,7 @@ unescape_character (const char *scanner)
     return -1;
   }
 
-  second_digit = hex_to_int (*scanner);
+  second_digit = hex_to_int (*scanner++);
   if (second_digit < 0) {
     return -1;
   }
@@ -312,8 +309,7 @@ gst_uri_protocol_check_internal (const gchar * uri, gchar ** endptr)
 
   if (g_ascii_isalpha (*check)) {
     check++;
-    while (g_ascii_isalnum (*check) || *check == '+'
-        || *check == '-' || *check == '.')
+    while (g_ascii_isalnum (*check))
       check++;
   }
 
@@ -325,8 +321,7 @@ gst_uri_protocol_check_internal (const gchar * uri, gchar ** endptr)
  * @protocol: A string
  *
  * Tests if the given string is a valid protocol identifier. Protocols
- * must consist of alphanumeric characters, '+', '-' and '.' and must
- * start with a alphabetic character. See RFC 3986 Section 3.1.
+ * must consist of alphanumeric characters and not start with a number.
  *
  * Returns: TRUE if the string is a valid protocol identifier, FALSE otherwise.
  */
@@ -351,7 +346,7 @@ gst_uri_protocol_is_valid (const gchar * protocol)
  * @uri: A URI string
  *
  * Tests if the given string is a valid URI identifier. URIs start with a valid
- * scheme followed by ":" and maybe a string identifying the location.
+ * protocol followed by "://" and maybe a string identifying the location.
  *
  * Returns: TRUE if the string is a valid URI
  */
@@ -368,7 +363,7 @@ gst_uri_is_valid (const gchar * uri)
 
   gst_uri_protocol_check_internal (uri, &endptr);
 
-  return *endptr == ':';
+  return (*endptr == ':' && *(endptr + 1) == '/' && *(endptr + 2) == '/');
 }
 
 /**
@@ -392,9 +387,9 @@ gst_uri_get_protocol (const gchar * uri)
   g_return_val_if_fail (uri != NULL, NULL);
   g_return_val_if_fail (gst_uri_is_valid (uri), NULL);
 
-  colon = strstr (uri, ":");
+  colon = strstr (uri, "://");
 
-  return g_ascii_strdown (uri, colon - uri);
+  return g_strdown (g_strndup (uri, colon - uri));
 }
 
 /**
@@ -421,12 +416,12 @@ gst_uri_has_protocol (const gchar * uri, const gchar * protocol)
   g_return_val_if_fail (protocol != NULL, FALSE);
   g_return_val_if_fail (gst_uri_is_valid (uri), FALSE);
 
-  colon = strstr (uri, ":");
+  colon = strstr (uri, "://");
 
   if (colon == NULL)
     return FALSE;
 
-  return (g_ascii_strncasecmp (uri, protocol, (gsize) (colon - uri)) == 0);
+  return (strncmp (uri, protocol, (gsize) (colon - uri)) == 0);
 }
 
 /**
@@ -455,8 +450,6 @@ gst_uri_get_location (const gchar * uri)
   g_return_val_if_fail (gst_uri_is_valid (uri), NULL);
 
   colon = strstr (uri, "://");
-  if (!colon)
-    return NULL;
 
   unescaped = unescape_string (colon + 3, "/");
 
@@ -475,7 +468,7 @@ gst_uri_get_location (const gchar * uri)
 #endif
 
   GST_LOG ("extracted location '%s' from URI '%s'", GST_STR_NULL (unescaped),
-      uri);
+      uri);;
   return unescaped;
 }
 
@@ -496,17 +489,15 @@ EXPORT_C
 gchar *
 gst_uri_construct (const gchar * protocol, const gchar * location)
 {
-  char *escaped, *proto_lowercase;
+  char *escaped;
   char *retval;
 
   g_return_val_if_fail (gst_uri_protocol_is_valid (protocol), NULL);
   g_return_val_if_fail (location != NULL, NULL);
 
-  proto_lowercase = g_ascii_strdown (protocol, -1);
   escaped = escape_string (location);
-  retval = g_strdup_printf ("%s://%s", proto_lowercase, escaped);
+  retval = g_strdup_printf ("%s://%s", protocol, escaped);
   g_free (escaped);
-  g_free (proto_lowercase);
 
   return retval;
 }
@@ -687,13 +678,8 @@ gst_uri_handler_get_uri_type (GstURIHandler * handler)
 
   iface = GST_URI_HANDLER_GET_INTERFACE (handler);
   g_return_val_if_fail (iface != NULL, GST_URI_UNKNOWN);
-  g_return_val_if_fail (iface->get_type != NULL
-      || iface->get_type_full != NULL, GST_URI_UNKNOWN);
-
-  if (iface->get_type != NULL)
-    ret = iface->get_type ();
-  else
-    ret = iface->get_type_full (G_OBJECT_TYPE (handler));
+  g_return_val_if_fail (iface->get_type != NULL, GST_URI_UNKNOWN);
+  ret = iface->get_type ();
   g_return_val_if_fail (GST_URI_TYPE_IS_VALID (ret), GST_URI_UNKNOWN);
 
   return ret;
@@ -786,8 +772,6 @@ gboolean
 gst_uri_handler_set_uri (GstURIHandler * handler, const gchar * uri)
 {
   GstURIHandlerInterface *iface;
-  gboolean ret;
-  gchar *new_uri, *protocol, *location, *colon;
 
   g_return_val_if_fail (GST_IS_URI_HANDLER (handler), FALSE);
   g_return_val_if_fail (gst_uri_is_valid (uri), FALSE);
@@ -795,21 +779,7 @@ gst_uri_handler_set_uri (GstURIHandler * handler, const gchar * uri)
   iface = GST_URI_HANDLER_GET_INTERFACE (handler);
   g_return_val_if_fail (iface != NULL, FALSE);
   g_return_val_if_fail (iface->set_uri != NULL, FALSE);
-
-  protocol = gst_uri_get_protocol (uri);
-
-  colon = strstr (uri, ":");
-  location = g_strdup (colon);
-
-  new_uri = g_strdup_printf ("%s%s", protocol, location);
-
-  ret = iface->set_uri (handler, uri);
-
-  g_free (new_uri);
-  g_free (location);
-  g_free (protocol);
-
-  return ret;
+  return iface->set_uri (handler, uri);
 }
 
 /**

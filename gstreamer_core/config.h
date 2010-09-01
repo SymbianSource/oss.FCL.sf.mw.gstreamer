@@ -1,9 +1,6 @@
 /* config.h.  Generated from config.h.in by configure.  */
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define if building universal (internal helper macro) */
-/* #undef AC_APPLE_UNIVERSAL_BUILD */
-
 /* Define to 1 if translation of program messages to the user's native
    language is requested. */
 	 #undef ENABLE_NLS 
@@ -11,23 +8,14 @@
 /* gettext package name */
 #define GETTEXT_PACKAGE "gstreamer-0.10"
 
-/* data dir */
-#define GST_DATADIR "/usr/local/share"
-//#define GST_DISABLE_GST_DEBUG 1
 /* Define if pipeline parsing code is disabled */
-/* #undef GST_DISABLE_PARSE */
-
-/* Extra platform specific plugin suffix */
-/* #undef GST_EXTRA_MODULE_SUFFIX */
+//#define GST_DISABLE_PARSE 1 
 
 /* macro to use to show function name */
 #define GST_FUNCTION __PRETTY_FUNCTION__
 
 /* Defined if gcov is enabled to force a rebuild due to config.h changing */
 /* #undef GST_GCOV_ENABLED */
-
-/* Defined when registry scanning through fork is unsafe */
-/* #undef GST_HAVE_UNSAFE_FORK */
 
 /* Default errorlevel to use */
 #ifdef DEBUG_ENABLE
@@ -47,14 +35,6 @@
 
 /* package origin */
 #define GST_PACKAGE_ORIGIN "Unknown package origin"
-
-/* Define to 1 if you have the MacOS X function CFLocaleCopyCurrent in the
-   CoreFoundation framework. */
-/* #undef HAVE_CFLOCALECOPYCURRENT */
-
-/* Define to 1 if you have the MacOS X function CFPreferencesCopyAppValue in
-   the CoreFoundation framework. */
-/* #undef HAVE_CFPREFERENCESCOPYAPPVALUE */
 
 /* Define to 1 if you have the `clock_gettime' function. */
 #define HAVE_CLOCK_GETTIME 1
@@ -179,7 +159,7 @@
 #define HAVE_MMAP 1
 
 /* Have a monotonic clock */
-//#define HAVE_MONOTONIC_CLOCK 1
+#define HAVE_MONOTONIC_CLOCK 1
 
 /* Define to 1 if you have the `poll' function. */
 #ifndef __SYMBIAN32__
@@ -292,20 +272,20 @@
 #define PACKAGE_NAME "GStreamer"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "GStreamer 0.10.24"
+#define PACKAGE_STRING "GStreamer 0.10.19"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "gstreamer"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "0.10.24"
+#define PACKAGE_VERSION "0.10.19"
 
-/// needed for audiofx
-#ifndef G_PARAM_STATIC_STRINGS
-#define	G_PARAM_STATIC_STRINGS (G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB)
-#endif
+#define PLUGIN_LIST "c:\\gstreamer\\plugins_list"
+#define PLUGIN_LIST_IN_ROM "z:\\gstreamer\\plugins_list"
+#define GSTREAMER_REGISTERY_PATH "c:\\gstreamer"
+#define GSTREAMER_REGISTERY_PATH_IN_ROM "z:\\gstreamer"
 
-
+#define GST_REGISTRY_GENERATOR "GSTRegistryGenerator.exe"
 /* directory where plugins are located */
 #ifdef __SYMBIAN32__
 #if defined(__WINSCW__) || defined(__WINS__)
@@ -332,19 +312,11 @@
 /* #undef USE_POISONING */
 
 /* Version number of package */
-#define VERSION "0.10.24"
+#define VERSION "0.10.19"
 
-/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
-   significant byte first (like Motorola and SPARC, unlike Intel). */
-#if defined AC_APPLE_UNIVERSAL_BUILD
-# if defined __BIG_ENDIAN__
-#  define WORDS_BIGENDIAN 1
-# endif
-#else
-# ifndef WORDS_BIGENDIAN
-/* #  undef WORDS_BIGENDIAN */
-# endif
-#endif
+/* Define to 1 if your processor stores words with the most significant byte
+   first (like Motorola and SPARC, unlike Intel and VAX). */
+/* #undef WORDS_BIGENDIAN */
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 #define _FILE_OFFSET_BITS 64
@@ -355,23 +327,8 @@
 /* Define for large files, on AIX-style hosts. */
 /* #undef _LARGE_FILES */
 
-/* We need at least WinXP SP2 for __stat64 */
-/* #undef __MSVCRT_VERSION__ */
-
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus
 /* #undef inline */
-#else
-#ifdef __WINSCW__ 
-_LIT(KResFileNamePath,"\\sys\\bin\\plugins\\");
-#else
-_LIT(KResFileNamePath,"\\sys\\bin\\");
 #endif
-#endif
-
-#define PLUGIN_LIST_TXT_FILE_PATH "c:\\gstreamer\\plugins_list"
-#define PLUGIN_LIST_TXT_FILE_PATH_IN_ROM "z:\\gstreamer\\plugins_list"
-#define GSTREAMER_REGISTERY_PATH "c:\\gstreamer"
-#define GSTREAMER_REGISTERY_PATH_IN_ROM "z:\\gstreamer"
-#define GSTREAMER_TXT_FILE_SUFFIX "txt"

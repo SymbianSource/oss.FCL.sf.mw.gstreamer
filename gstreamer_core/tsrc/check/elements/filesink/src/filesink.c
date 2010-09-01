@@ -26,8 +26,7 @@
 
 #include <gst/gst_global.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h> 
+
 #include <glib.h>
 #include <glib/gstdio.h>
 
@@ -48,20 +47,11 @@
 
 void create_xml(int result)
 {
-
     if(result)
-    {
         assert_failed = 1;
-    } 
-
+    
     testResultXml(xmlfile);
     close_log_file();
- 
-    if(result)
-    {
-        exit (-1);
-    }    
-
 }
 
 

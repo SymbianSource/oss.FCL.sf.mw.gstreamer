@@ -20,7 +20,6 @@
 *
 */
 
-
 #include <platform_paths.hrh>                    
 
 TARGET          libgstaudiorate.dll
@@ -44,7 +43,12 @@ MW_LAYER_SYSTEMINCLUDE
 OS_LAYER_LIBC_SYSTEMINCLUDE
 
 OS_LAYER_GLIB_SYSTEMINCLUDE
-MW_LAYER_GSTREAMER_SYSTEMINCLUDE
+USERINCLUDE		../../include/gstreamer
+USERINCLUDE		../../include/gstreamer/gst
+USERINCLUDE		../../include/gstreamer/gst/base
+USERINCLUDE		../../include/gstreamer/gst/controller
+USERINCLUDE		../../include/gstreamer/gst/dataprotocol
+USERINCLUDE		../../include/gstreamer/gst/net
 
 SOURCEPATH      ../gst/audiorate
 SOURCE          gstaudiorate.c

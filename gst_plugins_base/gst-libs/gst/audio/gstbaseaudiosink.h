@@ -85,8 +85,7 @@ G_BEGIN_DECLS
  * drifts too much.
  * @GST_BASE_AUDIO_SINK_SLAVE_NONE: No adjustment is done. 
  *
- * Different possible clock slaving algorithms used when the internal audio
- * clock is not selected as the pipeline master clock.
+ * Different possible clock slaving algorithms
  */
 typedef enum 
 {
@@ -94,8 +93,6 @@ typedef enum
   GST_BASE_AUDIO_SINK_SLAVE_SKEW,
   GST_BASE_AUDIO_SINK_SLAVE_NONE
 } GstBaseAudioSinkSlaveMethod;
-
-#define GST_TYPE_BASE_AUDIO_SINK_SLAVE_METHOD (gst_base_audio_sink_slave_method_get_type ())
 
 typedef struct _GstBaseAudioSink GstBaseAudioSink;
 typedef struct _GstBaseAudioSinkClass GstBaseAudioSinkClass;
@@ -153,11 +150,6 @@ IMPORT_C
 
 
 GType gst_base_audio_sink_get_type(void);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-GType gst_base_audio_sink_slave_method_get_type (void);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif

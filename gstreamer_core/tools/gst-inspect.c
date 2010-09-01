@@ -25,15 +25,13 @@
 #  include "config.h"
 #endif
 
+#include <gst/controller/gstcontroller.h>
 
-#include<gst/gst_global.h>
 #include "tools.h"
 
 #include <string.h>
 #include <locale.h>
 #include <glib/gprintf.h>
-#include <gobject_global.h>
-#include <gst/controller/gstcontroller.h>
 
 static char *_name = NULL;
 
@@ -1299,8 +1297,8 @@ print_plugin_automatic_install_info (GstPlugin * plugin)
 int
 main (int argc, char *argv[])
 {
-  static gboolean print_all = FALSE;
-  static gboolean print_aii = FALSE;
+  gboolean print_all = FALSE;
+  gboolean print_aii = FALSE;
   GOptionEntry options[] = {
     {"print-all", 'a', 0, G_OPTION_ARG_NONE, &print_all,
         N_("Print all elements"), NULL},

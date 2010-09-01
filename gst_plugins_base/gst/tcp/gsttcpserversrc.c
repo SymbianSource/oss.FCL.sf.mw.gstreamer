@@ -18,26 +18,16 @@
  * Boston, MA 02111-1307, USA.
  */
 
-/**
- * SECTION:element-tcpserversrc
- * @see_also: #tcpserversink
- *
- * <refsect2>
- * <title>Example launch line</title>
- * |[
- * # server:
- * gst-launch tcpserversrc protocol=none port=3000 ! fdsink fd=2
- * # client:
- * gst-launch fdsrc fd=1 ! tcpclientsink protocol=none port=3000
- * ]| 
- * </refsect2>
- */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
+#ifdef __SYMBIAN32__
+#include "gst/gst-i18n-plugin.h"
+#else
 #include <gst/gst-i18n-plugin.h>
+#endif
 #include "gsttcp.h"
 #include "gsttcpserversrc.h"
 #include <string.h>             /* memset */
@@ -120,15 +110,13 @@ gst_tcp_server_src_class_init (GstTCPServerSrcClass * klass)
 
   g_object_class_install_property (gobject_class, PROP_HOST,
       g_param_spec_string ("host", "Host", "The hostname to listen as",
-          TCP_DEFAULT_LISTEN_HOST, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          TCP_DEFAULT_LISTEN_HOST, G_PARAM_READWRITE));
   g_object_class_install_property (gobject_class, PROP_PORT,
       g_param_spec_int ("port", "Port", "The port to listen to",
-          0, TCP_HIGHEST_PORT, TCP_DEFAULT_PORT,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          0, TCP_HIGHEST_PORT, TCP_DEFAULT_PORT, G_PARAM_READWRITE));
   g_object_class_install_property (gobject_class, PROP_PROTOCOL,
       g_param_spec_enum ("protocol", "Protocol", "The protocol to wrap data in",
-          GST_TYPE_TCP_PROTOCOL, GST_TCP_PROTOCOL_NONE,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          GST_TYPE_TCP_PROTOCOL, GST_TCP_PROTOCOL_NONE, G_PARAM_READWRITE));
 
   gstbasesrc_class->start = gst_tcp_server_src_start;
   gstbasesrc_class->stop = gst_tcp_server_src_stop;

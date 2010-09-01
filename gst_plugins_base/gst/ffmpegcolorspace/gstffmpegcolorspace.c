@@ -22,13 +22,13 @@
 /**
  * SECTION:element-ffmpegcolorspace
  *
- * Convert video frames between a great variety of colorspace formats.
- *
  * <refsect2>
  * <title>Example launch line</title>
- * |[
+ * <para>
+ * <programlisting>
  * gst-launch -v videotestsrc ! video/x-raw-yuv,format=\(fourcc\)YUY2 ! ffmpegcolorspace ! ximagesink
- * ]|
+ * </programlisting>
+ * </para>
  * </refsect2>
  */
 
@@ -139,8 +139,11 @@ static GstCaps *
 gst_ffmpegcsp_transform_caps (GstBaseTransform * btrans,
     GstPadDirection direction, GstCaps * caps)
 {
+  GstFFMpegCsp *space;
   GstCaps *template;
   GstCaps *result;
+
+  space = GST_FFMPEGCSP (btrans);
 
   template = gst_ffmpegcsp_codectype_to_caps (CODEC_TYPE_VIDEO, NULL);
   result = gst_caps_intersect (caps, template);
@@ -376,12 +379,15 @@ static gboolean
 gst_ffmpegcsp_get_unit_size (GstBaseTransform * btrans, GstCaps * caps,
     guint * size)
 {
+  GstFFMpegCsp *space = NULL;
   GstStructure *structure = NULL;
   AVCodecContext *ctx = NULL;
   gboolean ret = TRUE;
   gint width, height;
 
   g_assert (size);
+
+  space = GST_FFMPEGCSP (btrans);
 
   structure = gst_caps_get_structure (caps, 0);
   gst_structure_get_int (structure, "width", &width);
@@ -406,8 +412,7 @@ gst_ffmpegcsp_get_unit_size (GstBaseTransform * btrans, GstCaps * caps,
    * GStreamer currently puts it into the caps as 'palette_data' field,
    * so for paletted data the frame size avpicture_get_size() returns is
    * 1024 bytes larger than what GStreamer expects. */
-  if (gst_structure_has_field (structure, "palette_data") &&
-      ctx->pix_fmt == PIX_FMT_PAL8) {
+  if (gst_structure_has_field (structure, "palette_data")) {
     *size -= 4 * 256;           /* = AVPALETTE_SIZE */
   }
 

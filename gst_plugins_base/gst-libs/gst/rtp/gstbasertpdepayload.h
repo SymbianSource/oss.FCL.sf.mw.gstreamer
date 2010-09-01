@@ -96,7 +96,7 @@ struct _GstBaseRTPDepayloadClass
 {
   GstElementClass parent_class;
 
-  /* virtuals, inform the subclass of the caps. */
+  /* virtuals */
   gboolean (*set_caps) (GstBaseRTPDepayload *filter, GstCaps *caps);
 
   /* non-pure function, default implementation in base class
@@ -104,23 +104,17 @@ struct _GstBaseRTPDepayloadClass
   GstFlowReturn (*add_to_queue) (GstBaseRTPDepayload *filter, GstBuffer *in);
 
   /* pure virtual function, child must use this to process incoming
-   * rtp packets. If the child returns a buffer without a valid timestamp,
-   * the timestamp of @in will be applied to the result buffer and the
-   * buffer will be pushed. If this function returns %NULL, nothing is
-   * pushed.  */
+   * rtp packets. If the child returns a buffer, the timestamp of @in will be
+   * applied to the result buffer and the buffer will be pushed. If this
+   * function returns %NULL, nothing is pushed.  */
   GstBuffer * (*process) (GstBaseRTPDepayload *base, GstBuffer *in);
 
   /* non-pure function used to convert from RTP timestamp to GST timestamp
    * this function is used by the child class before gst_pad_pushing */
   void (*set_gst_timestamp) (GstBaseRTPDepayload *filter, guint32 timestamp, GstBuffer *buf);
 
-  /* non-pure function used to to signal the depayloader about packet loss. the
-   * timestamp and duration are the estimated values of the lost packet.
-   * The default implementation of this message pushes a segment update. */
-  gboolean (*packet_lost) (GstBaseRTPDepayload *filter, GstEvent *event);
-
   /*< private >*/
-  gpointer _gst_reserved[GST_PADDING-1];
+  gpointer _gst_reserved[GST_PADDING];
 };
 #ifdef __SYMBIAN32__
 IMPORT_C

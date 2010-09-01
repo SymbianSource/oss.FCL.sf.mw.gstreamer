@@ -92,6 +92,8 @@ IMPORT_C
 #endif
 
 
+
+
 GstTrace*	gst_trace_new			(gchar *filename, gint size);
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -130,9 +132,6 @@ void 		gst_trace_text_flush		(GstTrace *trace);
  * Retrieve the remaining size in the @trace buffer.
  */
 #define 	gst_trace_get_remaining(trace) 	((trace)->bufsize - (trace)->bufoffset)
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
 void 		gst_trace_set_default		(GstTrace *trace);
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -147,12 +146,10 @@ IMPORT_C
 
 
 void 		gst_trace_read_tsc		(gint64 *dst);
-
-
-extern GStaticMutex     _gst_trace_mutex;
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
+
 
 
 gboolean		gst_alloc_trace_available	(void);
@@ -223,15 +220,11 @@ void			gst_alloc_trace_set_flags	(GstAllocTrace *trace, GstAllocTraceFlags flags
  */
 #define	gst_alloc_trace_new(trace, mem) 		\
 G_STMT_START {						\
-  if (G_UNLIKELY ((trace)->flags)) {                    \
-    g_static_mutex_lock (&_gst_trace_mutex);            \
-    if ((trace)->flags & GST_ALLOC_TRACE_LIVE) 		\
-      (trace)->live++;					\
-    if ((trace)->flags & GST_ALLOC_TRACE_MEM_LIVE) 	\
-      (trace)->mem_live = 				\
-        g_slist_prepend ((trace)->mem_live, mem);	\
-    g_static_mutex_unlock (&_gst_trace_mutex);          \
-  }                                                     \
+  if ((trace)->flags & GST_ALLOC_TRACE_LIVE) 		\
+    (trace)->live++;					\
+  if ((trace)->flags & GST_ALLOC_TRACE_MEM_LIVE) 	\
+    (trace)->mem_live = 				\
+      g_slist_prepend ((trace)->mem_live, mem);		\
 } G_STMT_END
 
 /**
@@ -243,15 +236,11 @@ G_STMT_START {						\
  */
 #define	gst_alloc_trace_free(trace, mem) 		\
 G_STMT_START {						\
-  if (G_UNLIKELY ((trace)->flags)) {                    \
-    g_static_mutex_lock (&_gst_trace_mutex);            \
-    if ((trace)->flags & GST_ALLOC_TRACE_LIVE) 		\
-      (trace)->live--;					\
-    if ((trace)->flags & GST_ALLOC_TRACE_MEM_LIVE) 	\
-      (trace)->mem_live = 				\
-        g_slist_remove ((trace)->mem_live, mem); 	\
-    g_static_mutex_unlock (&_gst_trace_mutex);          \
-  }                                                     \
+  if ((trace)->flags & GST_ALLOC_TRACE_LIVE) 		\
+    (trace)->live--;					\
+  if ((trace)->flags & GST_ALLOC_TRACE_MEM_LIVE) 	\
+    (trace)->mem_live = 				\
+      g_slist_remove ((trace)->mem_live, mem); 		\
 } G_STMT_END
 
 #else

@@ -25,32 +25,26 @@
 
 G_BEGIN_DECLS
 
-#include <gst/video/video-enumtypes.h>
-
 /**
  * GstVideoFormat:
- * @GST_VIDEO_FORMAT_UNKNOWN: Unknown or unset video format id
+ * @GST_VIDEO_FORMAT_UNKNOWN,
  * @GST_VIDEO_FORMAT_I420: planar 4:2:0 YUV
  * @GST_VIDEO_FORMAT_YV12: planar 4:2:0 YVU (like I420 but UV planes swapped)
  * @GST_VIDEO_FORMAT_YUY2: packed 4:2:2 YUV (Y0-U0-Y1-V0 Y2-U2-Y3-V2 Y4 ...)
  * @GST_VIDEO_FORMAT_UYVY: packed 4:2:2 YUV (U0-Y0-V0-Y1 U2-Y2-V2-Y3 U4 ...) 
  * @GST_VIDEO_FORMAT_AYUV: packed 4:4:4 YUV with alpha channel (A0-Y0-U0-V0 ...)
- * @GST_VIDEO_FORMAT_RGBx: sparse rgb packed into 32 bit, space last
- * @GST_VIDEO_FORMAT_BGRx: sparse reverse rgb packed into 32 bit, space last
- * @GST_VIDEO_FORMAT_xRGB: sparse rgb packed into 32 bit, space first
- * @GST_VIDEO_FORMAT_xBGR: sparse reverse rgb packed into 32 bit, space first
- * @GST_VIDEO_FORMAT_RGBA: rgb with alpha channel last
- * @GST_VIDEO_FORMAT_BGRA: reverse rgb with alpha channel last
- * @GST_VIDEO_FORMAT_ARGB: rgb with alpha channel first
- * @GST_VIDEO_FORMAT_ABGR: reverse rgb with alpha channel first
- * @GST_VIDEO_FORMAT_RGB: rgb
- * @GST_VIDEO_FORMAT_BGR: reverse rgb
+ * @GST_VIDEO_FORMAT_RGBx:
+ * @GST_VIDEO_FORMAT_BGRx:
+ * @GST_VIDEO_FORMAT_xRGB:
+ * @GST_VIDEO_FORMAT_xBGR:
+ * @GST_VIDEO_FORMAT_RGBA:
+ * @GST_VIDEO_FORMAT_BGRA:
+ * @GST_VIDEO_FORMAT_ARGB:
+ * @GST_VIDEO_FORMAT_ABGR:
+ * @GST_VIDEO_FORMAT_RGB:
+ * @GST_VIDEO_FORMAT_BGR:
  * @GST_VIDEO_FORMAT_Y41B: planar 4:1:1 YUV (Since: 0.10.18)
  * @GST_VIDEO_FORMAT_Y42B: planar 4:2:2 YUV (Since: 0.10.18)
- * @GST_VIDEO_FORMAT_YVYU: packed 4:2:2 YUV (Y0-V0-Y1-U0 Y2-V2-Y3-U2 Y4 ...) (Since: 0.10.23)
- * @GST_VIDEO_FORMAT_Y444: planar 4:4:4 YUV (Since: 0.10.24)
- * @GST_VIDEO_FORMAT_v210: packed 4:2:2 10-bit YUV, complex format (Since: 0.10.24)
- * @GST_VIDEO_FORMAT_v216: packed 4:2:2 16-bit YUV, Y0-U0-Y1-V1 order (Since: 0.10.24)
  *
  * Enum value describing the most common video formats.
  */
@@ -72,11 +66,7 @@ typedef enum {
   GST_VIDEO_FORMAT_RGB,
   GST_VIDEO_FORMAT_BGR,
   GST_VIDEO_FORMAT_Y41B,
-  GST_VIDEO_FORMAT_Y42B,
-  GST_VIDEO_FORMAT_YVYU,
-  GST_VIDEO_FORMAT_Y444,
-  GST_VIDEO_FORMAT_v210,
-  GST_VIDEO_FORMAT_v216
+  GST_VIDEO_FORMAT_Y42B
 } GstVideoFormat;
 
 #define GST_VIDEO_BYTE1_MASK_32  "0xFF000000"
@@ -237,38 +227,6 @@ typedef enum {
         "height = " GST_VIDEO_SIZE_RANGE ", "                           \
         "framerate = " GST_VIDEO_FPS_RANGE
 
-/* buffer flags */
-
-/**
- * GST_VIDEO_BUFFER_TFF:
- *
- * If the #GstBuffer is interlaced, then the first field in the video frame is
- * the top field.  If unset, the bottom field is first.
- *
- * Since: 0.10.23
- */
-#define GST_VIDEO_BUFFER_TFF GST_BUFFER_FLAG_MEDIA1
-
-/**
- * GST_VIDEO_BUFFER_RFF:
- *
- * If the #GstBuffer is interlaced, then the first field (as defined by the
- * %GST_VIDEO_BUFFER_TFF flag setting) is repeated.
- *
- * Since: 0.10.23
- */
-#define GST_VIDEO_BUFFER_RFF GST_BUFFER_FLAG_MEDIA2
-
-/**
- * GST_VIDEO_BUFFER_ONEFIELD:
- *
- * If the #GstBuffer is interlaced, then only the first field (as defined by the
- * %GST_VIDEO_BUFFER_TFF flag setting) is to be displayed.
- *
- * Since: 0.10.23
- */
-#define GST_VIDEO_BUFFER_ONEFIELD GST_BUFFER_FLAG_MEDIA3
-
 /* functions */
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -302,11 +260,6 @@ gboolean gst_video_format_parse_caps (GstCaps *caps, GstVideoFormat *format,
 IMPORT_C
 #endif
 
-gboolean gst_video_format_parse_caps_interlaced (GstCaps *caps, gboolean *interlaced);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
 gboolean gst_video_parse_caps_framerate (GstCaps *caps,
     int *fps_n, int *fps_d);
 #ifdef __SYMBIAN32__
@@ -322,13 +275,6 @@ IMPORT_C
 GstCaps * gst_video_format_new_caps (GstVideoFormat format,
     int width, int height, int framerate_n, int framerate_d,
     int par_n, int par_d);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-GstCaps * gst_video_format_new_caps_interlaced (GstVideoFormat format,
-    int width, int height, int framerate_n, int framerate_d,
-						int par_n, int par_d, gboolean interlaced);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif

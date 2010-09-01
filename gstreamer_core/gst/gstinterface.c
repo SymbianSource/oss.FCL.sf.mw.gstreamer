@@ -51,10 +51,9 @@ EXPORT_C
 GType
 gst_implements_interface_get_type (void)
 {
-  static volatile gsize gst_interface_type = 0;
+  static GType gst_interface_type = 0;
 
-  if (g_once_init_enter (&gst_interface_type)) {
-    GType _type;
+  if (!gst_interface_type) {
     static const GTypeInfo gst_interface_info = {
       sizeof (GstImplementsInterfaceClass),
       (GBaseInitFunc) gst_implements_interface_class_init,
@@ -68,11 +67,10 @@ gst_implements_interface_get_type (void)
       NULL
     };
 
-    _type = g_type_register_static (G_TYPE_INTERFACE,
+    gst_interface_type = g_type_register_static (G_TYPE_INTERFACE,
         "GstImplementsInterface", &gst_interface_info, 0);
 
-    g_type_interface_add_prerequisite (_type, GST_TYPE_ELEMENT);
-    g_once_init_leave (&gst_interface_type, _type);
+    g_type_interface_add_prerequisite (gst_interface_type, GST_TYPE_ELEMENT);
   }
 
   return gst_interface_type;
@@ -190,10 +188,14 @@ EXPORT_C
 gboolean
 gst_implements_interface_check (gpointer from, GType type)
 {
+  GstImplementsInterface *iface;
+
   /* check cast, return FALSE if it fails, don't give a warning... */
   if (!G_TYPE_CHECK_INSTANCE_TYPE (from, type)) {
     return FALSE;
   }
+
+  iface = G_TYPE_CHECK_INSTANCE_CAST (from, type, GstImplementsInterface);
 
   /* now, if we're an element (or derivative), is this thing
    * actually implemented for real? */

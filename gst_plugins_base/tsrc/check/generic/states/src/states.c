@@ -45,20 +45,11 @@
 int fd_new;
 void create_xml(int result)
 {
-
     if(result)
-    {
         assert_failed = 1;
-    } 
-
+    
     testResultXml(xmlfile);
     close_log_file();
-
-    if(result)
-    {
-        exit (-1);
-    }    
-
 }
 
 
@@ -66,34 +57,34 @@ void create_xml(int result)
 static GET_GLOBAL_VAR_FROM_TLS(threads_running,gstcheck,gboolean)
 #define _gst_check_threads_running (*GET_GSTREAMER_WSD_VAR_NAME(threads_running,gstcheck,g)())
 #else 
-IMPORT_C extern gboolean _gst_check_threads_running;
+extern gboolean _gst_check_threads_running;
 #endif
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(raised_critical,gstcheck,gboolean)
 #define _gst_check_raised_critical (*GET_GSTREAMER_WSD_VAR_NAME(raised_critical,gstcheck,g)())
 #else 
-IMPORT_C extern gboolean _gst_check_raised_critical;
+extern gboolean _gst_check_raised_critical;
 #endif
 //gboolean _gst_check_raised_warning = FALSE;
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(raised_warning,gstcheck,gboolean)
 #define _gst_check_raised_warning (*GET_GSTREAMER_WSD_VAR_NAME(raised_warning,gstcheck,g)())
 #else 
-IMPORT_C extern gboolean _gst_check_raised_warning;
+extern gboolean _gst_check_raised_warning;
 #endif
 //gboolean _gst_check_expecting_log = FALSE;
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(expecting_log,gstcheck,gboolean)
 #define _gst_check_expecting_log (*GET_GSTREAMER_WSD_VAR_NAME(expecting_log,gstcheck,g)())
 #else 
-IMPORT_C extern gboolean _gst_check_expecting_log;
+extern gboolean _gst_check_expecting_log;
 #endif
 
 #if EMULATOR
 GET_GLOBAL_VAR_FROM_TLS(buffers,gstcheck,GList*)
 #define buffers (*GET_GSTREAMER_WSD_VAR_NAME(buffers,gstcheck,g)())
 #else 
-IMPORT_C extern GList *buffers;
+extern GList *buffers;
 #endif
 
 

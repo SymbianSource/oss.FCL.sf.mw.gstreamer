@@ -31,7 +31,6 @@ G_BEGIN_DECLS
 
 #define GST_TYPE_SYSTEM_CLOCK 			(gst_system_clock_get_type ())
 #define GST_SYSTEM_CLOCK(obj) 			(G_TYPE_CHECK_INSTANCE_CAST ((obj), GST_TYPE_SYSTEM_CLOCK, GstSystemClock))
-#define GST_SYSTEM_CLOCK_CAST(obj)		((GstSystemClock *)(obj))
 #define GST_IS_SYSTEM_CLOCK(obj) 		(G_TYPE_CHECK_INSTANCE_TYPE ((obj), GST_TYPE_SYSTEM_CLOCK))
 #define GST_SYSTEM_CLOCK_CLASS(klass) 		(G_TYPE_CHECK_CLASS_CAST ((klass), GST_TYPE_SYSTEM_CLOCK, GstSystemClockClass))
 #define GST_IS_SYSTEM_CLOCK_CLASS(klass) 	(G_TYPE_CHECK_CLASS_TYPE ((klass), GST_TYPE_SYSTEM_CLOCK))
@@ -40,20 +39,6 @@ G_BEGIN_DECLS
 
 typedef struct _GstSystemClock GstSystemClock;
 typedef struct _GstSystemClockClass GstSystemClockClass;
-typedef struct _GstSystemClockPrivate GstSystemClockPrivate;
-
-/**
- * GstClockType:
- * @GST_CLOCK_TYPE_REALTIME: time since Epoch
- * @GST_CLOCK_TYPE_MONOTONIC: monotonic time since some unspecified starting
- *                            point
- *
- * The different kind of clocks.
- */
-typedef enum {
-  GST_CLOCK_TYPE_REALTIME	= 0,
-  GST_CLOCK_TYPE_MONOTONIC	= 1
-} GstClockType;
 
 /**
  * GstSystemClock:
@@ -68,10 +53,7 @@ struct _GstSystemClock {
   GThread	*thread;	/* thread for async notify */
   gboolean 	 stopping;
 
-  /* ABI added */
-  GstSystemClockPrivate *priv;
-
-  gpointer _gst_reserved[GST_PADDING - 1];
+  gpointer _gst_reserved[GST_PADDING];
 };
 
 struct _GstSystemClockClass {

@@ -1,19 +1,6 @@
 /* config.h.  Generated from config.h.in by configure.  */
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define if building universal (internal helper macro) */
-/* #undef AC_APPLE_UNIVERSAL_BUILD */
-
-/* The implementation that should be used for integer audio resampling witll
-   be benchmarked at runtime */
-#define AUDIORESAMPLE_FORMAT_AUTO 1
-
-/* The float implementation should be used for integer audio resampling */
-/* #undef AUDIORESAMPLE_FORMAT_FLOAT */
-
-/* The int implementation should be used for integer audio resampling */
-/* #undef AUDIORESAMPLE_FORMAT_INT */
-
 /* defined if cdda headers are in a cdda/ directory */
 /* #undef CDPARANOIA_HEADERS_IN_DIR */
 
@@ -65,18 +52,10 @@
 #define GST_PACKAGE_ORIGIN "Unknown package origin"
 
 /* Define to enable ALSA (used by alsa). */
-/* #undef HAVE_ALSA */
+#undef HAVE_ALSA 
 
 /* Define to enable CDParanoia (used by cdparanoia). */
 /* #undef HAVE_CDPARANOIA */
-
-/* Define to 1 if you have the MacOS X function CFLocaleCopyCurrent in the
-   CoreFoundation framework. */
-/* #undef HAVE_CFLOCALECOPYCURRENT */
-
-/* Define to 1 if you have the MacOS X function CFPreferencesCopyAppValue in
-   the CoreFoundation framework. */
-/* #undef HAVE_CFPREFERENCESCOPYAPPVALUE */
 
 /* Define if the host CPU is an Alpha */
 /* #undef HAVE_CPU_ALPHA */
@@ -160,7 +139,7 @@
 #define HAVE_GMTIME_R 1
 
 /* Define to enable GNOME VFS (used by gnomevfs). */
-/* #undef HAVE_GNOME_VFS */
+#undef HAVE_GNOME_VFS 
 
 /* Define to enable Video 4 Linux (used by video4linux). */
 #undef HAVE_GST_V4L 
@@ -174,14 +153,8 @@
 /* Define to 1 if you have the `asound' library (-lasound). */
 /* #undef HAVE_LIBASOUND */
 
-/* Define to 1 if you have the `nsl' library (-lnsl). */
-/* #undef HAVE_LIBNSL */
-
 /* Define to 1 if you have the `resolv' library (-lresolv). */
 /* #undef HAVE_LIBRESOLV */
-
-/* Define to 1 if you have the `socket' library (-lsocket). */
-/* #undef HAVE_LIBSOCKET */
 
 /* Define to enable libvisual visualization library (used by libvisual). */
 /* #undef HAVE_LIBVISUAL */
@@ -202,10 +175,12 @@
 #define HAVE_MEMORY_H 1
 
 /* Define to enable Xiph Ogg library (used by ogg). */
-/* #undef HAVE_OGG */
+#undef HAVE_OGG 
 
 /* Define to enable Pango font rendering (used by pango). */
-/* #undef HAVE_PANGO */
+#ifndef __SYMBIAN32__
+#define HAVE_PANGO
+#endif 
 
 /* defined if the compiler implements __PRETTY_FUNCTION__ */
 #define HAVE_PRETTY_FUNCTION 1
@@ -252,13 +227,15 @@
 #define HAVE_UNISTD_H 1
 
 /* Define if valgrind should be used */
-/* #undef HAVE_VALGRIND */
+#ifndef __SYMBIAN32__
+#define HAVE_VALGRIND 1
+#endif
 
 /* Define to enable Xiph Vorbis audio codec (used by vorbis). */
-/* #undef HAVE_VORBIS */
+#define HAVE_VORBIS 
 
 /* defined if vorbis_synthesis_restart is present */
-/* #undef HAVE_VORBIS_SYNTHESIS_RESTART */
+#define HAVE_VORBIS_SYNTHESIS_RESTART 1
 
 /* Define to 1 if you have the <winsock2.h> header file. */
 /* #undef HAVE_WINSOCK2_H */
@@ -270,20 +247,13 @@
 #define HAVE_XSHM 
 
 /* Define to enable X11 XVideo extensions (used by xvimagesink). */
-/* #undef HAVE_XVIDEO */
+#define HAVE_XVIDEO 
 
 /* the host CPU */
 #define HOST_CPU "i686"
 
-/* directory in which the detected libvisual's plugins are located */
-/* #undef LIBVISUAL_PLUGINSBASEDIR */
-
 /* gettext locale dir */
-#define LOCALEDIR "/home/puneet/puneet_libs/share/locale"
-
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
-#define LT_OBJDIR ".libs/"
+#define LOCALEDIR "/home/rakhi/openlibs//share/locale"
 
 /* Define if you have no native hstrerror() function. */
 /* #undef NO_HSTRERROR */
@@ -301,13 +271,13 @@
 #define PACKAGE_NAME "GStreamer Base Plug-ins"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "GStreamer Base Plug-ins 0.10.23"
+#define PACKAGE_STRING "GStreamer Base Plug-ins 0.10.19"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "gst-plugins-base"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "0.10.24"
+#define PACKAGE_VERSION "0.10.19"
 
 /* directory where plugins are located */
 #ifdef __SYMBIAN32__
@@ -344,19 +314,11 @@
 #define STDC_HEADERS 1
 
 /* Version number of package */
-#define VERSION "0.10.24"
+#define VERSION "0.10.19"
 
-/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
-   significant byte first (like Motorola and SPARC, unlike Intel). */
-#if defined AC_APPLE_UNIVERSAL_BUILD
-# if defined __BIG_ENDIAN__
-#  define WORDS_BIGENDIAN 1
-# endif
-#else
-# ifndef WORDS_BIGENDIAN
-/* #  undef WORDS_BIGENDIAN */
-# endif
-#endif
+/* Define to 1 if your processor stores words with the most significant byte
+   first (like Motorola and SPARC, unlike Intel and VAX). */
+/* #undef WORDS_BIGENDIAN */
 
 /* Define to 1 if the X Window System is missing or not being used. */
 /* #undef X_DISPLAY_MISSING */

@@ -1,6 +1,5 @@
 /* GStreamer
  * Copyright (C) <1999> Erik Walthinsen <omega@cse.ogi.edu>
- * Copyright (C) <2007-2008> Sebastian Dröge <sebastian.droege@collabora.co.uk>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -19,67 +18,57 @@
  */
 
 
-#ifndef __AUDIO_RESAMPLE_H__
-#define __AUDIO_RESAMPLE_H__
+#ifndef __AUDIORESAMPLE_H__
+#define __AUDIORESAMPLE_H__
 
 #include <gst/gst.h>
 #include <gst/base/gstbasetransform.h>
-#include <gst/audio/audio.h>
 
-#include "speex_resampler_wrapper.h"
+#include "resample.h"
 
 G_BEGIN_DECLS
 
-#define GST_TYPE_AUDIO_RESAMPLE \
-  (gst_audio_resample_get_type())
-#define GST_AUDIO_RESAMPLE(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_AUDIO_RESAMPLE,GstAudioResample))
-#define GST_AUDIO_RESAMPLE_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_AUDIO_RESAMPLE,GstAudioResampleClass))
-#define GST_IS_AUDIO_RESAMPLE(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_AUDIO_RESAMPLE))
-#define GST_IS_AUDIO_RESAMPLE_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_AUDIO_RESAMPLE))
+#define GST_TYPE_AUDIORESAMPLE \
+  (gst_audioresample_get_type())
+#define GST_AUDIORESAMPLE(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_AUDIORESAMPLE,GstAudioresample))
+#define GST_AUDIORESAMPLE_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_AUDIORESAMPLE,GstAudioresampleClass))
+#define GST_IS_AUDIORESAMPLE(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_AUDIORESAMPLE))
+#define GST_IS_AUDIORESAMPLE_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_AUDIORESAMPLE))
 
-typedef struct _GstAudioResample GstAudioResample;
-typedef struct _GstAudioResampleClass GstAudioResampleClass;
+typedef struct _GstAudioresample GstAudioresample;
+typedef struct _GstAudioresampleClass GstAudioresampleClass;
 
 /**
- * GstAudioResample:
+ * GstAudioresample:
  *
  * Opaque data structure.
  */
-struct _GstAudioResample {
+struct _GstAudioresample {
   GstBaseTransform element;
-
-  /* <private> */
 
   GstCaps *srccaps, *sinkcaps;
 
+  gboolean passthru;
   gboolean need_discont;
 
-  guint64 next_offset;
+  guint64 offset;
+  guint64 ts_offset;
   GstClockTime next_ts;
-  GstClockTime next_upstream_ts;
-  
-  gint channels;
-  gint inrate;
-  gint outrate;
-  gint quality;
-  gint width;
-  gboolean fp;
+  GstClockTime prev_ts, prev_duration;
+  int channels;
 
-  guint8 *tmp_in;
-  guint tmp_in_size;
+  int i_rate;
+  int o_rate;
+  int filter_length;
 
-  guint8 *tmp_out;
-  guint tmp_out_size;
-
-  SpeexResamplerState *state;
-  const SpeexResampleFuncs *funcs;
+  ResampleState * resample;
 };
 
-struct _GstAudioResampleClass {
+struct _GstAudioresampleClass {
   GstBaseTransformClass parent_class;
 };
 #ifdef __SYMBIAN32__
@@ -87,8 +76,8 @@ IMPORT_C
 #endif
 
 
-GType gst_audio_resample_get_type(void);
+GType gst_audioresample_get_type(void);
 
 G_END_DECLS
 
-#endif /* __AUDIO_RESAMPLE_H__ */
+#endif /* __AUDIORESAMPLE_H__ */

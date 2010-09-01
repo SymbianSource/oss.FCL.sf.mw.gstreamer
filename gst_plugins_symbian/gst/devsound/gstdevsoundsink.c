@@ -32,16 +32,8 @@
 #include "gstilbcdecoderinterface.h"
 #include "string.h"
 #include <glib_global.h>
-#ifdef AV_SYNC
-#include <gst/audio/gstaudioclock.h>
-#endif /*AV_SYNC*/
-
 
 GST_DEBUG_CATEGORY_EXTERN (devsound_debug);
-#ifdef GST_CAT_DEFAULT
-#undef GST_CAT_DEFAULT
-#endif
-
 #define GST_CAT_DEFAULT devsound_debug
 
 /* elementfactory information */
@@ -67,25 +59,16 @@ static void gst_devsound_sink_set_property(GObject * object, guint prop_id,
 static GstCaps *gst_devsound_sink_getcaps(GstBaseSink * bsink);
 static gboolean gst_devsound_sink_setcaps(GstBaseSink *bsink, GstCaps *caps);
 
+
 static gboolean gst_devsound_sink_event(GstBaseSink * asink, GstEvent * event);
-#ifdef AV_SYNC
-static void gst_devsound_sink_get_times(GstBaseSink * bsink, GstBuffer * buffer,
-    GstClockTime * start, GstClockTime * end);
-static GstClock *gst_devsound_sink_provide_clock (GstElement * element);
-static GstClockTime gst_devsound_sink_get_time (GstClock * clock,
-    gpointer user_data);
-#endif /*AV_SYNC*/
-
-static GstStateChangeReturn gst_devsound_sink_change_state (GstElement * element,
-    GstStateChange transition);
-
 
 static void *StartDevSoundThread(void *threadid);
+
 
 //Error concealment interface impl
 static void gst_error_concealment_handler_init (gpointer g_iface,
     gpointer iface_data);
-static gint gst_ConcealErrorForNextBuffer(void);
+static gint gst_ConcealErrorForNextBuffer();
 static gint gst_SetFrameMode(gboolean aFrameMode);
 static gint gst_FrameModeRqrdForEC(gboolean* aFrameModeRqrd);
 static void gst_Apply_ErrorConcealment_Update(GstDevsoundSink* dssink);
@@ -103,7 +86,7 @@ static void gst_Apply_G711_Decoder_Update(GstDevsoundSink* dssink );
 //G729 interface impl
 static void gst_g729_decoder_handler_init (gpointer g_iface,
     gpointer iface_data);
-static gint gst_BadLsfNextBuffer(void);
+static gint gst_BadLsfNextBuffer();
 static void gst_Apply_G729_Decoder_Update(GstDevsoundSink* dssink );
 
 //Ilbc interface impl
@@ -114,7 +97,6 @@ static gint gst_SetIlbcCng(gboolean aCng);
 static gint gst_SetIlbcDecoderMode(enum TIlbcDecodeMode aDecodeMode);
 static void  gst_Apply_Ilbc_Decoder_Update(GstDevsoundSink* dssink );
 
-static void get_PopulateIntfcProperties(GstDevsoundSink* dssink);
 
 static gboolean gst_sink_start (GstBaseSink * sink);
 static gboolean gst_sink_stop (GstBaseSink * sink);
@@ -178,26 +160,23 @@ enum
     VOLUME,
     MAXVOLUME,
     VOLUMERAMP,
-/*    CHANNELS,*/
+    CHANNELS,
     LEFTBALANCE,
     RIGHTBALANCE,
-/*    RATE,*/
+    RATE,
     PRIORITY,
     PREFERENCE,
-/*    SAMPLESPLAYED,*/
-/*    FOURCC, //FOURCC is not needed*/
-/*    MIMETYPE,*/
+    SAMPLESPLAYED,
+    FOURCC, //FOURCC is not needed
+    MIMETYPE,
     OUTPUTDEVICE
     };
 
 enum command_to_consumer_thread_enum
     {
     OPEN = 2,
-    PLAYING,
-    PAUSE,
-    RESUME,
+    WRITEDATA,
     /*UPDATE,*/
-    WAIT,
     CLOSE
     };
 enum command_to_consumer_thread_enum cmd;
@@ -206,14 +185,33 @@ static GstStaticPadTemplate devsoundsink_sink_factory=
     GST_STATIC_PAD_TEMPLATE ("sink",
         GST_PAD_SINK,
         GST_PAD_ALWAYS,
-        GST_STATIC_CAPS ("audio/x-raw-int, " "endianness = (int) { " G_STRINGIFY (G_BYTE_ORDER) " }, " "signed = (boolean) TRUE, " "width = (int) 16, " "depth = (int) 16, " "rate = (int) [ 8000, 48000 ]," "channels = (int) [ 1, 2 ]; "
-                "audio/amr, " "rate = (int) 8000, " "channels = (int) 1 ; "
-                "audio/AMR, " "rate = (int) 8000, " "channels = (int) 1 ; "
-                "audio/x-alaw, " "rate = (int) [ 8000, 48000 ], " "channels = (int) [ 1, 2 ]; "
-                "audio/g729, " "rate = (int) [ 8000, 48000 ], " "channels = (int) [ 1, 2 ]; "
-                "audio/mpeg, mpegversion = (int) 1, layer = (int) [ 1, 3 ], rate = (int) [ 8000, 48000 ], channels = (int) [ 1, 2 ]; "                
-                "audio/ilbc, " "rate = (int) [ 8000, 48000 ], " "channels = (int) [ 1, 2 ]; "
-                "audio/x-mulaw, " "rate = (int) [ 8000, 48000 ], " "channels = (int) [ 1, 2 ]")
+        GST_STATIC_CAPS ("audio/x-raw-int, "
+                "endianness = (int) { " G_STRINGIFY (G_BYTE_ORDER) " }, "
+                "signed = (boolean) TRUE, "
+                "width = (int) 16, "
+                "depth = (int) 16, "
+                "rate = (int) [ 8000, 48000 ],"
+                "channels = (int) [ 1, 2 ]; "
+                "audio/amr, "
+                //"width = (int) 8, "
+                //"depth = (int) 8, "
+                "rate = (int) 8000, "
+                "channels = (int) 1 ; "
+                "audio/x-alaw, "
+                "rate = (int) [ 8000, 48000 ], "
+                "channels = (int) [ 1, 2 ]; "
+                "audio/g729, "
+                "rate = (int) [ 8000, 48000 ], "
+                "channels = (int) [ 1, 2 ]; "
+                "audio/mp3, "
+                "rate = (int) [ 8000, 48000 ], "
+                "channels = (int) [ 1, 2 ]; "                
+                "audio/ilbc, "
+                "rate = (int) [ 8000, 48000 ], "
+                "channels = (int) [ 1, 2 ]; "
+                "audio/x-mulaw, "
+                "rate = (int) [ 8000, 48000 ], "
+                "channels = (int) [ 1, 2 ]")
                 );
 
 static GstElementClass *parent_class= NULL;
@@ -264,7 +262,7 @@ GType gst_devsound_sink_get_type(void)
 
         devsoundsink_type =
         g_type_register_static (GST_TYPE_BASE_SINK, "GstDevsoundSink",
-            &devsoundsink_info, (GTypeFlags)0);
+            &devsoundsink_info, 0);
 
 
         g_type_add_interface_static (devsoundsink_type, GST_TYPE_ERROR_CONCEALMENT,
@@ -286,20 +284,14 @@ GType gst_devsound_sink_get_type(void)
 
 static void gst_devsound_sink_dispose(GObject * object)
     {
-    GstDevsoundSink *devsoundsink = GST_DEVSOUND_SINK (object);
+    GstDevsoundSink *devsoundsink= GST_DEVSOUND_SINK (object);
 
     if (devsoundsink->probed_caps)
         {
         gst_caps_unref(devsoundsink->probed_caps);
         devsoundsink->probed_caps = NULL;
         }
-#ifdef AV_SYNC
-    if (devsoundsink->clock)
-        {
-        gst_object_unref (devsoundsink->clock);
-        }
-    devsoundsink->clock = NULL;
-#endif /*AV_SYNC*/
+
     G_OBJECT_CLASS (parent_class)->dispose (object);
     }
 
@@ -332,21 +324,18 @@ static void gst_devsound_sink_class_init(GstDevsoundSinkClass * klass)
     gobject_class->finalize = GST_DEBUG_FUNCPTR (gst_devsound_sink_finalise);
     gobject_class->get_property = GST_DEBUG_FUNCPTR (gst_devsound_sink_get_property);
     gobject_class->set_property = GST_DEBUG_FUNCPTR (gst_devsound_sink_set_property);
-    
-    
-    gstelement_class->change_state = GST_DEBUG_FUNCPTR(gst_devsound_sink_change_state);
-    
+
     g_object_class_install_property(gobject_class, PROP_DEVICE,
             g_param_spec_string("device", "Device", "Devsound device ",
-            DEFAULT_DEVICE, (GParamFlags)G_PARAM_READWRITE));
+            DEFAULT_DEVICE, G_PARAM_READWRITE));
 
     g_object_class_install_property(gobject_class, VOLUME,
                 g_param_spec_int("volume", "Volume", "Devsound volume",
-                        -1, G_MAXINT, -1, (GParamFlags)G_PARAM_READWRITE));
+                        -1, G_MAXINT, -1, G_PARAM_READWRITE));
 
     g_object_class_install_property(gobject_class, VOLUMERAMP,
               g_param_spec_int("volumeramp", "VolumeRamp", "Devsound volume ramp",
-                      -1, G_MAXINT, -1, (GParamFlags)G_PARAM_READWRITE));
+                      -1, G_MAXINT, -1, G_PARAM_READWRITE));
 
     g_object_class_install_property(gobject_class, MAXVOLUME,
             g_param_spec_int("maxvolume", "MaxVolume", "Devsound max volume",
@@ -354,26 +343,26 @@ static void gst_devsound_sink_class_init(GstDevsoundSinkClass * klass)
 
     g_object_class_install_property(gobject_class, LEFTBALANCE,
                   g_param_spec_int("leftbalance", "Left Balance", "Left Balance",
-                          -1, G_MAXINT, -1, (GParamFlags)G_PARAM_READWRITE));
+                          -1, G_MAXINT, -1, G_PARAM_READWRITE));
 
     g_object_class_install_property(gobject_class, RIGHTBALANCE,
                    g_param_spec_int("rightbalance", "Right Balance", "Right Balance",
-                           -1, G_MAXINT, -1, (GParamFlags)G_PARAM_READWRITE));
-/*
+                           -1, G_MAXINT, -1, G_PARAM_READWRITE));
+
     g_object_class_install_property(gobject_class, SAMPLESPLAYED,
                       g_param_spec_int("samplesplayed", "Samples Played", "Samples Played",
                               -1, G_MAXINT, -1, G_PARAM_READABLE));
-*/
+
     g_object_class_install_property(gobject_class, PRIORITY,
             g_param_spec_int("priority", "Priority", "Priority ", -1,
                     G_MAXINT, -1,
-                    (GParamFlags)G_PARAM_READWRITE));
+                    G_PARAM_READWRITE));
 
     g_object_class_install_property(gobject_class, PREFERENCE,
             g_param_spec_int("preference", "Preference", "Preference ", -1,
                     G_MAXINT, -1,
-                    (GParamFlags)G_PARAM_READWRITE));
-/*
+                    G_PARAM_READWRITE));
+
     g_object_class_install_property(gobject_class, RATE,
             g_param_spec_int("rate", "Rate", "Rate ", -1,
                     G_MAXINT, -1,
@@ -383,16 +372,12 @@ static void gst_devsound_sink_class_init(GstDevsoundSinkClass * klass)
             g_param_spec_int("channels", "Channels", "Channels ", -1,
                     G_MAXINT, -1,
                     G_PARAM_READWRITE));
-*/
+
     g_object_class_install_property(gobject_class, OUTPUTDEVICE,
              g_param_spec_int("outputdevice", "Output Device", "Output Device ", -1,
                      G_MAXINT, -1,
-                     (GParamFlags)G_PARAM_READWRITE));
+                     G_PARAM_READWRITE));
     
-#ifdef AV_SYNC
-    gstelement_class->provide_clock = GST_DEBUG_FUNCPTR (gst_devsound_sink_provide_clock);
-#endif /*AV_SYNC*/
-
     gstbasesink_class->start = GST_DEBUG_FUNCPTR (gst_sink_start);
     gstbasesink_class->stop = GST_DEBUG_FUNCPTR (gst_sink_stop);
     gstbasesink_class->render = GST_DEBUG_FUNCPTR (gst_sink_render);
@@ -400,47 +385,35 @@ static void gst_devsound_sink_class_init(GstDevsoundSinkClass * klass)
     gstbasesink_class->get_caps = GST_DEBUG_FUNCPTR (gst_devsound_sink_getcaps);
     gstbasesink_class->set_caps = GST_DEBUG_FUNCPTR (gst_devsound_sink_setcaps);
     gstbasesink_class->event    = GST_DEBUG_FUNCPTR (gst_devsound_sink_event);
-#ifdef AV_SYNC
-    gstbasesink_class->get_times = GST_DEBUG_FUNCPTR (gst_devsound_sink_get_times);
-#endif /*AV_SYNC*/
     }
 
-static void gst_devsound_sink_init(GstDevsoundSink * dssink)
+static void gst_devsound_sink_init(GstDevsoundSink * devsoundsink)
     {
-    GST_DEBUG_OBJECT(dssink, "initializing devsoundsink");
-    dssink->device = g_strdup(DEFAULT_DEVICE);
-    dssink->handle = NULL;
-    dssink->preference = 0; //default=>EMdaPriorityPreferenceNone;
-    dssink->priority = 0;   //default=>EMdaPriorityNormal;
-#ifdef AV_SYNC
-    dssink->time_or_samples_played = 0;
-    dssink->timeplayedavailable = FALSE;
-    /* Create the provided clock. */
-    dssink->clock = gst_audio_clock_new ("clock", gst_devsound_sink_get_time, dssink);
-#endif /*AV_SYNC*/
+    GST_DEBUG_OBJECT(devsoundsink, "initializing devsoundsink");
+    devsoundsink->device = g_strdup(DEFAULT_DEVICE);
+    devsoundsink->handle = NULL;
+    devsoundsink->preference = 0; //default=>EMdaPriorityPreferenceNone;
+    devsoundsink->priority = 0;   //default=>EMdaPriorityNormal;
     pthread_mutex_init(&ds_mutex, NULL);
     pthread_cond_init(&ds_condition, NULL);
     }
 
 static void *StartDevSoundThread(void *threadarg)
     {
-    GstDevsoundSink *dssink;
+
+    GstDevsoundSink *devsound;
 
     gint remainingDataLen = 0;
     GstBuffer *buffer = NULL;
     gboolean lastBufferSet=FALSE;
-    dssink = (GstDevsoundSink*) threadarg;
+    devsound = (GstDevsoundSink*) threadarg;
 
-    // TODO handle error here
-    open_devsound(&(dssink->handle));
-#ifdef AV_SYNC
-    dssink->timeplayedavailable = is_timeplayed_supported(dssink->handle);
-#endif /*AV_SYNC*/
+    open_devsound(&(devsound->handle));
 
 
     //get supported (in/out)put datatypes
     //from devsound to build caps
-    getsupporteddatatypes(dssink);
+    getsupporteddatatypes(devsound);
 
     // TODO obtain mutex to update variable here???
     consumer_thread_state = CONSUMER_THREAD_INITIALIZED;
@@ -465,94 +438,82 @@ static void *StartDevSoundThread(void *threadarg)
         {
         //TODO if there is preemption we have to somehow signal
         //the pipeline in the render
-        initialize_devsound(dssink);
+        initialize_devsound(devsound);
 
-        playinit(dssink->handle);
-        dssink->eosreceived = FALSE;
-        initproperties(dssink);
+        playinit(devsound->handle);
+        initproperties(devsound);
         }
     while (1)
         {
         switch (cmd)
             {
-            case PAUSE:
-                pause_devsound(dssink);
-                cmd = WAIT;
-                break;
-                
-            case RESUME:
-                resume_devsound(dssink);
-                cmd = PLAYING;
-                break;
-            
-            case WAIT:
-                pthread_mutex_lock(&ds_mutex);
-                pthread_cond_signal(&ds_condition);
-                pthread_mutex_unlock(&ds_mutex);
-                            
-                pthread_mutex_lock(&ds_mutex);
-                pthread_cond_wait(&ds_condition, &ds_mutex);
-                pthread_mutex_unlock(&ds_mutex);
-                break;
-                
-            case PLAYING:
+            case WRITEDATA:
                 {
-                pre_init_setconf(dssink);
-                gst_Apply_ErrorConcealment_Update(dssink);
-                gst_Apply_G711_Decoder_Update(dssink);
-                gst_Apply_G729_Decoder_Update(dssink);
-                gst_Apply_Ilbc_Decoder_Update(dssink);
+                pre_init_setconf(devsound);
+                gst_Apply_ErrorConcealment_Update(devsound);
+                gst_Apply_G711_Decoder_Update(devsound);
+                gst_Apply_G729_Decoder_Update(devsound);
+                gst_Apply_Ilbc_Decoder_Update(devsound);
 
                 // TODO we could do this in BTBF callback
-                populateproperties(dssink);
-                get_PopulateIntfcProperties(dssink);
-                
+                populateproperties(devsound);
+
+                framemodereq = devsound->framemodereq;
+                g711cng = devsound->g711cng;
+                ilbccng = devsound->ilbccng;
+                output = devsound->output;
+
                 if(buffer_queue->length > 0)
                     {
                     if (remainingDataLen == 0)
                         {
                         // TODO enable lock and unlock
-                        GST_OBJECT_LOCK (dssink);
+                        GST_OBJECT_LOCK (devsound);
                         buffer = GST_BUFFER_CAST(g_queue_peek_head(buffer_queue));
-                        GST_OBJECT_UNLOCK(dssink);
+                        GST_OBJECT_UNLOCK(devsound);
                         remainingDataLen = GST_BUFFER_SIZE(buffer);
                         }
 
                     lastBufferSet =  GST_BUFFER_FLAG_IS_SET(buffer,GST_BUFFER_FLAG_LAST);
-                    remainingDataLen = write_data(dssink->handle,
+                    remainingDataLen = write_data(devsound->handle,
                             GST_BUFFER_DATA(buffer) + (GST_BUFFER_SIZE(buffer) - remainingDataLen),
                             remainingDataLen,
                             lastBufferSet);
 
                     if (remainingDataLen == 0)
                         {
-                        GST_OBJECT_LOCK (dssink);
+                        GST_OBJECT_LOCK (devsound);
                         buffer = GST_BUFFER_CAST(g_queue_pop_head(buffer_queue));
-                        GST_OBJECT_UNLOCK(dssink);
+                        GST_OBJECT_UNLOCK(devsound);
                         gst_buffer_unref(buffer);
                         buffer = NULL;
                         }
 
                     if (lastBufferSet && remainingDataLen == 0)
                         {
-                        lastBufferSet = FALSE;
-                        dssink->eosreceived = FALSE;
-                        playinit(dssink->handle);
-                        initproperties(dssink);
-                        get_PopulateIntfcProperties(dssink);
-                        cmd = WAIT;
-                        }
+                        // Last Buffer is already sent to DevSound
+                        // and we have received PlayError so now we exit
+                        // from the big loop next time
+/*
+                        pthread_mutex_lock(&ds_mutex);
+                        pthread_cond_signal(&ds_condition);
+                        pthread_mutex_unlock(&ds_mutex);
+*/
+                        cmd = CLOSE;
+                       }
                     }
                 else
                     {
-                    cmd = WAIT;
+                    pthread_mutex_lock(&ds_mutex);
+                    pthread_cond_wait(&ds_condition, &ds_mutex);
+                    pthread_mutex_unlock(&ds_mutex);
                     }
                 }
                 break;
             case CLOSE:
                 {
-                close_devsound(dssink);
-                dssink->handle= NULL;
+                close_devsound(devsound);
+                devsound->handle= NULL;
                 pthread_mutex_lock(&ds_mutex);
                 pthread_cond_signal(&ds_condition);
                 pthread_mutex_unlock(&ds_mutex);
@@ -576,7 +537,7 @@ static void *StartDevSoundThread(void *threadarg)
 static gboolean gst_sink_start (GstBaseSink * sink)
     {
     GstBuffer *tmp_gstbuffer=NULL;
-    GstDevsoundSink *dssink = GST_DEVSOUND_SINK(sink);
+    GstDevsoundSink *devsound = GST_DEVSOUND_SINK(sink);
 
     if(buffer_queue)
         {
@@ -596,7 +557,7 @@ static gboolean gst_sink_start (GstBaseSink * sink)
 
     consumer_thread_state = CONSUMER_THREAD_INITIALIZING;
     cmd = OPEN;
-    pthread_create(&ds_thread,  NULL, StartDevSoundThread, (void *)dssink);
+    pthread_create(&ds_thread,  NULL, StartDevSoundThread, (void *)devsound);
 
     // Wait until consumer thread is created
     // TODO : obtain mutex to retreive thread state?
@@ -613,7 +574,7 @@ static gboolean gst_sink_start (GstBaseSink * sink)
 static gboolean gst_sink_stop (GstBaseSink * sink)
     {
     GstBuffer *tmp_gstbuffer=NULL;
-    GstDevsoundSink *dssink = GST_DEVSOUND_SINK(sink);
+    GstDevsoundSink *devsound = GST_DEVSOUND_SINK(sink);
 
     cmd = CLOSE;
 
@@ -621,12 +582,7 @@ static gboolean gst_sink_stop (GstBaseSink * sink)
     pthread_cond_signal(&ds_condition);
     pthread_mutex_unlock(&ds_mutex);
 
-    pthread_mutex_lock(&ds_mutex);
-    pthread_cond_wait(&ds_condition, &ds_mutex);
-    pthread_mutex_unlock(&ds_mutex);
-    
-
-    GST_OBJECT_LOCK(dssink);
+    GST_OBJECT_LOCK(devsound);
     while (buffer_queue->length)
         {
         tmp_gstbuffer = (GstBuffer*)g_queue_pop_tail(buffer_queue);
@@ -634,7 +590,7 @@ static gboolean gst_sink_stop (GstBaseSink * sink)
         }
     g_queue_free(buffer_queue);
     buffer_queue = NULL;
-    GST_OBJECT_UNLOCK(dssink);
+    GST_OBJECT_UNLOCK(devsound);
 
     return TRUE;
     }
@@ -642,21 +598,21 @@ static gboolean gst_sink_stop (GstBaseSink * sink)
 static GstFlowReturn gst_sink_render (GstBaseSink * sink,
     GstBuffer * buffer)
     {
-    GstDevsoundSink *dssink = GST_DEVSOUND_SINK(sink);
+    GstDevsoundSink *devsound = GST_DEVSOUND_SINK(sink);
     GstBuffer* tmp;
 
-    if (get_ds_cb_error(dssink->handle))
+    if (get_ds_cb_error(devsound->handle))
         {
         return GST_FLOW_CUSTOM_ERROR;
         }
         
     tmp = gst_buffer_copy(buffer);
  
-    GST_OBJECT_LOCK (dssink);
+    GST_OBJECT_LOCK (devsound);
     g_queue_push_tail (buffer_queue, tmp);
-    GST_OBJECT_UNLOCK (dssink);
+    GST_OBJECT_UNLOCK (devsound);
 
-    cmd = PLAYING;
+    cmd = WRITEDATA;
     pthread_mutex_lock(&ds_mutex);
     pthread_cond_signal(&ds_condition);
     pthread_mutex_unlock(&ds_mutex);
@@ -666,7 +622,7 @@ static GstFlowReturn gst_sink_render (GstBaseSink * sink,
 
 static void gst_devsound_sink_finalise(GObject * object)
     {
-    GstDevsoundSink *devsoundsink = GST_DEVSOUND_SINK (object);
+    GstDevsoundSink *devsoundsink= GST_DEVSOUND_SINK (object);
     g_free(devsoundsink->device);
 
     }
@@ -690,7 +646,7 @@ static void gst_devsound_sink_set_property(GObject * object, guint prop_id,
                 sink->probed_caps = NULL;
                 }
             break;
-/*        case CHANNELS:
+        case CHANNELS:
             sink->channels = g_value_get_int(value);
             sink->pending.channelsupdate = TRUE;
             break;
@@ -700,7 +656,7 @@ static void gst_devsound_sink_set_property(GObject * object, guint prop_id,
             sink->rate = gst_devsound_sink_get_rate(sink->rate);
             sink->pending.rateupdate = TRUE;
             break;
-*/        case VOLUME:
+        case VOLUME:
             sink->volume = g_value_get_int(value);
             sink->pending.volumeupdate = TRUE;
             break;
@@ -724,13 +680,14 @@ static void gst_devsound_sink_set_property(GObject * object, guint prop_id,
             sink->preference = g_value_get_int(value);
             sink->pending.preferenceupdate = TRUE;
             break;
-/*        case FOURCC: //FOURCC is not needed
+        case FOURCC: //FOURCC is not needed
             sink->fourcc = g_value_get_int(value);
             sink->pending.fourccupdate = TRUE;
             break;
+
         case MIMETYPE:
             sink->mimetype = g_value_dup_string(value);
-            break;*/
+            break;
         case OUTPUTDEVICE:
             sink->output = g_value_get_int(value);
             sink->pending.outputupdate = TRUE;
@@ -753,21 +710,21 @@ static void gst_devsound_sink_get_property(GObject * object, guint prop_id,
         case PROP_DEVICE:
             g_value_set_string(value, sink->device);
             break;
-/*        case CHANNELS:
+        case CHANNELS:
             g_value_set_int(value, sink->channels);
             break;
         case RATE:
             g_value_set_int(value, sink->rate);
-            break;*/
+            break;
         case VOLUME:
             g_value_set_int(value, sink->volume);
             break;
         case MAXVOLUME:
             g_value_set_int(value, sink->maxvolume);
             break;
-/*        case SAMPLESPLAYED:
+        case SAMPLESPLAYED:
               g_value_set_int(value, sink->samplesplayed);
-              break;*/
+              break;
         case OUTPUTDEVICE:
               g_value_set_int(value, sink->output);
               break;
@@ -825,7 +782,7 @@ static gboolean gst_devsound_sink_setcaps(GstBaseSink *bsink, GstCaps *caps)
         {
         devsoundsink->fourcc = 0x39323747; //KMccFourCCIdG729   
         }
-    else if (!strncmp(mimetype, "audio/mpeg", 10))
+    else if (!strncmp(mimetype, "audio/mp3", 9))
         {
         devsoundsink->fourcc = 0x33504d20; //KMMFFourCCCodeMP3    
         }
@@ -966,14 +923,14 @@ static gint gst_devsound_sink_get_rate(gint rate)
 
 static gboolean gst_devsound_sink_event(GstBaseSink *asink, GstEvent *event)
     {
-    GstDevsoundSink *sink = GST_DEVSOUND_SINK (asink);
+    GstDevsoundSink *sink= GST_DEVSOUND_SINK (asink);
     GstBuffer* lastBuffer = NULL;
     switch (GST_EVENT_TYPE (event))
         {
         case GST_EVENT_EOS:
             // end-of-stream, we should close down all stream leftovers here
             //reset_devsound(sink->handle);
-            sink->eosreceived = TRUE;
+
             if(buffer_queue->length)
                 {
                 GST_OBJECT_LOCK(sink);
@@ -988,7 +945,7 @@ static gboolean gst_devsound_sink_event(GstBaseSink *asink, GstEvent *event)
                 GST_OBJECT_LOCK(sink);
                 g_queue_push_tail(buffer_queue,lastBuffer);
                 GST_OBJECT_UNLOCK(sink);
-                cmd = PLAYING;
+                cmd = WRITEDATA;
                 pthread_mutex_lock(&ds_mutex);
                 pthread_cond_signal(&ds_condition);
                 pthread_mutex_unlock(&ds_mutex);
@@ -1003,103 +960,6 @@ static gboolean gst_devsound_sink_event(GstBaseSink *asink, GstEvent *event)
         }
 
     return TRUE;
-    }
-
-#ifdef AV_SYNC
-static void gst_devsound_sink_get_times (GstBaseSink * bsink, GstBuffer * buffer,
-    GstClockTime * start, GstClockTime * end)
-    {
-    /* Like GstBaseAudioSink, we set these to NONE */
-    *start = GST_CLOCK_TIME_NONE;
-    *end = GST_CLOCK_TIME_NONE;
-    }
-
-static GstClock *gst_devsound_sink_provide_clock (GstElement * element)
-    {
-    GstDevsoundSink *sink = GST_DEVSOUND_SINK (element);
-    return GST_CLOCK (gst_object_ref (sink->clock));
-    }
-
-static GstClockTime gst_devsound_sink_get_time (GstClock * clock, gpointer user_data)
-    {
-    GstClockTime result = 0;
-    GstDevsoundSink *sink = GST_DEVSOUND_SINK (user_data);
-
-    /* The value returned must be in nano seconds. 1 sec = 1000000000 nano seconds (9 zeros)*/
-    /*If time played is available from DevSound (a3f devsound onwards) get it*/
-    if (sink->timeplayedavailable)
-        {
-        result = sink->time_or_samples_played;
-        }
-    else if ((sink->time_or_samples_played > 0 ) && (sink->rate > 0 ))/*This is a pre-a3f devsound. So calculate times played based on samples played*/
-        { /*GST_SECOND = 1000000000*/
-        result = gst_util_uint64_scale_int (sink->time_or_samples_played, GST_SECOND, sink->rate);
-        }
-    GST_LOG_OBJECT (sink, "Time: %" GST_TIME_FORMAT, GST_TIME_ARGS (result));
-    return result;
-    }
-#endif /*AV_SYNC*/
-
-static GstStateChangeReturn gst_devsound_sink_change_state (GstElement * element, GstStateChange transition)
-    {
-    GstStateChangeReturn ret = GST_STATE_CHANGE_SUCCESS;
-    GstDevsoundSink *sink= GST_DEVSOUND_SINK (element);
-    
-    switch (transition)
-        {
-        case GST_STATE_CHANGE_NULL_TO_READY:
-            {
-#ifdef AV_SYNC
-            sink->time_or_samples_played = 0;
-#endif /*AV_SYNC*/			
-            }
-            break;
-
-        case GST_STATE_CHANGE_PAUSED_TO_PLAYING:
-            if(cmd == WAIT)
-                {
-                cmd = RESUME;
-                pthread_mutex_lock(&ds_mutex);
-                pthread_cond_signal(&ds_condition);
-                pthread_mutex_unlock(&ds_mutex);
-                
-                pthread_mutex_lock(&ds_mutex);
-                pthread_cond_wait(&ds_condition, &ds_mutex);
-                pthread_mutex_unlock(&ds_mutex);
-                }
-            break;
-        default:
-            break;
-        }
-
-    ret = GST_ELEMENT_CLASS (parent_class)->change_state (element, transition);
-      if (G_UNLIKELY (ret == GST_STATE_CHANGE_FAILURE))
-        goto activate_failed;
-
-      switch (transition) {
-          
-          case GST_STATE_CHANGE_PLAYING_TO_PAUSED:
-              cmd = PAUSE;
-              pthread_mutex_lock(&ds_mutex);
-              pthread_cond_signal(&ds_condition);
-              pthread_mutex_unlock(&ds_mutex);
-              
-              pthread_mutex_lock(&ds_mutex);
-              pthread_cond_wait(&ds_condition, &ds_mutex);
-              pthread_mutex_unlock(&ds_mutex);
-              break;
-          default:
-              break;
-          }
-      
-      return ret;
-    
-    activate_failed:
-      {
-        GST_DEBUG_OBJECT (sink,
-            "element failed to change states -- activation problem?");
-        return GST_STATE_CHANGE_FAILURE;
-      }    
     }
 
 
@@ -1225,7 +1085,6 @@ static void gst_g729_decoder_handler_init (gpointer g_iface,
 static gint gst_BadLsfNextBuffer()
     {
     customInfaceUpdate.g729badlsfnextbufferupdate = TRUE;
-    return 0;
     }
 
 static void gst_Apply_G729_Decoder_Update(GstDevsoundSink* dssink )
@@ -1283,13 +1142,3 @@ static void gst_Apply_Ilbc_Decoder_Update(GstDevsoundSink* dssink )
         customInfaceUpdate.ilbcdecodermodeupdate = FALSE;
         }
     }
-
-static void get_PopulateIntfcProperties(GstDevsoundSink* dssink)
-    {
-    framemode_rqrd_for_ec(dssink->handle,&framemodereq);   
-
-    get_cng(dssink->handle,&g711cng);
-    
-    get_ilbccng(dssink->handle,&ilbccng);
-    }
-	

@@ -29,9 +29,6 @@ GST_DEBUG_CATEGORY_EXTERN (audio_convert_debug);
 #ifndef __GST_AUDIO_QUANTIZE_H__
 #define __GST_AUDIO_QUANTIZE_H__
 
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
 gboolean gst_audio_quantize_setup (AudioConvertCtx * ctx);
 void gst_audio_quantize_reset (AudioConvertCtx * ctx);
 #ifdef __SYMBIAN32__

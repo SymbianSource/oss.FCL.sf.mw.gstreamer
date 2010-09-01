@@ -161,10 +161,6 @@ gst_riff_parse_chunk (GstElement * element, GstBuffer * buf,
   GST_DEBUG_OBJECT (element, "fourcc=%" GST_FOURCC_FORMAT ", size=%u",
       GST_FOURCC_ARGS (fourcc), size);
 
-  /* be paranoid: size may be nonsensical value here, such as (guint) -1 */
-  if (G_UNLIKELY (size > G_MAXINT))
-    goto bogus_size;
-
   if (bufsize < size + 8 + offset) {
     GST_DEBUG_OBJECT (element,
         "Needed chunk data (%d) is more than available (%d), shortcutting",
@@ -193,11 +189,6 @@ too_small:
     GST_DEBUG_OBJECT (element,
         "Failed to parse chunk header (offset %d, %d available, %d needed)",
         offset, bufsize, 8);
-    return FALSE;
-  }
-bogus_size:
-  {
-    GST_ERROR_OBJECT (element, "Broken file: bogus chunk size %u", size);
     return FALSE;
   }
 }
@@ -655,10 +646,6 @@ gst_riff_parse_info (GstElement * element,
     tsize = GST_READ_UINT32_LE (data + 4);
     size -= 8;
     data += 8;
-
-    GST_DEBUG ("tag %" GST_FOURCC_FORMAT ", size %u",
-        GST_FOURCC_ARGS (tag), tsize);
-
     if (tsize > size) {
       GST_WARNING_OBJECT (element,
           "Tagsize %d is larger than available data %d", tsize, size);
@@ -701,7 +688,7 @@ gst_riff_parse_info (GstElement * element,
         type = GST_TAG_GENRE;
         break;
       case GST_RIFF_INFO_IKEY:
-        type = GST_TAG_KEYWORDS;
+        type = NULL; /*"Keywords"; */ ;
         break;
       case GST_RIFF_INFO_ILGT:
         type = NULL;            /*"Lightness"; */
@@ -758,12 +745,6 @@ gst_riff_parse_info (GstElement * element,
       } else {
         GST_WARNING_OBJECT (element, "could not extract %s tag", type);
       }
-    }
-
-    if (tsize & 1) {
-      tsize++;
-      if (tsize > size)
-        tsize = size;
     }
 
     data += tsize;

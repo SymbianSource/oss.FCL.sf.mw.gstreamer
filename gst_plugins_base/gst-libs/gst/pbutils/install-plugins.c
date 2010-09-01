@@ -144,7 +144,7 @@
  * as interlocutor to the real installer though, even more so if command line
  * argument munging is required to transform the command line arguments
  * passed by GStreamer to the helper application into arguments that are
- * understood by the real installer.
+ * understood by the reeal installer.
  * </para>
  * <para>
  * The helper application path defined at compile time can be overriden at
@@ -355,7 +355,7 @@
 #endif
 
 #ifdef __SYMBIAN32__
-#include <gst/gst_global.h>
+#include <gst_global.h>
 #endif
 
 #include "install-plugins.h"
@@ -369,8 +369,6 @@
 #ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>
 #endif
-
-#include <string.h>
 
 /* best effort to make things compile and possibly even work on win32 */
 #ifndef WEXITSTATUS
@@ -395,9 +393,8 @@ struct _GstInstallPluginsContext
  *
  * This function is for X11-based applications (such as most Gtk/Qt
  * applications on linux/unix) only. You can use it to tell the external
- * installer the XID of your main application window. That way the installer
- * can make its own window transient to your application window during the
- * installation.
+ * the XID of your main application window, so the installer can make its
+ * own window transient to your application windonw during the installation.
  *
  * If set, the XID will be passed to the installer via a --transient-for=XID
  * command line option.
@@ -512,18 +509,6 @@ gst_install_plugins_get_helper (void)
 }
 
 static gboolean
-ptr_array_contains_string (GPtrArray * arr, const gchar * s)
-{
-  gint i;
-
-  for (i = 0; i < arr->len; ++i) {
-    if (strcmp ((const char *) g_ptr_array_index (arr, i), s) == 0)
-      return TRUE;
-  }
-  return FALSE;
-}
-
-static gboolean
 gst_install_plugins_spawn_child (gchar ** details,
     GstInstallPluginsContext * ctx, GPid * child_pid, gint * exit_status)
 {
@@ -543,10 +528,9 @@ gst_install_plugins_spawn_child (gchar ** details,
     g_ptr_array_add (arr, xid_str);
   }
 
-  /* finally, add the detail strings, but without duplicates */
+  /* finally, add the detail strings */
   while (details != NULL && details[0] != NULL) {
-    if (!ptr_array_contains_string (arr, details[0]))
-      g_ptr_array_add (arr, details[0]);
+    g_ptr_array_add (arr, details[0]);
     ++details;
   }
 

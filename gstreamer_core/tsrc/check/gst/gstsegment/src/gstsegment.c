@@ -1,15 +1,24 @@
- /*
- *  Copyright © 2008 Nokia Corporation.
- *  This material, including documentation and any related 
- *  computer programs, is protected by copyright controlled by 
- *  Nokia Corporation. All rights are reserved. Copying, 
- *  including reproducing, storing, adapting or translating, any 
- *  or all of this material requires the prior written consent of 
- *  Nokia Corporation. This material also contains confidential 
- *  information which may not be disclosed to others without the 
- *  prior written consent of Nokia Corporation.
- * ============================================================================
- */
+/*
+* Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation; either
+* version 2 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with this library; if not, write to the
+* Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+* Boston, MA 02111-1307, USA.
+*
+* Description:
+*
+*/
  
 /* GStreamer
  * Copyright (C) 2005 Jan Schmidt <thaytan@mad.scientist.com>
@@ -45,7 +54,7 @@
 static GET_GLOBAL_VAR_FROM_TLS(raised_critical,gstcheck,gboolean)
 #define _gst_check_raised_critical (*GET_GSTREAMER_WSD_VAR_NAME(raised_critical,gstcheck,g)())
 #else 
-IMPORT_C extern gboolean _gst_check_raised_critical;
+extern gboolean _gst_check_raised_critical;
 #endif
 
 //gboolean _gst_check_expecting_log = FALSE;
@@ -53,7 +62,7 @@ IMPORT_C extern gboolean _gst_check_raised_critical;
 static GET_GLOBAL_VAR_FROM_TLS(expecting_log,gstcheck,gboolean)
 #define _gst_check_expecting_log (*GET_GSTREAMER_WSD_VAR_NAME(expecting_log,gstcheck,g)())
 #else 
-IMPORT_C extern gboolean _gst_check_expecting_log;
+extern gboolean _gst_check_expecting_log;
 #endif
 
 
@@ -61,20 +70,11 @@ IMPORT_C extern gboolean _gst_check_expecting_log;
 
 void create_xml(int result)
 {
-
     if(result)
-    {
         assert_failed = 1;
-    } 
-
+    
     testResultXml(xmlfile);
     close_log_file();
-
-    if(result)
-    {
-        exit (-1);
-    }    
-
 }
 
 void segment_seek_nosize()
@@ -1595,7 +1595,7 @@ void  segment_newsegment_streamtime_applied_rate_rate()
   /* accumulated 100 of previous segment to make 200 */
   fail_unless (segment.accum == 200);
   
-  fail_unless (segment.last_stop == 200);
+  fail_unless (segment.last_stop == 0);
   
   fail_unless (segment.duration == -1);
   
@@ -1651,7 +1651,7 @@ void  segment_newsegment_streamtime_applied_rate_rate()
   
   fail_unless (segment.accum == 400);
   
-  fail_unless (segment.last_stop == 200);
+  fail_unless (segment.last_stop == 0);
   
   fail_unless (segment.duration == -1);
   
@@ -1944,7 +1944,7 @@ void segment_newsegment_accum()
   
   fail_unless (segment.accum == 0);
   
-  fail_unless (segment.last_stop == 200);
+  fail_unless (segment.last_stop == 0);
   
   fail_unless (segment.duration == -1);
   
@@ -1982,7 +1982,7 @@ void segment_newsegment_accum()
   
   fail_unless (segment.accum == 50);
   
-  fail_unless (segment.last_stop == 150);
+  fail_unless (segment.last_stop == 0);
   
   fail_unless (segment.duration == -1);
   
@@ -2016,7 +2016,7 @@ void segment_newsegment_accum()
   
   fail_unless (segment.accum == 50);
   
-  fail_unless (segment.last_stop == 150);
+  fail_unless (segment.last_stop == 100);
   
   fail_unless (segment.duration == -1);
   
@@ -2067,7 +2067,7 @@ void segment_newsegment_accum2()
   
   fail_unless (segment.accum == 0);
   
-  fail_unless (segment.last_stop == 200);
+  fail_unless (segment.last_stop == 0);
   
   fail_unless (segment.duration == -1);
   
@@ -2105,7 +2105,7 @@ void segment_newsegment_accum2()
   
   fail_unless (segment.accum == 0);
   
-  fail_unless (segment.last_stop == 200);
+  fail_unless (segment.last_stop == 150);
   
   fail_unless (segment.duration == -1);
   

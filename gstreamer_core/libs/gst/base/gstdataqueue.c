@@ -92,6 +92,8 @@ enum
                q->cur_level.time,                                       \
                q->queue->length)
 
+static void gst_data_queue_class_init (GstDataQueueClass * klass);
+static void gst_data_queue_init (GstDataQueue * queue);
 static void gst_data_queue_finalize (GObject * object);
 
 static void gst_data_queue_set_property (GObject * object,
@@ -101,17 +103,40 @@ static void gst_data_queue_get_property (GObject * object,
 
 static GObjectClass *parent_class = NULL;
 static guint gst_data_queue_signals[LAST_SIGNAL] = { 0 };
+#ifdef __SYMBIAN32__
+EXPORT_C
+#endif
 
-#define _do_init \
-{ \
-  GST_DEBUG_CATEGORY_INIT (data_queue_debug, "dataqueue", 0, \
-      "data queue object"); \
-  GST_DEBUG_CATEGORY_INIT (data_queue_dataflow, "data_queue_dataflow", 0, \
-      "dataflow inside the data queue object"); \
+
+GType
+gst_data_queue_get_type (void)
+{
+  static GType queue_type = 0;
+
+  if (!queue_type) {
+    static const GTypeInfo queue_info = {
+      sizeof (GstDataQueueClass),
+      NULL,
+      NULL,
+      (GClassInitFunc) gst_data_queue_class_init,
+      NULL,
+      NULL,
+      sizeof (GstDataQueue),
+      0,
+      (GInstanceInitFunc) gst_data_queue_init,
+      NULL
+    };
+
+    queue_type = g_type_register_static (G_TYPE_OBJECT,
+        "GstDataQueue", &queue_info, 0);
+    GST_DEBUG_CATEGORY_INIT (data_queue_debug, "dataqueue", 0,
+        "data queue object");
+    GST_DEBUG_CATEGORY_INIT (data_queue_dataflow, "data_queue_dataflow", 0,
+        "dataflow inside the data queue object");
+  }
+
+  return queue_type;
 }
-
-
-G_DEFINE_TYPE_WITH_CODE (GstDataQueue, gst_data_queue, G_TYPE_OBJECT, _do_init);
 
 static void
 gst_data_queue_class_init (GstDataQueueClass * klass)
@@ -156,16 +181,16 @@ gst_data_queue_class_init (GstDataQueueClass * klass)
   g_object_class_install_property (gobject_class, ARG_CUR_LEVEL_BYTES,
       g_param_spec_uint ("current-level-bytes", "Current level (kB)",
           "Current amount of data in the queue (bytes)",
-          0, G_MAXUINT, 0, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+          0, G_MAXUINT, 0, G_PARAM_READABLE));
   g_object_class_install_property (gobject_class, ARG_CUR_LEVEL_VISIBLE,
       g_param_spec_uint ("current-level-visible",
           "Current level (visible items)",
           "Current number of visible items in the queue", 0, G_MAXUINT, 0,
-          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+          G_PARAM_READABLE));
   g_object_class_install_property (gobject_class, ARG_CUR_LEVEL_TIME,
       g_param_spec_uint64 ("current-level-time", "Current level (ns)",
           "Current amount of data in the queue (in ns)", 0, G_MAXUINT64, 0,
-          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+          G_PARAM_READABLE));
 
   /* set several parent class virtual functions */
   gobject_class->finalize = GST_DEBUG_FUNCPTR (gst_data_queue_finalize);

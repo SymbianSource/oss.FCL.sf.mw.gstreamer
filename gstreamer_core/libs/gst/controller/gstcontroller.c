@@ -81,6 +81,7 @@
 #ifdef __SYMBIAN32__
 #include <glib_global.h>
 #include <gobject_global.h>
+
 #endif
 #define GST_CAT_DEFAULT controller_debug
 GST_DEBUG_CATEGORY_EXTERN (GST_CAT_DEFAULT);
@@ -150,8 +151,6 @@ gst_controlled_property_new (GObject * object, const gchar * name)
       prop->pspec = pspec;
       prop->name = pspec->name;
       prop->disabled = FALSE;
-      memset (&prop->last_value, 0, sizeof (GValue));
-      g_value_init (&prop->last_value, G_PARAM_SPEC_VALUE_TYPE (prop->pspec));
     }
   } else {
     GST_WARNING ("class '%s' has no property '%s'", G_OBJECT_TYPE_NAME (object),
@@ -172,7 +171,6 @@ gst_controlled_property_free (GstControlledProperty * prop)
 {
   if (prop->csource)
     g_object_unref (prop->csource);
-  g_value_unset (&prop->last_value);
   g_free (prop);
 }
 
@@ -205,58 +203,6 @@ gst_controller_find_controlled_property (GstController * self,
   return NULL;
 }
 
-/*
- * gst_controller_add_property:
- * @self: the controller object or %NULL if none yet exists
- * @object: object to bind the property
- * @name: name of projecty in @object
- * @ref_existing: pointer to flag that tracks if we need to ref an existng
- *   controller still
- *
- * Creates a new #GstControlledProperty if there is none for property @name yet.
- * In case this is the first controlled propery, it creates the controller as
- * well.
- *
- * Returns: a newly created controller object or reffed existing one with the
- * given property bound.
- */
-static GstController *
-gst_controller_add_property (GstController * self, GObject * object,
-    gchar * name, gboolean * ref_existing)
-{
-  /* test if this property isn't yet controlled */
-  if (!self || !gst_controller_find_controlled_property (self, name)) {
-    GstControlledProperty *prop;
-
-    /* create GstControlledProperty and add to self->propeties List */
-    if ((prop = gst_controlled_property_new (object, name))) {
-      /* if we don't have a controller object yet, now is the time to create one */
-      if (!self) {
-        self = g_object_new (GST_TYPE_CONTROLLER, NULL);
-        self->object = g_object_ref (object);
-        /* store the controller */
-        g_object_set_qdata (object, priv_gst_controller_key, self);
-        *ref_existing = FALSE;
-      } else {
-        /* only want one single _ref(), even for multiple properties */
-        if (*ref_existing) {
-          g_object_ref (self);
-          *ref_existing = FALSE;
-          GST_INFO ("returning existing controller");
-        }
-      }
-      self->properties = g_list_prepend (self->properties, prop);
-    }
-  } else {
-    GST_WARNING ("trying to control property again");
-    if (*ref_existing) {
-      g_object_ref (self);
-      *ref_existing = FALSE;
-    }
-  }
-  return self;
-}
-
 /* methods */
 
 /**
@@ -276,6 +222,7 @@ GstController *
 gst_controller_new_valist (GObject * object, va_list var_args)
 {
   GstController *self;
+  GstControlledProperty *prop;
   gboolean ref_existing = TRUE;
   gchar *name;
 
@@ -286,7 +233,34 @@ gst_controller_new_valist (GObject * object, va_list var_args)
   self = g_object_get_qdata (object, priv_gst_controller_key);
   /* create GstControlledProperty for each property */
   while ((name = va_arg (var_args, gchar *))) {
-    self = gst_controller_add_property (self, object, name, &ref_existing);
+    /* test if this property isn't yet controlled */
+    if (!self || !(prop = gst_controller_find_controlled_property (self, name))) {
+      /* create GstControlledProperty and add to self->propeties List */
+      if ((prop = gst_controlled_property_new (object, name))) {
+        /* if we don't have a controller object yet, now is the time to create one */
+        if (!self) {
+          self = g_object_new (GST_TYPE_CONTROLLER, NULL);
+          self->object = g_object_ref (object);
+          /* store the controller */
+          g_object_set_qdata (object, priv_gst_controller_key, self);
+          ref_existing = FALSE;
+        } else {
+          /* only want one single _ref(), even for multiple properties */
+          if (ref_existing) {
+            g_object_ref (self);
+            ref_existing = FALSE;
+            GST_INFO ("returning existing controller");
+          }
+        }
+        self->properties = g_list_prepend (self->properties, prop);
+      }
+    } else {
+      GST_WARNING ("trying to control property again");
+      if (ref_existing) {
+        g_object_ref (self);
+        ref_existing = FALSE;
+      }
+    }
   }
   va_end (var_args);
 
@@ -312,6 +286,7 @@ GstController *
 gst_controller_new_list (GObject * object, GList * list)
 {
   GstController *self;
+  GstControlledProperty *prop;
   gboolean ref_existing = TRUE;
   gchar *name;
   GList *node;
@@ -324,7 +299,34 @@ gst_controller_new_list (GObject * object, GList * list)
   /* create GstControlledProperty for each property */
   for (node = list; node; node = g_list_next (node)) {
     name = (gchar *) node->data;
-    self = gst_controller_add_property (self, object, name, &ref_existing);
+    /* test if this property isn't yet controlled */
+    if (!self || !(prop = gst_controller_find_controlled_property (self, name))) {
+      /* create GstControlledProperty and add to self->propeties List */
+      if ((prop = gst_controlled_property_new (object, name))) {
+        /* if we don't have a controller object yet, now is the time to create one */
+        if (!self) {
+          self = g_object_new (GST_TYPE_CONTROLLER, NULL);
+          self->object = g_object_ref (object);
+          /* store the controller */
+          g_object_set_qdata (object, priv_gst_controller_key, self);
+          ref_existing = FALSE;
+        } else {
+          /* only want one single _ref(), even for multiple properties */
+          if (ref_existing) {
+            g_object_ref (self);
+            ref_existing = FALSE;
+            GST_INFO ("returning existing controller");
+          }
+        }
+        self->properties = g_list_prepend (self->properties, prop);
+      }
+    } else {
+      GST_WARNING ("trying to control property again");
+      if (ref_existing) {
+        g_object_ref (self);
+        ref_existing = FALSE;
+      }
+    }
   }
 
   if (self)
@@ -602,9 +604,6 @@ gst_controller_get_control_source (GstController * self, gchar * property_name)
   GstControlledProperty *prop;
   GstControlSource *ret = NULL;
 
-  g_return_val_if_fail (GST_IS_CONTROLLER (self), NULL);
-  g_return_val_if_fail (property_name, NULL);
-
   g_mutex_lock (self->lock);
   if ((prop = gst_controller_find_controlled_property (self, property_name))) {
     ret = prop->csource;
@@ -626,8 +625,7 @@ gst_controller_get_control_source (GstController * self, gchar * property_name)
  * Gets the value for the given controller-handled property at the requested
  * time.
  *
- * Returns: the GValue of the property at the given time, or %NULL if the
- * property isn't handled by the controller
+ * Returns: the GValue of the property at the given time, or %NULL if the property isn't handled by the controller
  */
 #ifdef __SYMBIAN32__
 EXPORT_C
@@ -694,9 +692,7 @@ gst_controller_suggest_next_sync (GstController * self)
   g_mutex_lock (self->lock);
 
   /* TODO: Implement more logic, depending on interpolation mode
-   * and control points
-   * FIXME: we need playback direction
-   */
+   * and control points */
   ret = self->priv->last_sync + self->priv->control_rate;
 
   g_mutex_unlock (self->lock);
@@ -712,9 +708,6 @@ gst_controller_suggest_next_sync (GstController * self)
  * Sets the properties of the element, according to the controller that (maybe)
  * handles them and for the given timestamp.
  *
- * If this function fails, it is most likely the application developers fault.
- * Most probably the control sources are not setup correctly.
- *
  * Returns: %TRUE if the controller values could be applied to the object
  * properties, %FALSE otherwise
  */
@@ -727,8 +720,7 @@ gst_controller_sync_values (GstController * self, GstClockTime timestamp)
 {
   GstControlledProperty *prop;
   GList *node;
-  gboolean ret = TRUE, val_ret;
-  GValue value = { 0, };
+  gboolean ret = FALSE;
 
   g_return_val_if_fail (GST_IS_CONTROLLER (self), FALSE);
   g_return_val_if_fail (GST_CLOCK_TIME_IS_VALID (timestamp), FALSE);
@@ -736,39 +728,25 @@ gst_controller_sync_values (GstController * self, GstClockTime timestamp)
   GST_LOG ("sync_values");
 
   g_mutex_lock (self->lock);
-  g_object_freeze_notify (self->object);
   /* go over the controlled properties of the controller */
   for (node = self->properties; node; node = g_list_next (node)) {
+    GValue value = { 0, };
     prop = node->data;
+
+    GST_DEBUG ("  property '%s' at ts=%" G_GUINT64_FORMAT, prop->name,
+        timestamp);
 
     if (!prop->csource || prop->disabled)
       continue;
 
-    GST_LOG ("property '%s' at ts=%" G_GUINT64_FORMAT, prop->name, timestamp);
-
-    /* we can make this faster
-     * http://bugzilla.gnome.org/show_bug.cgi?id=536939
-     */
     g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (prop->pspec));
-    val_ret = gst_control_source_get_value (prop->csource, timestamp, &value);
-    if (G_LIKELY (val_ret)) {
-      /* always set the value for first time, but then only if it changed
-       * this should limit g_object_notify invocations.
-       * FIXME: can we detect negative playback rates?
-       */
-      if ((timestamp < self->priv->last_sync) ||
-          gst_value_compare (&value, &prop->last_value) != GST_VALUE_EQUAL) {
-        g_object_set_property (self->object, prop->name, &value);
-        g_value_copy (&value, &prop->last_value);
-      }
-    } else {
-      GST_DEBUG ("no control value for param %s", prop->name);
+    ret = gst_control_source_get_value (prop->csource, timestamp, &value);
+    if (ret) {
+      g_object_set_property (self->object, prop->name, &value);
+      g_value_unset (&value);
     }
-    g_value_unset (&value);
-    ret &= val_ret;
   }
   self->priv->last_sync = timestamp;
-  g_object_thaw_notify (self->object);
 
   g_mutex_unlock (self->lock);
 
@@ -1004,8 +982,7 @@ _gst_controller_class_init (GstControllerClass * klass)
       g_param_spec_uint64 ("control-rate",
           "control rate",
           "Controlled properties will be updated at least every control-rate nanoseconds",
-          1, G_MAXUINT, 100 * GST_MSECOND,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          1, G_MAXUINT, 100 * GST_MSECOND, G_PARAM_READWRITE));
 
   /* register signals */
   /* set defaults for overridable methods */
@@ -1018,10 +995,9 @@ EXPORT_C
 GType
 gst_controller_get_type (void)
 {
-  static volatile gsize type = 0;
+  static GType type = 0;
 
-  if (g_once_init_enter (&type)) {
-    GType _type;
+  if (type == 0) {
     static const GTypeInfo info = {
       sizeof (GstControllerClass),
       NULL,                     /* base_init */
@@ -1034,8 +1010,7 @@ gst_controller_get_type (void)
       (GInstanceInitFunc) _gst_controller_init, /* instance_init */
       NULL                      /* value_table */
     };
-    _type = g_type_register_static (G_TYPE_OBJECT, "GstController", &info, 0);
-    g_once_init_leave (&type, _type);
+    type = g_type_register_static (G_TYPE_OBJECT, "GstController", &info, 0);
   }
   return type;
 }

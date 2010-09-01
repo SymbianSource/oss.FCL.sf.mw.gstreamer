@@ -20,7 +20,6 @@
  * SECTION:gstmacros
  * @short_description: Various portabillity helper macros
  *
- * A set of macros complementing the glib portability macros.
  */
 
 #ifndef __GST_MACROS_H__

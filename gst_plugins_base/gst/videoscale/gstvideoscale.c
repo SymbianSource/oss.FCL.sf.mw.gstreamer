@@ -22,27 +22,35 @@
  * SECTION:element-videoscale
  * @see_also: videorate, ffmpegcolorspace
  *
+ * <refsect2>
+ * <para>
  * This element resizes video frames. By default the element will try to
  * negotiate to the same size on the source and sinkpad so that no scaling
  * is needed. It is therefore safe to insert this element in a pipeline to
  * get more robust behaviour without any cost if no scaling is needed.
- *
+ * </para>
+ * <para>
  * This element supports a wide range of color spaces including various YUV and
  * RGB formats and is therefore generally able to operate anywhere in a
  * pipeline.
- *
- * <refsect2>
+ * </para>
  * <title>Example pipelines</title>
- * |[
+ * <para>
+ * <programlisting>
  * gst-launch -v filesrc location=videotestsrc.ogg ! oggdemux ! theoradec ! ffmpegcolorspace ! videoscale ! ximagesink
- * ]| Decode an Ogg/Theora and display the video using ximagesink. Since
+ * </programlisting>
+ * Decode an Ogg/Theora and display the video using ximagesink. Since
  * ximagesink cannot perform scaling, the video scaling will be performed by
  * videoscale when you resize the video window.
  * To create the test Ogg/Theora file refer to the documentation of theoraenc.
- * |[
+ * </para>
+ * <para>
+ * <programlisting>
  * gst-launch -v filesrc location=videotestsrc.ogg ! oggdemux ! theoradec ! videoscale ! video/x-raw-yuv, width=50 ! xvimagesink
- * ]| Decode an Ogg/Theora and display the video using xvimagesink with a width
- * of 50.
+ * </programlisting>
+ * Decode an Ogg/Theora and display the video using xvimagesink with a width of
+ * 50.
+ * </para>
  * </refsect2>
  *
  * Last reviewed on 2006-03-02 (0.10.4)
@@ -55,15 +63,14 @@
 #include <string.h>
 
 #include <gst/video/video.h>
-#include <liboil/liboil.h>
+#include <gst/liboil.h>
 
-#ifdef __SYMBIAN32__
-#include <liboil/globals.h>
-#endif
 
 #include "gstvideoscale.h"
 #include "vs_image.h"
 #include "vs_4tap.h"
+
+#include <glib_global.h>
 
 
 /* debug variable definition */
@@ -76,7 +83,7 @@ GST_ELEMENT_DETAILS ("Video scaler",
     "Resizes video",
     "Wim Taymans <wim.taymans@chello.be>");
 
-#define DEFAULT_PROP_METHOD	GST_VIDEO_SCALE_BILINEAR
+#define DEFAULT_PROP_METHOD	GST_VIDEO_SCALE_NEAREST
 
 enum
 {
@@ -84,6 +91,10 @@ enum
   PROP_METHOD
       /* FILL ME */
 };
+
+/* can't handle width/height of 1 yet, since we divide a lot by (n-1) */
+#undef GST_VIDEO_SIZE_RANGE
+#define GST_VIDEO_SIZE_RANGE "(int) [ 2, MAX ]"
 
 static GstStaticCaps gst_video_scale_format_caps[] = {
   GST_STATIC_CAPS (GST_VIDEO_CAPS_RGBx),
@@ -96,7 +107,6 @@ static GstStaticCaps gst_video_scale_format_caps[] = {
   GST_STATIC_CAPS (GST_VIDEO_CAPS_ABGR),
   GST_STATIC_CAPS (GST_VIDEO_CAPS_RGB),
   GST_STATIC_CAPS (GST_VIDEO_CAPS_BGR),
-  GST_STATIC_CAPS (GST_VIDEO_CAPS_YUV ("v308")),
   GST_STATIC_CAPS (GST_VIDEO_CAPS_YUV ("AYUV")),
   GST_STATIC_CAPS (GST_VIDEO_CAPS_YUV ("YUY2")),
   GST_STATIC_CAPS (GST_VIDEO_CAPS_YUV ("YVYU")),
@@ -105,18 +115,7 @@ static GstStaticCaps gst_video_scale_format_caps[] = {
   GST_STATIC_CAPS (GST_VIDEO_CAPS_YUV ("I420")),
   GST_STATIC_CAPS (GST_VIDEO_CAPS_YUV ("YV12")),
   GST_STATIC_CAPS (GST_VIDEO_CAPS_RGB_16),
-  GST_STATIC_CAPS (GST_VIDEO_CAPS_RGB_15),
-  GST_STATIC_CAPS ("video/x-raw-gray, "
-      "bpp = 8, "
-      "depth = 8, "
-      "width = " GST_VIDEO_SIZE_RANGE ", "
-      "height = " GST_VIDEO_SIZE_RANGE ", " "framerate = " GST_VIDEO_FPS_RANGE),
-  GST_STATIC_CAPS ("video/x-raw-gray, "
-      "bpp = 16, "
-      "depth = 16, "
-      "endianness = BYTE_ORDER, "
-      "width = " GST_VIDEO_SIZE_RANGE ", "
-      "height = " GST_VIDEO_SIZE_RANGE ", " "framerate = " GST_VIDEO_FPS_RANGE)
+  GST_STATIC_CAPS (GST_VIDEO_CAPS_RGB_15)
 };
 
 enum
@@ -131,7 +130,6 @@ enum
   GST_VIDEO_SCALE_ABGR,
   GST_VIDEO_SCALE_RGB,
   GST_VIDEO_SCALE_BGR,
-  GST_VIDEO_SCALE_v308,
   GST_VIDEO_SCALE_AYUV,
   GST_VIDEO_SCALE_YUY2,
   GST_VIDEO_SCALE_YVYU,
@@ -140,9 +138,7 @@ enum
   GST_VIDEO_SCALE_I420,
   GST_VIDEO_SCALE_YV12,
   GST_VIDEO_SCALE_RGB565,
-  GST_VIDEO_SCALE_RGB555,
-  GST_VIDEO_SCALE_GRAY8,
-  GST_VIDEO_SCALE_GRAY16
+  GST_VIDEO_SCALE_RGB555
 };
 
 #define GST_TYPE_VIDEO_SCALE_METHOD (gst_video_scale_method_get_type())
@@ -150,7 +146,6 @@ static GType
 gst_video_scale_method_get_type (void)
 {
   static GType video_scale_method_type = 0;
-
   static const GEnumValue video_scale_methods[] = {
     {GST_VIDEO_SCALE_NEAREST, "Nearest Neighbour", "nearest-neighbour"},
     {GST_VIDEO_SCALE_BILINEAR, "Bilinear", "bilinear"},
@@ -199,13 +194,9 @@ gst_video_scale_sink_template_factory (void)
 
 
 static void gst_video_scale_base_init (gpointer g_class);
-
 static void gst_video_scale_class_init (GstVideoScaleClass * klass);
-
 static void gst_video_scale_init (GstVideoScale * videoscale);
-
 static void gst_video_scale_finalize (GstVideoScale * videoscale);
-
 static gboolean gst_video_scale_src_event (GstBaseTransform * trans,
     GstEvent * event);
 
@@ -286,8 +277,7 @@ gst_video_scale_class_init (GstVideoScaleClass * klass)
 
   g_object_class_install_property (gobject_class, PROP_METHOD,
       g_param_spec_enum ("method", "method", "method",
-          GST_TYPE_VIDEO_SCALE_METHOD, DEFAULT_PROP_METHOD,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          GST_TYPE_VIDEO_SCALE_METHOD, DEFAULT_PROP_METHOD, G_PARAM_READWRITE));
 
   trans_class->transform_caps =
       GST_DEBUG_FUNCPTR (gst_video_scale_transform_caps);
@@ -377,28 +367,54 @@ gst_video_scale_transform_caps (GstBaseTransform * trans,
 
   structure = gst_caps_get_structure (caps, 0);
 
+  /* check compatibility of format and method before we copy the input caps */
+  if (method == GST_VIDEO_SCALE_4TAP) {
+    guint32 fourcc;
+
+    if (!gst_structure_has_name (structure, "video/x-raw-yuv"))
+      goto method_not_implemented_for_format;
+    if (!gst_structure_get_fourcc (structure, "format", &fourcc))
+      goto method_not_implemented_for_format;
+    if (fourcc != GST_MAKE_FOURCC ('I', '4', '2', '0') &&
+        fourcc != GST_MAKE_FOURCC ('Y', 'V', '1', '2'))
+      goto method_not_implemented_for_format;
+  }
+
   ret = gst_caps_copy (caps);
-  structure = gst_structure_copy (gst_caps_get_structure (ret, 0));
+  structure = gst_caps_get_structure (ret, 0);
 
   gst_structure_set (structure,
       "width", GST_TYPE_INT_RANGE, 1, G_MAXINT,
       "height", GST_TYPE_INT_RANGE, 1, G_MAXINT, NULL);
 
-  gst_caps_merge_structure (ret, gst_structure_copy (structure));
-
   /* if pixel aspect ratio, make a range of it */
   if ((par = gst_structure_get_value (structure, "pixel-aspect-ratio"))) {
-    gst_structure_set (structure,
+    GstCaps *copy;
+    GstStructure *cstruct;
+
+    /* copy input PAR first, this is the prefered PAR */
+    gst_structure_set_value (structure, "pixel-aspect-ratio", par);
+
+    /* then make a copy with a fraction range as a second choice */
+    copy = gst_caps_copy (ret);
+    cstruct = gst_caps_get_structure (copy, 0);
+    gst_structure_set (cstruct,
         "pixel-aspect-ratio", GST_TYPE_FRACTION_RANGE, 0, 1, G_MAXINT, 1, NULL);
 
-    gst_caps_merge_structure (ret, structure);
-  } else {
-    gst_structure_free (structure);
+    /* and append */
+    gst_caps_append (ret, copy);
   }
 
   GST_DEBUG_OBJECT (trans, "returning caps: %" GST_PTR_FORMAT, ret);
 
   return ret;
+
+method_not_implemented_for_format:
+  {
+    GST_DEBUG_OBJECT (trans, "method %d not implemented for format %"
+        GST_PTR_FORMAT ", returning empty caps", method, caps);
+    return gst_caps_new_empty ();
+  }
 }
 
 static int
@@ -445,7 +461,6 @@ gst_video_scale_prepare_size (GstVideoScale * videoscale, gint format,
       break;
     case GST_VIDEO_SCALE_RGB:
     case GST_VIDEO_SCALE_BGR:
-    case GST_VIDEO_SCALE_v308:
       img->stride = GST_ROUND_UP_4 (img->width * 3);
       *size = img->stride * img->height;
       break;
@@ -456,12 +471,7 @@ gst_video_scale_prepare_size (GstVideoScale * videoscale, gint format,
       *size = img->stride * img->height;
       break;
     case GST_VIDEO_SCALE_Y:
-    case GST_VIDEO_SCALE_GRAY8:
       img->stride = GST_ROUND_UP_4 (img->width);
-      *size = img->stride * img->height;
-      break;
-    case GST_VIDEO_SCALE_GRAY16:
-      img->stride = GST_ROUND_UP_4 (img->width * 2);
       *size = img->stride * img->height;
       break;
     case GST_VIDEO_SCALE_I420:
@@ -600,9 +610,7 @@ gst_video_scale_fixate_caps (GstBaseTransform * base, GstPadDirection direction,
   /* we have both PAR but they might not be fixated */
   if (from_par && to_par) {
     gint from_w, from_h, from_par_n, from_par_d, to_par_n, to_par_d;
-
     gint count = 0, w = 0, h = 0;
-
     guint num, den;
 
     /* from_par should be fixed */
@@ -753,12 +761,8 @@ gst_video_scale_transform (GstBaseTransform * trans, GstBuffer * in,
   gst_video_scale_prepare_image (videoscale->format, out, dest, &dest_u,
       &dest_v);
 
-  if (src->height < 4 && method == GST_VIDEO_SCALE_4TAP)
-    method = GST_VIDEO_SCALE_BILINEAR;
-
   switch (method) {
     case GST_VIDEO_SCALE_NEAREST:
-      GST_LOG_OBJECT (videoscale, "doing nearest scaling");
       switch (videoscale->format) {
         case GST_VIDEO_SCALE_RGBx:
         case GST_VIDEO_SCALE_xRGB:
@@ -773,7 +777,6 @@ gst_video_scale_transform (GstBaseTransform * trans, GstBuffer * in,
           break;
         case GST_VIDEO_SCALE_RGB:
         case GST_VIDEO_SCALE_BGR:
-        case GST_VIDEO_SCALE_v308:
           vs_image_scale_nearest_RGB (dest, src, videoscale->tmp_buf);
           break;
         case GST_VIDEO_SCALE_YUY2:
@@ -784,11 +787,7 @@ gst_video_scale_transform (GstBaseTransform * trans, GstBuffer * in,
           vs_image_scale_nearest_UYVY (dest, src, videoscale->tmp_buf);
           break;
         case GST_VIDEO_SCALE_Y:
-        case GST_VIDEO_SCALE_GRAY8:
           vs_image_scale_nearest_Y (dest, src, videoscale->tmp_buf);
-          break;
-        case GST_VIDEO_SCALE_GRAY16:
-          vs_image_scale_nearest_Y16 (dest, src, videoscale->tmp_buf);
           break;
         case GST_VIDEO_SCALE_I420:
         case GST_VIDEO_SCALE_YV12:
@@ -807,7 +806,6 @@ gst_video_scale_transform (GstBaseTransform * trans, GstBuffer * in,
       }
       break;
     case GST_VIDEO_SCALE_BILINEAR:
-      GST_LOG_OBJECT (videoscale, "doing bilinear scaling");
       switch (videoscale->format) {
         case GST_VIDEO_SCALE_RGBx:
         case GST_VIDEO_SCALE_xRGB:
@@ -822,7 +820,6 @@ gst_video_scale_transform (GstBaseTransform * trans, GstBuffer * in,
           break;
         case GST_VIDEO_SCALE_RGB:
         case GST_VIDEO_SCALE_BGR:
-        case GST_VIDEO_SCALE_v308:
           vs_image_scale_linear_RGB (dest, src, videoscale->tmp_buf);
           break;
         case GST_VIDEO_SCALE_YUY2:
@@ -833,11 +830,7 @@ gst_video_scale_transform (GstBaseTransform * trans, GstBuffer * in,
           vs_image_scale_linear_UYVY (dest, src, videoscale->tmp_buf);
           break;
         case GST_VIDEO_SCALE_Y:
-        case GST_VIDEO_SCALE_GRAY8:
           vs_image_scale_linear_Y (dest, src, videoscale->tmp_buf);
-          break;
-        case GST_VIDEO_SCALE_GRAY16:
-          vs_image_scale_linear_Y16 (dest, src, videoscale->tmp_buf);
           break;
         case GST_VIDEO_SCALE_I420:
         case GST_VIDEO_SCALE_YV12:
@@ -856,51 +849,16 @@ gst_video_scale_transform (GstBaseTransform * trans, GstBuffer * in,
       }
       break;
     case GST_VIDEO_SCALE_4TAP:
-      GST_LOG_OBJECT (videoscale, "doing 4tap scaling");
       switch (videoscale->format) {
-        case GST_VIDEO_SCALE_RGBx:
-        case GST_VIDEO_SCALE_xRGB:
-        case GST_VIDEO_SCALE_BGRx:
-        case GST_VIDEO_SCALE_xBGR:
-        case GST_VIDEO_SCALE_RGBA:
-        case GST_VIDEO_SCALE_ARGB:
-        case GST_VIDEO_SCALE_BGRA:
-        case GST_VIDEO_SCALE_ABGR:
-        case GST_VIDEO_SCALE_AYUV:
-          vs_image_scale_4tap_RGBA (dest, src, videoscale->tmp_buf);
-          break;
-        case GST_VIDEO_SCALE_RGB:
-        case GST_VIDEO_SCALE_BGR:
-        case GST_VIDEO_SCALE_v308:
-          vs_image_scale_4tap_RGB (dest, src, videoscale->tmp_buf);
-          break;
-        case GST_VIDEO_SCALE_YUY2:
-        case GST_VIDEO_SCALE_YVYU:
-          vs_image_scale_4tap_YUYV (dest, src, videoscale->tmp_buf);
-          break;
-        case GST_VIDEO_SCALE_UYVY:
-          vs_image_scale_4tap_UYVY (dest, src, videoscale->tmp_buf);
-          break;
-        case GST_VIDEO_SCALE_Y:
-        case GST_VIDEO_SCALE_GRAY8:
-          vs_image_scale_4tap_Y (dest, src, videoscale->tmp_buf);
-          break;
-        case GST_VIDEO_SCALE_GRAY16:
-          vs_image_scale_4tap_Y16 (dest, src, videoscale->tmp_buf);
-          break;
         case GST_VIDEO_SCALE_I420:
         case GST_VIDEO_SCALE_YV12:
           vs_image_scale_4tap_Y (dest, src, videoscale->tmp_buf);
           vs_image_scale_4tap_Y (&dest_u, &src_u, videoscale->tmp_buf);
           vs_image_scale_4tap_Y (&dest_v, &src_v, videoscale->tmp_buf);
           break;
-        case GST_VIDEO_SCALE_RGB565:
-          vs_image_scale_4tap_RGB565 (dest, src, videoscale->tmp_buf);
-          break;
-        case GST_VIDEO_SCALE_RGB555:
-          vs_image_scale_4tap_RGB555 (dest, src, videoscale->tmp_buf);
-          break;
         default:
+          /* FIXME: update gst_video_scale_transform_caps once RGB and/or
+           * other YUV formats work too */
           goto unsupported;
       }
       break;
@@ -971,8 +929,9 @@ gst_video_scale_src_event (GstBaseTransform * trans, GstEvent * event)
 static gboolean
 plugin_init (GstPlugin * plugin)
 {
+	#ifndef __SYMBIAN32__
   oil_init ();
-
+  #endif
   if (!gst_element_register (plugin, "videoscale", GST_RANK_NONE,
           GST_TYPE_VIDEO_SCALE))
     return FALSE;

@@ -96,21 +96,21 @@ typedef enum
 } GstSyncMethod;
 
 /**
- * GstTCPUnitType:
- * @GST_TCP_UNIT_TYPE_UNDEFINED: undefined
- * @GST_TCP_UNIT_TYPE_BUFFERS  : buffers
- * @GST_TCP_UNIT_TYPE_TIME     : timeunits (in nanoseconds)
- * @GST_TCP_UNIT_TYPE_BYTES    : bytes
+ * GstUnitType:
+ * @GST_UNIT_TYPE_UNDEFINED: undefined
+ * @GST_UNIT_TYPE_BUFFERS  : buffers
+ * @GST_UNIT_TYPE_TIME     : timeunits (in nanoseconds)
+ * @GST_UNIT_TYPE_BYTES    : bytes
  *
  * The units used to specify limits.
  */
 typedef enum
 {
-  GST_TCP_UNIT_TYPE_UNDEFINED,
-  GST_TCP_UNIT_TYPE_BUFFERS,
-  GST_TCP_UNIT_TYPE_TIME,
-  GST_TCP_UNIT_TYPE_BYTES
-} GstTCPUnitType;
+  GST_UNIT_TYPE_UNDEFINED,
+  GST_UNIT_TYPE_BUFFERS,
+  GST_UNIT_TYPE_TIME,
+  GST_UNIT_TYPE_BYTES
+} GstUnitType;
 
 /**
  * GstClientStatus:
@@ -162,9 +162,9 @@ typedef struct {
 
   /* method to sync client when connecting */
   GstSyncMethod sync_method;
-  GstTCPUnitType   burst_min_unit;
+  GstUnitType   burst_min_unit;
   guint64       burst_min_value;
-  GstTCPUnitType   burst_max_unit;
+  GstUnitType   burst_max_unit;
   guint64       burst_max_value;
 
   GstCaps *caps;                /* caps of last queued buffer */
@@ -208,8 +208,6 @@ struct _GstMultiFdSink {
 
   GstTCPProtocol protocol;
   guint mtu;
-  gint qos_dscp;
-  gboolean handle_read;
 
   GArray *bufqueue;     /* global queue of buffers */
 
@@ -218,14 +216,14 @@ struct _GstMultiFdSink {
 
   /* these values are used to check if a client is reading fast
    * enough and to control receovery */
-  GstTCPUnitType unit_type;/* the type of the units */
+  GstUnitType unit_type;/* the type of the units */
   gint64 units_max;       /* max units to queue for a client */
   gint64 units_soft_max;  /* max units a client can lag before recovery starts */
   GstRecoverPolicy recover_policy;
   GstClockTime timeout; /* max amount of nanoseconds to remain idle */
 
   GstSyncMethod def_sync_method;    /* what method to use for connecting clients */
-  GstTCPUnitType   def_burst_unit;
+  GstUnitType   def_burst_unit;
   guint64       def_burst_value;
 
   /* these values are used to control the amount of data
@@ -234,8 +232,6 @@ struct _GstMultiFdSink {
   gint   bytes_min;	/* min number of bytes to queue */
   gint64 time_min;	/* min time to queue */
   gint   buffers_min;   /* min number of buffers to queue */
-
-  gboolean resend_streamheader; /* resend streamheader if it changes */
 
   /* stats */
   gint buffers_queued;  /* number of queued buffers */
@@ -251,8 +247,8 @@ struct _GstMultiFdSinkClass {
   /* element methods */
   void          (*add)          (GstMultiFdSink *sink, int fd);
   void          (*add_full)     (GstMultiFdSink *sink, int fd, GstSyncMethod sync,
-		                 GstTCPUnitType format, guint64 value, 
-				 GstTCPUnitType max_unit, guint64 max_value);
+		                 GstUnitType format, guint64 value, 
+				 GstUnitType max_unit, guint64 max_value);
   void          (*remove)       (GstMultiFdSink *sink, int fd);
   void          (*remove_flush) (GstMultiFdSink *sink, int fd);
   void          (*clear)        (GstMultiFdSink *sink);
@@ -286,8 +282,8 @@ IMPORT_C
 #endif
 
 void          gst_multi_fd_sink_add_full     (GstMultiFdSink *sink, int fd, GstSyncMethod sync, 
-                                              GstTCPUnitType min_unit, guint64 min_value,
-                                              GstTCPUnitType max_unit, guint64 max_value);
+                                              GstUnitType min_unit, guint64 min_value,
+                                              GstUnitType max_unit, guint64 max_value);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif

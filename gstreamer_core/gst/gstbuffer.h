@@ -141,19 +141,6 @@ typedef struct _GstBufferClass GstBufferClass;
  * (i.e. when its refcount becomes zero).
  */
 #define GST_BUFFER_MALLOCDATA(buf)		(GST_BUFFER_CAST(buf)->malloc_data)
-/**
- * GST_BUFFER_FREE_FUNC:
- * @buf: a #GstBuffer.
- *
- * A pointer to a function that will be called on the buffer's malloc_data when
- * this buffer is finalized. Defaults to g_free().
- *
- * Note that the free function only affects the buffer's malloc_data; if the
- * buffer's malloc_data is %NULL, the function will not be called.
- *
- * Since: 0.10.22
- */
-#define GST_BUFFER_FREE_FUNC(buf)		(GST_BUFFER_CAST(buf)->free_func)
 
 /**
  * GST_BUFFER_OFFSET_NONE:
@@ -214,12 +201,6 @@ typedef struct _GstBufferClass GstBufferClass;
  * stream and contains media neutral data (elements can switch to optimized code
  * path that ignores the buffer content).
  * @GST_BUFFER_FLAG_DELTA_UNIT: this unit cannot be decoded independently.
- * @GST_BUFFER_FLAG_MEDIA1: a flag whose use is specific to the caps of the buffer.
- * Since: 0.10.23
- * @GST_BUFFER_FLAG_MEDIA2: a flag whose use is specific to the caps of the buffer.
- * Since: 0.10.23
- * @GST_BUFFER_FLAG_MEDIA3: a flag whose use is specific to the caps of the buffer.
- * Since: 0.10.23
  * @GST_BUFFER_FLAG_LAST: additional flags can be added starting from this flag.
  *
  * A set of buffer flags used to describe properties of a #GstBuffer.
@@ -231,9 +212,7 @@ typedef enum {
   GST_BUFFER_FLAG_IN_CAPS    = (GST_MINI_OBJECT_FLAG_LAST << 2),
   GST_BUFFER_FLAG_GAP        = (GST_MINI_OBJECT_FLAG_LAST << 3),
   GST_BUFFER_FLAG_DELTA_UNIT = (GST_MINI_OBJECT_FLAG_LAST << 4),
-  GST_BUFFER_FLAG_MEDIA1     = (GST_MINI_OBJECT_FLAG_LAST << 5),
-  GST_BUFFER_FLAG_MEDIA2     = (GST_MINI_OBJECT_FLAG_LAST << 6),
-  GST_BUFFER_FLAG_MEDIA3     = (GST_MINI_OBJECT_FLAG_LAST << 7),
+  /* padding */
   GST_BUFFER_FLAG_LAST       = (GST_MINI_OBJECT_FLAG_LAST << 8)
 } GstBufferFlag;
 
@@ -255,9 +234,7 @@ typedef enum {
  * @offset_end: the last offset contained in this buffer. It has the same 
  *     format as @offset.
  * @malloc_data: a pointer to the allocated memory associated with this buffer.
- *     When the buffer is freed, this data will freed with @free_func.
- * @free_func: a custom function that will be called with @malloc_data, defaults
- *     to g_free(). Since 0.10.22.
+ *     When the buffer is freed, this data will freed with g_free().
  *
  * The structure of a #GstBuffer. Use the associated macros to access the public
  * variables.
@@ -283,10 +260,8 @@ struct _GstBuffer {
 
   guint8                *malloc_data;
 
-  GFreeFunc              free_func;
-
   /*< private >*/
-  gpointer _gst_reserved[GST_PADDING - 1];
+  gpointer _gst_reserved[GST_PADDING];
 };
 
 struct _GstBufferClass {
@@ -358,6 +333,8 @@ G_INLINE_FUNC GstBuffer * gst_buffer_ref (GstBuffer * buf);
 static inline GstBuffer *
 gst_buffer_ref (GstBuffer * buf)
 {
+  /* not using a macro here because gcc-4.1 will complain
+   * if the return value isn't used (because of the cast) */
   return (GstBuffer *) gst_mini_object_ref (GST_MINI_OBJECT_CAST (buf));
 }
 
@@ -369,15 +346,7 @@ gst_buffer_ref (GstBuffer * buf)
  * will be freed. If GST_BUFFER_MALLOCDATA() is non-NULL, this pointer will
  * also be freed at this time.
  */
-#ifdef _FOOL_GTK_DOC_
-G_INLINE_FUNC void gst_buffer_unref (GstBuffer * buf);
-#endif
-
-static inline void
-gst_buffer_unref (GstBuffer * buf)
-{
-  gst_mini_object_unref (GST_MINI_OBJECT_CAST (buf));
-}
+#define		gst_buffer_unref(buf)		gst_mini_object_unref (GST_MINI_OBJECT_CAST (buf))
 
 /* copy buffer */
 /**
@@ -386,19 +355,8 @@ gst_buffer_unref (GstBuffer * buf)
  *
  * Create a copy of the given buffer. This will also make a newly allocated
  * copy of the data the source buffer contains.
- *
- * Returns: a new copy of @buf.
  */
-#ifdef _FOOL_GTK_DOC_
-G_INLINE_FUNC GstBuffer * gst_buffer_copy (const GstBuffer * buf);
-#endif
-
-static inline GstBuffer *
-gst_buffer_copy (const GstBuffer * buf)
-{
-  return GST_BUFFER (gst_mini_object_copy (GST_MINI_OBJECT_CAST (buf)));
-}
-
+#define		gst_buffer_copy(buf)		GST_BUFFER_CAST (gst_mini_object_copy (GST_MINI_OBJECT_CAST (buf)))
 
 /**
  * GstBufferCopyFlags:

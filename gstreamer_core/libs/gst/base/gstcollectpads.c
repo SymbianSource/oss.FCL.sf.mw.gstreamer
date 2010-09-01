@@ -95,7 +95,6 @@ static void gst_collect_pads_init (GstCollectPads * pads,
     GstCollectPadsClass * g_class);
 static void ref_data (GstCollectData * data);
 static void unref_data (GstCollectData * data);
-static void gst_collect_pads_check_pads_unlocked (GstCollectPads * pads);
 
 static void
 gst_collect_pads_base_init (gpointer g_class)
@@ -546,36 +545,6 @@ gst_collect_pads_collect_range (GstCollectPads * pads, guint64 offset,
   return GST_FLOW_NOT_SUPPORTED;
 }
 
-static gboolean
-gst_collect_pads_is_flushing (GstCollectPads * pads)
-{
-  GSList *walk = NULL;
-  gboolean res = TRUE;
-
-  GST_COLLECT_PADS_PAD_LOCK (pads);
-
-  /* Ensure pads->data state */
-  gst_collect_pads_check_pads_unlocked (pads);
-
-  GST_DEBUG ("Getting flushing state (pads:%p, pads->data:%p)",
-      pads, pads->data);
-
-  for (walk = pads->data; walk; walk = g_slist_next (walk)) {
-    GstCollectData *cdata = walk->data;
-
-    GST_DEBUG_OBJECT (cdata->pad, "flushing:%d", cdata->abidata.ABI.flushing);
-
-    if (cdata->abidata.ABI.flushing) {
-      goto done;
-    }
-  }
-
-  res = FALSE;
-done:
-  GST_COLLECT_PADS_PAD_UNLOCK (pads);
-  return res;
-}
-
 /* FIXME, I think this function is used to work around bad behaviour
  * of elements that add pads to themselves without activating them.
  *
@@ -586,8 +555,6 @@ gst_collect_pads_set_flushing_unlocked (GstCollectPads * pads,
     gboolean flushing)
 {
   GSList *walk = NULL;
-
-  GST_DEBUG ("Setting flushing (%d)", flushing);
 
   /* Update the pads flushing flag */
   for (walk = pads->data; walk; walk = g_slist_next (walk)) {
@@ -604,10 +571,6 @@ gst_collect_pads_set_flushing_unlocked (GstCollectPads * pads,
       GST_OBJECT_UNLOCK (cdata->pad);
     }
   }
-  /* Setting the pads to flushing means that we changed the values which
-   * are 'protected' by the cookie. We therefore update it to force a 
-   * recalculation of the current pad status. */
-  pads->abidata.ABI.pad_cookie++;
 }
 
 /**
@@ -634,8 +597,6 @@ gst_collect_pads_set_flushing (GstCollectPads * pads, gboolean flushing)
   g_return_if_fail (GST_IS_COLLECT_PADS (pads));
 
   GST_COLLECT_PADS_PAD_LOCK (pads);
-  /* Ensure pads->data state */
-  gst_collect_pads_check_pads_unlocked (pads);
   gst_collect_pads_set_flushing_unlocked (pads, flushing);
   GST_COLLECT_PADS_PAD_UNLOCK (pads);
 }
@@ -870,20 +831,19 @@ gst_collect_pads_available (GstCollectPads * pads)
 
     /* ignore pad with EOS */
     if (G_UNLIKELY (pdata->abidata.ABI.eos)) {
-      GST_DEBUG ("pad %s:%s is EOS", GST_DEBUG_PAD_NAME (pdata->pad));
+      GST_DEBUG ("pad %p is EOS", pdata);
       continue;
     }
 
     /* an empty buffer without EOS is weird when we get here.. */
     if (G_UNLIKELY ((buffer = pdata->buffer) == NULL)) {
-      GST_WARNING ("pad %s:%s has no buffer", GST_DEBUG_PAD_NAME (pdata->pad));
+      GST_WARNING ("pad %p has no buffer", pdata);
       goto not_filled;
     }
 
     /* this is the size left of the buffer */
     size = GST_BUFFER_SIZE (buffer) - pdata->pos;
-    GST_DEBUG ("pad %s:%s has %d bytes left",
-        GST_DEBUG_PAD_NAME (pdata->pad), size);
+    GST_DEBUG ("pad %p has %d bytes left", pdata, size);
 
     /* need to return the min of all available data */
     if (size < result)
@@ -1064,8 +1024,6 @@ gst_collect_pads_flush (GstCollectPads * pads, GstCollectData * data,
 
   data->pos += size;
 
-  GST_LOG_OBJECT (pads, "Flushing %d bytes, requested %u", flushsize, size);
-
   if (data->pos >= GST_BUFFER_SIZE (buffer))
     /* _clear will also reset data->pos to 0 */
     gst_collect_pads_clear (pads, data);
@@ -1083,10 +1041,10 @@ gst_collect_pads_flush (GstCollectPads * pads, GstCollectData * data,
  * Must be called with LOCK.
  */
 static void
-gst_collect_pads_check_pads_unlocked (GstCollectPads * pads)
+gst_collect_pads_check_pads (GstCollectPads * pads)
 {
-  GST_DEBUG ("stored cookie : %d, used_cookie:%d",
-      pads->abidata.ABI.pad_cookie, pads->cookie);
+  /* the master list and cookie are protected with the PAD_LOCK */
+  GST_COLLECT_PADS_PAD_LOCK (pads);
   if (G_UNLIKELY (pads->abidata.ABI.pad_cookie != pads->cookie)) {
     GSList *collected;
 
@@ -1106,13 +1064,10 @@ gst_collect_pads_check_pads_unlocked (GstCollectPads * pads)
       /* update the stats */
       pads->numpads++;
       data = collected->data;
-
-      if (G_LIKELY (!data->abidata.ABI.flushing)) {
-        if (data->buffer)
-          pads->queuedpads++;
-        if (data->abidata.ABI.eos)
-          pads->eospads++;
-      }
+      if (data->buffer)
+        pads->queuedpads++;
+      if (data->abidata.ABI.eos)
+        pads->eospads++;
 
       /* add to the list of pads to collect */
       ref_data (data);
@@ -1121,14 +1076,6 @@ gst_collect_pads_check_pads_unlocked (GstCollectPads * pads)
     /* and update the cookie */
     pads->cookie = pads->abidata.ABI.pad_cookie;
   }
-}
-
-static inline void
-gst_collect_pads_check_pads (GstCollectPads * pads)
-{
-  /* the master list and cookie are protected with the PAD_LOCK */
-  GST_COLLECT_PADS_PAD_LOCK (pads);
-  gst_collect_pads_check_pads_unlocked (pads);
   GST_COLLECT_PADS_PAD_UNLOCK (pads);
 }
 
@@ -1238,16 +1185,10 @@ gst_collect_pads_event (GstPad * pad, GstEvent * event)
         pads->eospads--;
         data->abidata.ABI.eos = FALSE;
       }
-
-      if (!gst_collect_pads_is_flushing (pads)) {
-        /* forward event if all pads are no longer flushing */
-        GST_DEBUG ("No more pads are flushing, forwarding FLUSH_STOP");
-        GST_OBJECT_UNLOCK (pads);
-        goto forward;
-      }
-      gst_event_unref (event);
       GST_OBJECT_UNLOCK (pads);
-      goto done;
+
+      /* forward event */
+      goto forward;
     }
     case GST_EVENT_EOS:
     {
@@ -1308,8 +1249,6 @@ gst_collect_pads_event (GstPad * pad, GstEvent * event)
   }
 
 forward:
-  GST_DEBUG_OBJECT (pads, "forward unhandled event: %s",
-      GST_EVENT_TYPE_NAME (event));
   res = gst_pad_event_default (pad, event);
 
 done:
@@ -1336,6 +1275,7 @@ gst_collect_pads_chain (GstPad * pad, GstBuffer * buffer)
 {
   GstCollectData *data;
   GstCollectPads *pads;
+  guint64 size;
   GstFlowReturn ret;
   GstBuffer **buffer_p;
 
@@ -1350,6 +1290,7 @@ gst_collect_pads_chain (GstPad * pad, GstBuffer * buffer)
   GST_OBJECT_UNLOCK (pad);
 
   pads = data->collect;
+  size = GST_BUFFER_SIZE (buffer);
 
   GST_OBJECT_LOCK (pads);
   /* if not started, bail out */
@@ -1380,7 +1321,6 @@ gst_collect_pads_chain (GstPad * pad, GstBuffer * buffer)
 
   /* While we have data queued on this pad try to collect stuff */
   do {
-    GST_DEBUG ("Pad %s:%s checking", GST_DEBUG_PAD_NAME (pad));
     /* Check if our collected condition is matched and call the collected function
      * if it is */
     ret = gst_collect_pads_check_collected (pads);
@@ -1423,7 +1363,6 @@ gst_collect_pads_chain (GstPad * pad, GstBuffer * buffer)
   while (data->buffer != NULL);
 
 unlock_done:
-  GST_DEBUG ("Pad %s:%s done", GST_DEBUG_PAD_NAME (pad));
   GST_OBJECT_UNLOCK (pads);
   unref_data (data);
   gst_buffer_unref (buffer);

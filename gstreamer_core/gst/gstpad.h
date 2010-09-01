@@ -28,7 +28,6 @@
 
 #include <gst/gstobject.h>
 #include <gst/gstbuffer.h>
-#include <gst/gstbufferlist.h>
 #include <gst/gstcaps.h>
 #include <gst/gstevent.h>
 #include <gst/gstquery.h>
@@ -48,7 +47,6 @@ G_BEGIN_DECLS
 
 
 typedef struct _GstPad GstPad;
-typedef struct _GstPadPrivate GstPadPrivate;
 typedef struct _GstPadClass GstPadClass;
 
 /**
@@ -160,9 +158,6 @@ typedef enum {
  */
 #define GST_FLOW_IS_SUCCESS(ret) ((ret) >= GST_FLOW_OK)
 
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
 G_CONST_RETURN gchar*	gst_flow_get_name	(GstFlowReturn ret);
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -234,31 +229,11 @@ typedef gboolean		(*GstPadActivateModeFunction)	(GstPad *pad, gboolean active);
  * gst_buffer_unref() when the buffer is no longer needed.
  *
  * When a chain function detects an error in the data stream, it must post an
- * error on the bus and return an appropriate #GstFlowReturn value.
+ * error on the buffer and return an appropriate #GstFlowReturn value.
  *
  * Returns: #GST_FLOW_OK for success
  */
 typedef GstFlowReturn		(*GstPadChainFunction)		(GstPad *pad, GstBuffer *buffer);
-
-/**
- * GstPadChainListFunction:
- * @pad: the sink #GstPad that performed the chain.
- * @list: the #GstBufferList that is chained, not %NULL.
- *
- * A function that will be called on sinkpads when chaining buffer lists.
- * The function typically processes the data contained in the buffer list and
- * either consumes the data or passes it on to the internally linked pad(s).
- *
- * The implementer of this function receives a refcount to @list and
- * should gst_buffer_list_unref() when the list is no longer needed.
- *
- * When a chainlist function detects an error in the data stream, it must
- * post an error on the bus and return an appropriate #GstFlowReturn value.
- *
- * Returns: #GST_FLOW_OK for success
- */
-typedef GstFlowReturn		(*GstPadChainListFunction)	(GstPad *pad, GstBufferList *list);
-
 /**
  * GstPadGetRangeFunction:
  * @pad: the src #GstPad to perform the getrange on.
@@ -337,28 +312,11 @@ typedef gboolean		(*GstPadCheckGetRangeFunction)	(GstPad *pad);
  * The signature of the internal pad link function.
  *
  * Returns: a newly allocated #GList of pads that are linked to the given pad on
- * the inside of the parent element.
- *
- * The caller must call g_list_free() on it after use.
- *
- * Deprecated: use the threadsafe #GstPadIterIntLinkFunction instead.
+ *  the inside of the parent element.
+ *  The caller must call g_list_free() on it after use.
  */
 typedef GList*			(*GstPadIntLinkFunction)	(GstPad *pad);
 
-/**
- * GstPadIterIntLinkFunction:
- * @pad: The #GstPad to query.
- *
- * The signature of the internal pad link iterator function.
- *
- * Returns: a new #GstIterator that will iterate over all pads that are
- * linked to the given pad on the inside of the parent element.
- *
- * the caller must call gst_iterator_free() after usage.
- *
- * Since 0.10.21
- */
-typedef GstIterator*           (*GstPadIterIntLinkFunction)    (GstPad *pad);
 
 /* generic query function */
 /**
@@ -466,16 +424,13 @@ typedef void			(*GstPadFixateCapsFunction)	(GstPad *pad, GstCaps *caps);
  * be processed by @pad. The function is mostly overridden by elements that can
  * provide a hardware buffer in order to avoid additional memcpy operations.
  *
- * The function can return a buffer that has caps different from the requested
- * @caps, in which case the upstream element requests a format change to this
- * new caps.
- * If a format change was requested, the returned buffer will be one to hold
- * the data of said new caps, so its size might be different from the requested
- * @size.
+ * The function can return a buffer that does not have @caps, in which case the
+ * upstream element requests a format change. If a format change was requested,
+ * the returned buffer will be one to hold the data of said new caps, so its
+ * size might be different from @size.
  *
  * When this function returns anything else than #GST_FLOW_OK, the buffer allocation
- * failed and @buf does not contain valid data. If the function returns #GST_FLOW_OK and
- * the @buf is NULL, a #GstBuffer will be created with @caps, @offset and @size.
+ * failed and @buf does not contain valid data.
  *
  * By default this function returns a new buffer of @size and with @caps containing
  * purely malloced data. The buffer should be freed with gst_buffer_unref()
@@ -575,7 +530,7 @@ typedef struct _GstPadTemplate GstPadTemplate;
  * @unlinkfunc: function called when pad is unlinked
  * @peer: the pad this pad is linked to
  * @sched_private: private storage for the scheduler
- * @chainfunc: function to chain buffer to pad
+ * @chainfunc: function to chain data to pad
  * @checkgetrangefunc: function to check if pad can operate in pull mode
  * @getrangefunc: function to get a range of data from a pad
  * @eventfunc: function to send an event to a pad
@@ -586,8 +541,6 @@ typedef struct _GstPadTemplate GstPadTemplate;
  * @bufferallocfunc: function to allocate a buffer for this pad
  * @do_buffer_signals: counter counting installed buffer signals
  * @do_event_signals: counter counting installed event signals
- * @iterintlinkfunc: get the internal links iterator of this pad
- * @block_destroy_data: notify function for gst_pad_set_blocked_async_full()
  *
  * The #GstPad structure. Use the functions to update the variables.
  */
@@ -655,21 +608,8 @@ struct _GstPad {
   gint				 do_buffer_signals;
   gint				 do_event_signals;
 
-  /* ABI added */
-  /* iterate internal links */
-  GstPadIterIntLinkFunction     iterintlinkfunc;
-
-  /* free block_data */
-  GDestroyNotify block_destroy_data;
-
   /*< private >*/
-  union {
-    struct {
-      gboolean                      block_callback_called;
-      GstPadPrivate                *priv;
-    } ABI;
-    gpointer _gst_reserved[GST_PADDING - 2];
-  } abidata;
+  gpointer _gst_reserved[GST_PADDING];
 };
 
 struct _GstPadClass {
@@ -706,18 +646,11 @@ struct _GstPadClass {
 #define GST_PAD_QUERYTYPEFUNC(pad)	(GST_PAD_CAST(pad)->querytypefunc)
 #define GST_PAD_QUERYFUNC(pad)		(GST_PAD_CAST(pad)->queryfunc)
 #define GST_PAD_INTLINKFUNC(pad)	(GST_PAD_CAST(pad)->intlinkfunc)
-#define GST_PAD_ITERINTLINKFUNC(pad)    (GST_PAD_CAST(pad)->iterintlinkfunc)
 
 #define GST_PAD_PEER(pad)		(GST_PAD_CAST(pad)->peer)
 #define GST_PAD_LINKFUNC(pad)		(GST_PAD_CAST(pad)->linkfunc)
 #define GST_PAD_UNLINKFUNC(pad)		(GST_PAD_CAST(pad)->unlinkfunc)
 
-/**
- * GST_PAD_CAPS:
- * @pad: a #GstPad.
- *
- * The caps for this pad.
- */
 #define GST_PAD_CAPS(pad)		(GST_PAD_CAST(pad)->caps)
 #define GST_PAD_GETCAPSFUNC(pad)	(GST_PAD_CAST(pad)->getcapsfunc)
 #define GST_PAD_SETCAPSFUNC(pad)	(GST_PAD_CAST(pad)->setcapsfunc)
@@ -808,9 +741,7 @@ struct _GstPadClass {
 
 /* FIXME: this awful circular dependency need to be resolved properly (see padtemplate.h) */
 #include <gst/gstpadtemplate.h>
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
+
 GType			gst_pad_get_type			(void);
 
 /* creating pads */
@@ -852,9 +783,6 @@ GstPad*			gst_pad_new_from_static_template	(GstStaticPadTemplate *templ, const g
  */
 #define gst_pad_get_parent(pad) gst_object_get_parent (GST_OBJECT_CAST (pad))
 
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
 GstPadDirection		gst_pad_get_direction			(GstPad *pad);
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -889,13 +817,6 @@ IMPORT_C
 
 gboolean		gst_pad_set_blocked_async		(GstPad *pad, gboolean blocked,
 								 GstPadBlockCallback callback, gpointer user_data);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-gboolean		gst_pad_set_blocked_async_full		(GstPad *pad, gboolean blocked,
-								 GstPadBlockCallback callback, gpointer user_data,
-                                                                 GDestroyNotify destroy_data);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -967,11 +888,6 @@ void			gst_pad_set_chain_function		(GstPad *pad, GstPadChainFunction chain);
 IMPORT_C
 #endif
 
-void			gst_pad_set_chain_list_function	(GstPad *pad, GstPadChainListFunction chainlist);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
 void			gst_pad_set_getrange_function		(GstPad *pad, GstPadGetRangeFunction get);
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -999,11 +915,6 @@ void			gst_pad_set_unlink_function		(GstPad *pad, GstPadUnlinkFunction unlink);
 IMPORT_C
 #endif
 
-
-gboolean                gst_pad_can_link                        (GstPad *srcpad, GstPad *sinkpad);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
 
 GstPadLinkReturn        gst_pad_link				(GstPad *srcpad, GstPad *sinkpad);
 #ifdef __SYMBIAN32__
@@ -1051,7 +962,7 @@ IMPORT_C
 
 G_CONST_RETURN GstCaps*	gst_pad_get_pad_template_caps		(GstPad *pad);
 
-/* capsnego function for linked/unlinked pads */
+/* capsnego function for connected/unconnected pads */
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -1084,7 +995,7 @@ IMPORT_C
 
 gboolean		gst_pad_peer_accept_caps		(GstPad * pad, GstCaps *caps);
 
-/* capsnego for linked pads */
+/* capsnego for connected pads */
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -1102,11 +1013,6 @@ IMPORT_C
 #endif
 
 GstFlowReturn		gst_pad_push				(GstPad *pad, GstBuffer *buffer);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-GstFlowReturn		gst_pad_push_list			(GstPad *pad, GstBufferList *list);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -1135,11 +1041,6 @@ IMPORT_C
 #endif
 
 GstFlowReturn		gst_pad_chain				(GstPad *pad, GstBuffer *buffer);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-GstFlowReturn		gst_pad_chain_list                      (GstPad *pad, GstBufferList *list);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -1186,24 +1087,6 @@ IMPORT_C
 #endif
 
 GList*			gst_pad_get_internal_links_default	(GstPad *pad);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-void                    gst_pad_set_iterate_internal_links_function (GstPad * pad,
-                                                                 GstPadIterIntLinkFunction iterintlink);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-GstIterator *           gst_pad_iterate_internal_links          (GstPad * pad);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-GstIterator *           gst_pad_iterate_internal_links_default  (GstPad * pad);
-
 
 /* generic query function */
 #ifdef __SYMBIAN32__

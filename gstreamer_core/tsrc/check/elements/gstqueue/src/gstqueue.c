@@ -33,20 +33,11 @@
 
 void create_xml(int result)
 {
-
     if(result)
-    {
         assert_failed = 1;
-    } 
-
+    
     testResultXml(xmlfile);
     close_log_file();
-
-    if(result)
-    {
-        exit (-1);
-    }    
-
 }
 
 #include "libgstreamer_wsd_solution.h" 
@@ -55,7 +46,7 @@ void create_xml(int result)
 static GET_GLOBAL_VAR_FROM_TLS(buffers,gstcheck,GList*)
 #define buffers (*GET_GSTREAMER_WSD_VAR_NAME(buffers,gstcheck,g)())
 #else 
-IMPORT_C extern GList *buffers;
+extern GList *buffers;
 #endif
 
 
@@ -63,7 +54,7 @@ IMPORT_C extern GList *buffers;
 GET_GLOBAL_VAR_FROM_TLS(check_mutex,gstcheck,GMutex *)
 #define check_mutex (*GET_GSTREAMER_WSD_VAR_NAME(check_mutex,gstcheck,g)())
 #else 
-IMPORT_C extern GMutex *check_mutex;
+extern GMutex *check_mutex;
 #endif
 
 
@@ -71,7 +62,7 @@ IMPORT_C extern GMutex *check_mutex;
 GET_GLOBAL_VAR_FROM_TLS(check_cond,gstcheck,GCond *)
 #define check_cond (*GET_GSTREAMER_WSD_VAR_NAME(check_cond,gstcheck,g)())
 #else 
-IMPORT_C extern GCond *check_cond;
+extern GCond *check_cond;
 #endif
 
 //GList *buffers = NULL;
@@ -329,8 +320,7 @@ void test_leaky_upstream()
   gst_pad_set_active (mysinkpad, TRUE);
   g_cond_wait (check_cond, check_mutex);
   g_mutex_unlock (check_mutex);
-  /// wait for second thread to read buffer.
-  //sleep(2);
+
   gst_pad_set_active (mysinkpad, FALSE);
 
   GST_DEBUG ("stopping");
@@ -421,7 +411,7 @@ void test_leaky_downstream()
   gst_pad_set_active (mysinkpad, TRUE);
   g_cond_wait (check_cond, check_mutex);
   g_mutex_unlock (check_mutex);
-  //sleep(2);
+
   gst_pad_set_active (mysinkpad, FALSE);
 
   GST_DEBUG ("stopping");

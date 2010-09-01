@@ -29,7 +29,7 @@
 
 
 /* gettext package name */
-#define GETTEXT_PACKAGE "gst-plugins-symbian-0.10"
+#define GETTEXT_PACKAGE "gst-plugins-base-0.10"
 
 /* macro to use to show function name */
 #define GST_FUNCTION __PRETTY_FUNCTION__
@@ -44,7 +44,7 @@
 #define GST_LICENSE "LGPL"
 
 /* package name in plugins */
-#define GST_PACKAGE_NAME "GStreamer Symbian Plug-ins source release"
+#define GST_PACKAGE_NAME "GStreamer Base Plug-ins source release"
 
 /* package origin */
 #define GST_PACKAGE_ORIGIN "Unknown package origin"
@@ -217,25 +217,25 @@
 #define HAVE_XVIDEO 
 
 /* gettext locale dir */
-#define LOCALEDIR "/home/datha/gst-plugins-symbian-0.10.1/share/locale"
+#define LOCALEDIR "/home/datha/gst-plugins-base-0.10.8/share/locale"
 
 /* Name of package */
-#define PACKAGE "gst-plugins-Symbian"
+#define PACKAGE "gst-plugins-base"
 
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT "http://bugzilla.gnome.org/enter_bug.cgi?product=GStreamer"
 
 /* Define to the full name of this package. */
-#define PACKAGE_NAME "GStreamer symbian Plug-ins"
+#define PACKAGE_NAME "GStreamer Base Plug-ins"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "GStreamer symbian Plug-ins 0.10.1"
+#define PACKAGE_STRING "GStreamer Base Plug-ins 0.10.8"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "gst-plugins-symbian"
+#define PACKAGE_TARNAME "gst-plugins-base"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "0.10.1"
+#define PACKAGE_VERSION "0.10.8"
 
 /* directory where plugins are located */
 #ifdef __SYMBIAN32__
@@ -271,7 +271,7 @@
 #define STDC_HEADERS 1
 
 /* Version number of package */
-#define VERSION "0.10.1"
+#define VERSION "0.10.8"
 
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */

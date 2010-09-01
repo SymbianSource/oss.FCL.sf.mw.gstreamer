@@ -54,13 +54,6 @@ gboolean  preferenceupdate;
 gboolean  priorityupdate;
 };
 
-typedef enum
-{
-    kUnInitialized = -1,
-    kPausedToPlaying,
-    kPlayBufferPreRoll,
-    kPlayed
-} ;
 struct _GstDevsoundSrc {
     GstPushSrc    src;
 
@@ -84,7 +77,6 @@ struct _GstDevsoundSrc {
   gint   samplesrecorded; 
   GList*  fmt;
   GList*  supportedbitrates;
-  gboolean eosreceived;
   
   guint speechbitrate;
   gboolean speechvadmode;
@@ -93,8 +85,7 @@ struct _GstDevsoundSrc {
   gboolean g729vadmode;
   gint ilbcencodemode;
   gboolean ilbcvadmode;
-  gint firstTimeInit;
-  guint prevbuffersize;
+
   
 };
 

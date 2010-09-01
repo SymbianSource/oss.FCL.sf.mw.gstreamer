@@ -25,6 +25,10 @@
 #define __GST_H__
 
 #include <glib.h>
+#ifdef __SYMBIAN32__
+#include <gst/gst_global.h>
+#include <glib_global.h>
+#endif
 
 #include <gst/glib-compat.h>
 
@@ -33,7 +37,6 @@
 
 #include <gst/gstbin.h>
 #include <gst/gstbuffer.h>
-#include <gst/gstbufferlist.h>
 #include <gst/gstcaps.h>
 #include <gst/gstchildproxy.h>
 #include <gst/gstclock.h>
@@ -56,7 +59,6 @@
 #include <gst/gstpipeline.h>
 #include <gst/gstplugin.h>
 #include <gst/gstpoll.h>
-#include <gst/gstpreset.h>
 #include <gst/gstquery.h>
 #include <gst/gstregistry.h>
 #include <gst/gstsegment.h>
@@ -65,7 +67,6 @@
 #include <gst/gsttaglist.h>
 #include <gst/gsttagsetter.h>
 #include <gst/gsttask.h>
-#include <gst/gsttaskpool.h>
 #include <gst/gsttrace.h>
 #include <gst/gsttypefind.h>
 #include <gst/gsttypefindfactory.h>
@@ -73,7 +74,6 @@
 #include <gst/gstutils.h>
 #include <gst/gstvalue.h>
 #include <gst/gstxml.h>
-#include <gst/gst_global.h>
 
 #include <gst/gstparse.h>
 
@@ -81,9 +81,7 @@
 #include <gst/gstcompat.h>
 
 G_BEGIN_DECLS
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
+
 void		gst_init			(int *argc, char **argv[]);
 #ifdef __SYMBIAN32__
 IMPORT_C

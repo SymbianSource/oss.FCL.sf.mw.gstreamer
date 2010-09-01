@@ -29,9 +29,6 @@
 
 #include "avcodec.h"
 
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
 extern gboolean gst_ffmpegcolorspace_register (GstPlugin * plugin);
 
 static gboolean

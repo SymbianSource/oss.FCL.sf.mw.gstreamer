@@ -110,6 +110,10 @@ gst_base_rtp_payload_audio_handle_event (GstPad * pad, GstEvent * event);
 
 GST_BOILERPLATE (GstBaseRTPAudioPayload, gst_base_rtp_audio_payload,
     GstBaseRTPPayload, GST_TYPE_BASE_RTP_PAYLOAD);
+#ifdef __SYMBIAN32__
+EXPORT_C
+#endif
+
 
 static void
 gst_base_rtp_audio_payload_base_init (gpointer klass)

@@ -467,7 +467,7 @@ gst_child_proxy_child_added (GstObject * object, GstObject * child)
 /**
  * gst_child_proxy_child_removed:
  * @object: the parent object
- * @child: the removed child
+ * @child: the newly added child
  *
  * Emits the "child-removed" signal.
  */
@@ -497,8 +497,6 @@ gst_child_proxy_base_init (gpointer g_class)
 	 *
 	 * Will be emitted after the @object was added to the @child_proxy.
 	 */
-    /* FIXME 0.11: use GST_TYPE_OBJECT as GstChildProxy only
-     * supports GstObjects */
     signals[CHILD_ADDED] =
         g_signal_new ("child-added", G_TYPE_FROM_CLASS (g_class),
         G_SIGNAL_RUN_FIRST, G_STRUCT_OFFSET (GstChildProxyInterface,
@@ -512,8 +510,6 @@ gst_child_proxy_base_init (gpointer g_class)
 	 *
 	 * Will be emitted after the @object was removed from the @child_proxy.
 	 */
-    /* FIXME 0.11: use GST_TYPE_OBJECT as GstChildProxy only
-     * supports GstObjects */
     signals[CHILD_REMOVED] =
         g_signal_new ("child-removed", G_TYPE_FROM_CLASS (g_class),
         G_SIGNAL_RUN_FIRST, G_STRUCT_OFFSET (GstChildProxyInterface,
@@ -531,10 +527,9 @@ EXPORT_C
 GType
 gst_child_proxy_get_type (void)
 {
-  static volatile gsize type = 0;
+  static GType type = 0;
 
-  if (g_once_init_enter (&type)) {
-    GType _type;
+  if (G_UNLIKELY (type == 0)) {
     static const GTypeInfo info = {
       sizeof (GstChildProxyInterface),
       gst_child_proxy_base_init,        /* base_init */
@@ -546,12 +541,9 @@ gst_child_proxy_get_type (void)
       0,                        /* n_preallocs */
       NULL                      /* instance_init */
     };
+    type = g_type_register_static (G_TYPE_INTERFACE, "GstChildProxy", &info, 0);
 
-    _type =
-        g_type_register_static (G_TYPE_INTERFACE, "GstChildProxy", &info, 0);
-
-    g_type_interface_add_prerequisite (_type, GST_TYPE_OBJECT);
-    g_once_init_leave (&type, (gsize) _type);
+    g_type_interface_add_prerequisite (type, GST_TYPE_OBJECT);
   }
   return type;
 }

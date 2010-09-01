@@ -32,13 +32,11 @@
 #include <gmodule.h>
 #include <gst/gstobject.h>
 #include <gst/gstmacros.h>
-#include <gst/gststructure.h>
 
 G_BEGIN_DECLS
 
 typedef struct _GstPlugin GstPlugin;
 typedef struct _GstPluginClass GstPluginClass;
-typedef struct _GstPluginPrivate GstPluginPrivate;
 typedef struct _GstPluginDesc GstPluginDesc;
 
 /**
@@ -82,27 +80,6 @@ typedef enum
 } GstPluginFlags;
 
 /**
- * GstPluginDependencyFlags:
- * @GST_PLUGIN_DEPENDENCY_FLAG_NONE : no special flags
- * @GST_PLUGIN_DEPENDENCY_FLAG_RECURSE : recurse into subdirectories
- * @GST_PLUGIN_DEPENDENCY_FLAG_PATHS_ARE_DEFAULT_ONLY : use paths
- *         argument only if none of the environment variables is set
- * @GST_PLUGIN_DEPENDENCY_FLAG_FILE_NAME_IS_SUFFIX : interpret
- *         filename argument as filter suffix and check all matching files in
- *         the directory
- *
- * Flags used in connection with gst_plugin_add_dependency().
- *
- * Since: 0.10.22
- */
-typedef enum {
-  GST_PLUGIN_DEPENDENCY_FLAG_NONE = 0,
-  GST_PLUGIN_DEPENDENCY_FLAG_RECURSE = (1 << 0),
-  GST_PLUGIN_DEPENDENCY_FLAG_PATHS_ARE_DEFAULT_ONLY = (1 << 1),
-  GST_PLUGIN_DEPENDENCY_FLAG_FILE_NAME_IS_SUFFIX = (1 << 2)
-} GstPluginDependencyFlags;
-
-/**
  * GstPluginInitFunc:
  * @plugin: The plugin object that can be used to register #GstPluginFeatures for this plugin.
  *
@@ -113,23 +90,6 @@ typedef enum {
  * Returns: %TRUE if plugin initialised successfully
  */
 typedef gboolean (*GstPluginInitFunc) (GstPlugin *plugin);
-
-/**
- * GstPluginInitFullFunc:
- * @plugin: The plugin object that can be used to register #GstPluginFeatures for this plugin.
- * @user_data: The user data.
- *
- * A plugin should provide a pointer to a function of either #GstPluginInitFunc
- * or this type in the plugin_desc struct.
- * The function will be called by the loader at startup. This version allows
- * user data to be passed to init function (useful for bindings).
- *
- * Returns: %TRUE if plugin initialised successfully
- *
- * Since: 0.10.24
- *
- */
-typedef gboolean (*GstPluginInitFullFunc) (GstPlugin *plugin, gpointer user_data);
 
 /**
  * GstPluginDesc:
@@ -200,8 +160,7 @@ struct _GstPlugin {
   gboolean      registered;     /* TRUE when the registry has seen a filename
                                  * that matches the plugin's basename */
 
-  GstPluginPrivate *priv;
-  gpointer _gst_reserved[GST_PADDING - 1];
+  gpointer _gst_reserved[GST_PADDING];
 };
 
 struct _GstPluginClass {
@@ -225,9 +184,7 @@ struct _GstPluginClass {
  *
  * This macro needs to be used to define the entry point and meta data of a
  * plugin. One would use this macro to export a plugin, so that it can be used
- * by other applications.
- *
- * The macro uses a define named PACKAGE for the #GstPluginDesc,source field.
+ * by other applications
  */
 #define GST_PLUGIN_DEFINE(major,minor,name,description,init,version,license,package,origin)	\
 GST_PLUGIN_EXPORT GstPluginDesc gst_plugin_desc = {	\
@@ -260,12 +217,9 @@ GST_PLUGIN_EXPORT GstPluginDesc gst_plugin_desc = {	\
  * local plugin. One would use this macro to define a local plugin that can only
  * be used by the own application.
  *
- * The macro uses a define named PACKAGE for the #GstPluginDesc.source field.
- *
  * Deprecated: Use gst_plugin_register_static() instead. This macro was
  * deprecated because it uses constructors, which is a compiler feature not
  * available on all compilers.
- *
  */
 /* We don't have deprecation guards here on purpose, it's enough to have
  * deprecation guards around _gst_plugin_register_static(), and will result in
@@ -320,15 +274,9 @@ IMPORT_C
 GType                   gst_plugin_get_type             (void);
 
 #ifndef GST_DISABLE_DEPRECATED
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
 void			_gst_plugin_register_static	(GstPluginDesc *desc);
 #endif
 
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
 gboolean		gst_plugin_register_static	(gint major_version,
                                                          gint minor_version,
                                                          const gchar *name,
@@ -339,22 +287,6 @@ gboolean		gst_plugin_register_static	(gint major_version,
                                                          const gchar *source,
                                                          const gchar *package,
                                                          const gchar *origin);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-gboolean		gst_plugin_register_static_full	(gint major_version,
-                                                         gint minor_version,
-                                                         const gchar *name,
-                                                         gchar *description,
-                                                         GstPluginInitFullFunc init_full_func,
-                                                         const gchar *version,
-                                                         const gchar *license,
-                                                         const gchar *source,
-                                                         const gchar *package,
-                                                         const gchar *origin,
-                                                         gpointer user_data);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif
@@ -400,17 +332,6 @@ G_CONST_RETURN gchar*	gst_plugin_get_origin		(GstPlugin *plugin);
 IMPORT_C
 #endif
 
-G_CONST_RETURN GstStructure*	gst_plugin_get_cache_data	(GstPlugin * plugin);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-void		gst_plugin_set_cache_data	(GstPlugin * plugin, GstStructure *cache_data);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
 GModule *		gst_plugin_get_module		(GstPlugin *plugin);
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -440,26 +361,6 @@ IMPORT_C
 #endif
 
 GstPlugin *             gst_plugin_load_by_name         (const gchar *name);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-void                    gst_plugin_add_dependency (GstPlugin    * plugin,
-                                                   const gchar ** env_vars,
-                                                   const gchar ** paths,
-                                                   const gchar ** names,
-                                                   GstPluginDependencyFlags flags);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-void                    gst_plugin_add_dependency_simple (GstPlugin   * plugin,
-                                                          const gchar * env_vars,
-                                                          const gchar * paths,
-                                                          const gchar * names,
-                                                          GstPluginDependencyFlags flags);
 #ifdef __SYMBIAN32__
 IMPORT_C
 #endif

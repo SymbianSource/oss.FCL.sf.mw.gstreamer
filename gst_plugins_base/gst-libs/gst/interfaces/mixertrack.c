@@ -41,7 +41,6 @@ enum
   ARG_0,
   ARG_LABEL,
   ARG_UNTRANSLATED_LABEL,
-  ARG_INDEX,
   ARG_MIN_VOLUME,
   ARG_MAX_VOLUME,
   ARG_FLAGS,
@@ -103,7 +102,7 @@ gst_mixer_track_class_init (GstMixerTrackClass * klass)
   g_object_class_install_property (object_klass, ARG_LABEL,
       g_param_spec_string ("label", "Track label",
           "The label assigned to the track (may be translated)", NULL,
-          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+          G_PARAM_READABLE));
 
   /**
    * GstMixerTrack:untranslated-label
@@ -119,42 +118,27 @@ gst_mixer_track_class_init (GstMixerTrackClass * klass)
   g_object_class_install_property (object_klass, ARG_UNTRANSLATED_LABEL,
       g_param_spec_string ("untranslated-label", "Untranslated track label",
           "The untranslated label assigned to the track (since 0.10.13)",
-          NULL,
-          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
-
-  /**
-   * GstMixerTrack:index
-   *
-   * Index of the mixer track, if available. Mixer track implementations
-   * must set this at construct time. This can be used to discern between
-   * multiple tracks with identical labels.
-   *
-   * Since: 0.10.21
-   */
-  g_object_class_install_property (object_klass, ARG_INDEX,
-      g_param_spec_uint ("index", "Index",
-          "Track index", 0, G_MAXUINT,
-          0, G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+          NULL, G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
   g_object_class_install_property (object_klass, ARG_MIN_VOLUME,
-      g_param_spec_int ("min-volume", "Minimum volume level",
+      g_param_spec_int ("min_volume", "Minimum volume level",
           "The minimum possible volume level", G_MININT, G_MAXINT,
-          0, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+          0, G_PARAM_READABLE));
 
   g_object_class_install_property (object_klass, ARG_MAX_VOLUME,
-      g_param_spec_int ("max-volume", "Maximum volume level",
+      g_param_spec_int ("max_volume", "Maximum volume level",
           "The maximum possible volume level", G_MININT, G_MAXINT,
-          0, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+          0, G_PARAM_READABLE));
 
   g_object_class_install_property (object_klass, ARG_FLAGS,
       g_param_spec_uint ("flags", "Flags",
           "Flags indicating the type of mixer track",
-          0, G_MAXUINT, 0, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+          0, G_MAXUINT, 0, G_PARAM_READABLE));
 
   g_object_class_install_property (object_klass, ARG_NUM_CHANNELS,
-      g_param_spec_int ("num-channels", "Number of channels",
+      g_param_spec_int ("num_channels", "Number of channels",
           "The number of channels contained within the track",
-          0, G_MAXINT, 0, G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+          0, G_MAXINT, 0, G_PARAM_READABLE));
 
 #if 0
   signals[SIGNAL_RECORD_TOGGLED] =
@@ -192,9 +176,8 @@ gst_mixer_track_init (GstMixerTrack * mixer_track)
   mixer_track->num_channels = 0;
 }
 
-/* FIXME 0.11: move these as members into the mixer track structure */
+/* FIXME 0.11: move this as a member into the mixer track structure */
 #define MIXER_TRACK_OBJECT_DATA_KEY_UNTRANSLATED_LABEL "gst-mixer-track-ulabel"
-#define MIXER_TRACK_OBJECT_DATA_KEY_INDEX "index"
 
 static void
 gst_mixer_track_get_property (GObject * object, guint prop_id, GValue * value,
@@ -212,11 +195,6 @@ gst_mixer_track_get_property (GObject * object, guint prop_id, GValue * value,
       g_value_set_string (value,
           (const gchar *) g_object_get_data (G_OBJECT (mixer_track),
               MIXER_TRACK_OBJECT_DATA_KEY_UNTRANSLATED_LABEL));
-      break;
-    case ARG_INDEX:
-      g_value_set_uint (value,
-          GPOINTER_TO_INT (g_object_get_data (G_OBJECT (mixer_track),
-                  MIXER_TRACK_OBJECT_DATA_KEY_INDEX)));
       break;
     case ARG_MIN_VOLUME:
       g_value_set_int (value, mixer_track->min_volume);
@@ -249,11 +227,6 @@ gst_mixer_track_set_property (GObject * object, guint prop_id,
       g_object_set_data_full (G_OBJECT (mixer_track),
           MIXER_TRACK_OBJECT_DATA_KEY_UNTRANSLATED_LABEL,
           g_value_dup_string (value), (GDestroyNotify) g_free);
-      break;
-    case ARG_INDEX:
-      g_object_set_data (G_OBJECT (mixer_track),
-          MIXER_TRACK_OBJECT_DATA_KEY_INDEX,
-          GINT_TO_POINTER (g_value_get_uint (value)));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

@@ -31,10 +31,6 @@
  * Various GStreamer objects provide access to their internal structures using
  * an iterator.
  *
- * In general, whenever calling a GstIterator function results in your code
- * receiving a refcounted object, the refcount for that object will have been
- * increased.  Your code is responsible for unrefing that object after use.
- *
  * The basic use pattern of an iterator is as follows:
  *
  * <example>
@@ -53,7 +49,7 @@
  *          gst_iterator_resync (it);
  *          break;
  *        case GST_ITERATOR_ERROR:
- *          ...wrong parameters were given...
+ *          ...wrong parameter were given...
  *          done = TRUE;
  *          break;
  *        case GST_ITERATOR_DONE:
@@ -65,7 +61,7 @@
  *   </programlisting>
  * </example>
  *
- * Last reviewed on 2009-06-16 (0.10.24)
+ * Last reviewed on 2005-11-09 (0.9.4)
  */
 
 #include "gst_private.h"
@@ -100,8 +96,7 @@ gst_iterator_init (GstIterator * it,
  * @size: the size of the iterator structure
  * @type: #GType of children
  * @lock: pointer to a #GMutex.
- * @master_cookie: pointer to a guint32 that is changed when the items in the
- *    iterator changed.
+ * @master_cookie: pointer to a guint32 to protect the iterated object.
  * @next: function to get next item
  * @item: function to call on each item retrieved
  * @resync: function to resync the iterator
@@ -155,6 +150,7 @@ typedef struct _GstListIterator
   gpointer owner;
   GList **orig;
   GList *list;                  /* pointer in list */
+  GType *type;
   GstIteratorDisposeFunction freefunc;
 } GstListIterator;
 
@@ -189,36 +185,13 @@ gst_list_iterator_free (GstListIterator * it)
  * gst_iterator_new_list:
  * @type: #GType of elements
  * @lock: pointer to a #GMutex protecting the list.
- * @master_cookie: pointer to a guint32 that is incremented when the list
- *     is changed.
+ * @master_cookie: pointer to a guint32 to protect the list.
  * @list: pointer to the list
  * @owner: object owning the list
  * @item: function to call for each item
  * @free: function to call when the iterator is freed
  *
  * Create a new iterator designed for iterating @list.
- *
- * The list you iterate is usually part of a data structure @owner and is
- * protected with @lock. 
- *
- * The iterator will use @lock to retrieve the next item of the list and it
- * will then call the @item function before releasing @lock again.
- *
- * The @item function usualy makes sure that the item remains alive while
- * @lock is released and the application is using the item. The application is
- * responsible for freeing/
-#ifdef __SYMBIAN32__
-EXPORT_C
-#endif
-unreffing the item after usage as explained in
- * gst_iterator_next().
- *
- * When a concurrent update to the list is performed, usually by @owner while
- * holding @lock, @master_cookie will be updated. The iterator implementation
- * will notice the update of the cookie and will return %GST_ITERATOR_RESYNC to
- * the user of the iterator in the next call to gst_iterator_next().
- *
- * @owner will be passed to the @free function when the iterator is freed.
  *
  * Returns: the new #GstIterator for @list.
  *
@@ -270,24 +243,12 @@ gst_iterator_pop (GstIterator * it)
  * @it: The #GstIterator to iterate
  * @elem: pointer to hold next element
  *
- * Get the next item from the iterator in @elem. 
+ * Get the next item from the iterator. For iterators that return
+ * refcounted objects, the returned object will have its refcount
+ * increased and should therefore be unreffed after usage.
  *
- * Only when this function returns %GST_ITERATOR_OK, @elem will contain a valid
- * value. For iterators that return refcounted objects, the returned object
- * will have its refcount increased and should therefore be unreffed after
- * usage.
- *
- * When this function returns %GST_ITERATOR_DONE, no more elements can be
- * retrieved from @it.
- *
- * A return value of %GST_ITERATOR_RESYNC indicates that the element list was
- * concurrently updated. The user of @it should call gst_iterator_resync() to
- * get the newly updated list. 
- *
- * A return value of %GST_ITERATOR_ERROR indicates an unrecoverable fatal error.
- *
- * Returns: The result of the iteration. Unref @elem after usage if this
- * is a refcounted object.
+ * Returns: The result of the iteration. Unref after usage if this is
+ * a refcounted object.
  *
  * MT safe.
  */
@@ -355,9 +316,6 @@ done:
  * Resync the iterator. this function is mostly called
  * after gst_iterator_next() returned %GST_ITERATOR_RESYNC.
  *
- * When an iterator was pushed on @it, it will automatically be popped again
- * with this function.
- *
  * MT safe.
  */
 #ifdef __SYMBIAN32__
@@ -407,14 +365,11 @@ gst_iterator_free (GstIterator * it)
  * @other: The #GstIterator to push
  *
  * Pushes @other iterator onto @it. All calls performed on @it are
- * forwarded to @other. If @other returns %GST_ITERATOR_DONE, it is
+ * forwarded tot @other. If @other returns #GST_ITERATOR_DONE, it is
  * popped again and calls are handled by @it again.
  *
  * This function is mainly used by objects implementing the iterator
  * next function to recurse into substructures.
- *
- * When gst_iterator_resync() is called on @it, @other will automatically be
- * popped.
  *
  * MT safe.
  */
@@ -545,19 +500,18 @@ gst_iterator_filter (GstIterator * it, GCompareFunc func, gpointer user_data)
  * @ret: the seed value passed to the fold function
  * @user_data: user data passed to the fold function
  *
- * Folds @func over the elements of @iter. That is to say, @func will be called
- * as @func (object, @ret, @user_data) for each object in @it. The normal use
+ * Folds @func over the elements of @iter. That is to say, @proc will be called
+ * as @proc (object, @ret, @user_data) for each object in @iter. The normal use
  * of this procedure is to accumulate the results of operating on the objects in
- * @ret.  If object is a refcounted object its refcount will be increased 
- * before @func is called, and it should be unrefed after use in @func.
+ * @ret.
  *
- * This procedure can be used (and is used internally) to implement the
- * gst_iterator_foreach() and gst_iterator_find_custom() operations.
+ * This procedure can be used (and is used internally) to implement the foreach
+ * and find_custom operations.
  *
  * The fold will proceed as long as @func returns TRUE. When the iterator has no
- * more arguments, %GST_ITERATOR_DONE will be returned. If @func returns FALSE,
- * the fold will stop, and %GST_ITERATOR_OK will be returned. Errors or resyncs
- * will cause fold to return %GST_ITERATOR_ERROR or %GST_ITERATOR_RESYNC as
+ * more arguments, #GST_ITERATOR_DONE will be returned. If @func returns FALSE,
+ * the fold will stop, and #GST_ITERATOR_OK will be returned. Errors or resyncs
+ * will cause fold to return #GST_ITERATOR_ERROR or #GST_ITERATOR_RESYNC as
  * appropriate.
  *
  * The iterator will not be freed.
@@ -618,9 +572,7 @@ foreach_fold_func (gpointer item, GValue * unused, ForeachFoldData * data)
  * @user_data: user data passed to the function
  *
  * Iterate over all element of @it and call the given function @func for
- * each element.  As in gst_iterator_fold(), the refcount of a refcounted 
- * object will be increased before @func is called, and should be unrefed
- * after use.
+ * each element.
  *
  * Returns: the result call to gst_iterator_fold(). The iterator will not be
  * freed.
@@ -667,9 +619,7 @@ find_custom_fold_func (gpointer item, GValue * ret, FindCustomFoldData * data)
  * @user_data: user data passed to the compare function
  *
  * Find the first element in @it that matches the compare function @func.
- * @func should return 0 when the element is found.  As in gst_iterator_fold(),
- * the refcount of a refcounted object will be increased before @func is 
- * called, and should be unrefed after use.
+ * @func should return 0 when the element is found.
  *
  * The iterator will not be freed.
  *

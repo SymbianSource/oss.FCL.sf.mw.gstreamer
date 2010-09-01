@@ -181,8 +181,6 @@ typedef enum
  * @segtotal: the total number of segments
  * @bytes_per_sample: number of bytes in one sample
  * @silence_sample: bytes representing one sample of silence
- * @seglatency: number of segments queued in the lower level device,
- *  defaults to segtotal
  *
  * The structure containing the format specification of the ringbuffer.
  */
@@ -202,30 +200,17 @@ struct _GstRingBufferSpec
   gint      rate;
   gint      channels;
   
-  guint64  latency_time;        /* the required/actual latency time, this is the
-				 * actual the size of one segment and the
-				 * minimum possible latency we can achieve. */
-  guint64  buffer_time;         /* the required/actual time of the buffer, this is
-				 * the total size of the buffer and maximum
-				 * latency we can compensate for. */
-  gint     segsize;             /* size of one buffer segment in bytes, this value
-				 * should be chosen to match latency_time as
-				 * well as possible. */
-  gint     segtotal;            /* total number of segments, this value is the
-				 * number of segments of @segsize and should be
-				 * chosen so that it matches buffer_time as
-				 * close as possible. */
+  guint64  latency_time;        /* the required/actual latency time */
+  guint64  buffer_time;         /* the required/actual time of the buffer */
+  gint     segsize;             /* size of one buffer segment in bytes */
+  gint     segtotal;            /* total number of segments */
+
   /* out */
   gint     bytes_per_sample;    /* number of bytes of one sample */
   guint8   silence_sample[32];  /* bytes representing silence */
 
-  /* ABI added 0.10.20 */
-  gint     seglatency;          /* number of segments queued in the lower
-				 * level device, defaults to segtotal. */
-
   /*< private >*/
-  /* gpointer _gst_reserved[GST_PADDING]; */
-  guint8 _gst_reserved[(sizeof (gpointer) * GST_PADDING) - sizeof (gint)];
+  gpointer _gst_reserved[GST_PADDING];
 };
 
 #define GST_RING_BUFFER_GET_COND(buf) (((GstRingBuffer *)buf)->cond)
@@ -279,7 +264,6 @@ struct _GstRingBuffer {
       gboolean           flushing;
       /* ATOMIC */
       gint               may_start;
-      gboolean           active;
     } ABI;
     /* adding + 0 to mark ABI change to be undone later */
     gpointer _gst_reserved[GST_PADDING + 0];
@@ -288,7 +272,6 @@ struct _GstRingBuffer {
 
 /**
  * GstRingBufferClass:
- * @parent_class: parent class
  * @open_device:  open the device, don't set any params or allocate anything
  * @acquire: allocate the resources for the ringbuffer using the given spec
  * @release: free resources of the ringbuffer
@@ -298,10 +281,6 @@ struct _GstRingBuffer {
  * @resume: resume processing of samples after pause
  * @stop: stop processing of samples
  * @delay: get number of samples queued in device
- * @activate: activate the thread that starts pulling and monitoring the
- * consumed segments in the device. Since 0.10.22
- * @commit: write samples into the ringbuffer
- * @clear_all: clear the entire ringbuffer Since 0.10.24
  *
  * The vmethods that subclasses can override to implement the ringbuffer.
  */
@@ -321,17 +300,8 @@ struct _GstRingBufferClass {
 
   guint        (*delay)        (GstRingBuffer *buf);
 
-  /* ABI added */
-  gboolean     (*activate)     (GstRingBuffer *buf, gboolean active);
-
-  guint        (*commit)       (GstRingBuffer * buf, guint64 *sample,
-                                guchar * data, gint in_samples, 
-                                gint out_samples, gint * accum);
-
-  void         (*clear_all)    (GstRingBuffer * buf);
-
   /*< private >*/
-  gpointer _gst_reserved[GST_PADDING - 3];
+  gpointer _gst_reserved[GST_PADDING];
 };
 #ifdef __SYMBIAN32__
 IMPORT_C
@@ -363,14 +333,6 @@ IMPORT_C
 #endif
 
 void            gst_ring_buffer_debug_spec_buff (GstRingBufferSpec *spec);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-
-gboolean        gst_ring_buffer_convert         (GstRingBuffer * buf, GstFormat src_fmt,
-                                                 gint64 src_val, GstFormat dest_fmt,
-						 gint64 * dest_val);
 
 /* device state */
 #ifdef __SYMBIAN32__
@@ -407,18 +369,6 @@ IMPORT_C
 
 
 gboolean        gst_ring_buffer_is_acquired     (GstRingBuffer *buf);
-
-/* activating */
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-gboolean        gst_ring_buffer_activate        (GstRingBuffer *buf, gboolean active);
-#ifdef __SYMBIAN32__
-IMPORT_C
-#endif
-
-gboolean        gst_ring_buffer_is_active       (GstRingBuffer *buf);
 
 /* flushing */
 #ifdef __SYMBIAN32__

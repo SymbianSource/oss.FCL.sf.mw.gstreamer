@@ -1,6 +1,12 @@
 
 /* Generated data (by glib-mkenums) */
 
+
+#ifdef __SYMBIAN32__
+#include <gst_global.h>
+#endif
+
+
 #include "pbutils-enumtypes.h"
 
 #include "pbutils.h" 
@@ -16,8 +22,8 @@ EXPORT_C
 GType
 gst_install_plugins_return_get_type (void)
 {
-  static volatile gsize g_define_type_id__volatile = 0;
-  if (g_once_init_enter (&g_define_type_id__volatile)) {
+  static GType etype = 0;
+  if (etype == 0) {
     static const GEnumValue values[] = {
       { GST_INSTALL_PLUGINS_SUCCESS, "GST_INSTALL_PLUGINS_SUCCESS", "success" },
       { GST_INSTALL_PLUGINS_NOT_FOUND, "GST_INSTALL_PLUGINS_NOT_FOUND", "not-found" },
@@ -32,10 +38,9 @@ gst_install_plugins_return_get_type (void)
       { GST_INSTALL_PLUGINS_INSTALL_IN_PROGRESS, "GST_INSTALL_PLUGINS_INSTALL_IN_PROGRESS", "install-in-progress" },
       { 0, NULL, NULL }
     };
-    GType g_define_type_id = g_enum_register_static ("GstInstallPluginsReturn", values);
-    g_once_init_leave (&g_define_type_id__volatile, g_define_type_id);
+    etype = g_enum_register_static ("GstInstallPluginsReturn", values);
   }
-  return g_define_type_id__volatile;
+  return etype;
 }
 
 /* Generated data ends here */

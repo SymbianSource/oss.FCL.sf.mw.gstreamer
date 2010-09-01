@@ -39,7 +39,6 @@
 /* for constructing an entry name */
 #include "gstelement.h"
 #include "gstpad.h"
-#include "gstinfo.h"
 
 /* Index signals and args */
 enum
@@ -54,9 +53,6 @@ enum
   ARG_RESOLVER
       /* FILL ME */
 };
-
-GST_DEBUG_CATEGORY_STATIC (index_debug);
-#define GST_CAT_DEFAULT index_debug
 
 static void gst_index_class_init (GstIndexClass * klass);
 static void gst_index_init (GstIndex * index);
@@ -98,9 +94,12 @@ gst_index_resolver_get_type (void)
 {
   static GType index_resolver_type = 0;
   static const GEnumValue index_resolver[] = {
-    {GST_INDEX_RESOLVER_CUSTOM, "GST_INDEX_RESOLVER_CUSTOM", "custom"},
-    {GST_INDEX_RESOLVER_GTYPE, "GST_INDEX_RESOLVER_GTYPE", "gtype"},
-    {GST_INDEX_RESOLVER_PATH, "GST_INDEX_RESOLVER_PATH", "path"},
+    {GST_INDEX_RESOLVER_CUSTOM, "GST_INDEX_RESOLVER_CUSTOM",
+        "Use a custom resolver"},
+    {GST_INDEX_RESOLVER_GTYPE, "GST_INDEX_RESOLVER_GTYPE",
+        "Resolve an object to its GType[.padname]"},
+    {GST_INDEX_RESOLVER_PATH, "GST_INDEX_RESOLVER_PATH",
+        "Resolve an object to its path in the pipeline"},
     {0, NULL, NULL},
   };
 
@@ -127,19 +126,43 @@ gst_index_entry_get_type (void)
   }
   return index_entry_type;
 }
+#ifdef __SYMBIAN32__
+EXPORT_C
+#endif
 
-#define _do_init \
-{ \
-  GST_DEBUG_CATEGORY_INIT (index_debug, "GST_INDEX", GST_DEBUG_BOLD, \
-      "Generic indexing support"); \
+
+
+GType
+gst_index_get_type (void)
+{
+  static GType index_type = 0;
+
+  if (!index_type) {
+    static const GTypeInfo index_info = {
+      sizeof (GstIndexClass),
+      NULL,
+      NULL,
+      (GClassInitFunc) gst_index_class_init,
+      NULL,
+      NULL,
+      sizeof (GstIndex),
+      0,
+      (GInstanceInitFunc) gst_index_init,
+      NULL
+    };
+
+    index_type =
+        g_type_register_static (GST_TYPE_OBJECT, "GstIndex", &index_info, 0);
+  }
+  return index_type;
 }
-
-G_DEFINE_TYPE_WITH_CODE (GstIndex, gst_index, GST_TYPE_OBJECT, _do_init);
 
 static void
 gst_index_class_init (GstIndexClass * klass)
 {
-  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+  GObjectClass *gobject_class;
+
+  gobject_class = G_OBJECT_CLASS (klass);
 
   parent_class = g_type_class_peek_parent (klass);
 
@@ -162,8 +185,7 @@ gst_index_class_init (GstIndexClass * klass)
   g_object_class_install_property (gobject_class, ARG_RESOLVER,
       g_param_spec_enum ("resolver", "Resolver",
           "Select a predefined object to string mapper",
-          GST_TYPE_INDEX_RESOLVER, GST_INDEX_RESOLVER_PATH,
-          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+          GST_TYPE_INDEX_RESOLVER, GST_INDEX_RESOLVER_PATH, G_PARAM_READWRITE));
 }
 
 static void

@@ -40,7 +40,6 @@ struct _GstSsaParse {
   GstPad         *srcpad;
 
   gboolean        framed;
-  gboolean        send_tags;
 
   gchar          *ini;
 };

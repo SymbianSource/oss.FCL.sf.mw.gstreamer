@@ -37,60 +37,51 @@
 
 void create_xml(int result)
 {
-
     if(result)
-    {
         assert_failed = 1;
-    } 
-
+    
     testResultXml(xmlfile);
     close_log_file();
-
-    if(result)
-    {
-        exit (-1);
-    }    
-
 }
 
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(threads_running,gstcheck,gboolean)
 #define _gst_check_threads_running (*GET_GSTREAMER_WSD_VAR_NAME(threads_running,gstcheck,g)())
 #else 
-IMPORT_C extern gboolean _gst_check_threads_running;
+extern gboolean _gst_check_threads_running;
 #endif
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(raised_critical,gstcheck,gboolean)
 #define _gst_check_raised_critical (*GET_GSTREAMER_WSD_VAR_NAME(raised_critical,gstcheck,g)())
 #else 
-IMPORT_C extern gboolean _gst_check_raised_critical;
+extern gboolean _gst_check_raised_critical;
 #endif
 //gboolean _gst_check_raised_warning = FALSE;
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(raised_warning,gstcheck,gboolean)
 #define _gst_check_raised_warning (*GET_GSTREAMER_WSD_VAR_NAME(raised_warning,gstcheck,g)())
 #else 
-IMPORT_C extern gboolean _gst_check_raised_warning;
+extern gboolean _gst_check_raised_warning;
 #endif
 //gboolean _gst_check_expecting_log = FALSE;
 #if EMULATOR
 static GET_GLOBAL_VAR_FROM_TLS(expecting_log,gstcheck,gboolean)
 #define _gst_check_expecting_log (*GET_GSTREAMER_WSD_VAR_NAME(expecting_log,gstcheck,g)())
 #else 
-IMPORT_C extern gboolean _gst_check_expecting_log;
+extern gboolean _gst_check_expecting_log;
 #endif
 
 #if EMULATOR
 GET_GLOBAL_VAR_FROM_TLS(buffers,gstcheck,GList*)
 #define buffers (*GET_GSTREAMER_WSD_VAR_NAME(buffers,gstcheck,g)())
 #else 
-IMPORT_C extern GList *buffers;
+extern GList *buffers;
 #endif
 #if EMULATOR
 GET_GLOBAL_VAR_FROM_TLS(thread_list,gstcheck,GList*)
 #define thread_list (*GET_GSTREAMER_WSD_VAR_NAME(thread_list,gstcheck,g)())
 #else 
-IMPORT_C extern GList *thread_list;
+extern GList *thread_list;
 #endif
 
 //GMutex *mutex;
@@ -98,7 +89,7 @@ IMPORT_C extern GList *thread_list;
 GET_GLOBAL_VAR_FROM_TLS(mutex,gstcheck,GMutex*)
 #define mutex (*GET_GSTREAMER_WSD_VAR_NAME(mutex,gstcheck,g)())
 #else 
-IMPORT_C extern GMutex *mutex;
+extern GMutex *mutex=NULL;
 #endif
 
 //GCond *start_cond;              /* used to notify main thread of thread startups */
@@ -106,7 +97,7 @@ IMPORT_C extern GMutex *mutex;
 GET_GLOBAL_VAR_FROM_TLS(start_cond,gstcheck,GCond*)
 #define start_cond (*GET_GSTREAMER_WSD_VAR_NAME(start_cond,gstcheck,g)())
 #else 
-IMPORT_C extern GCond *start_cond;
+extern GCond *start_cond=NULL;
 #endif
 
 //GCond *sync_cond;               /* used to synchronize all threads and main thread */
@@ -114,7 +105,7 @@ IMPORT_C extern GCond *start_cond;
 GET_GLOBAL_VAR_FROM_TLS(sync_cond,gstcheck,GCond*)
 #define sync_cond (*GET_GSTREAMER_WSD_VAR_NAME(sync_cond,gstcheck,g)())
 #else 
-IMPORT_C extern GCond *sync_cond;
+extern GCond *sync_cond=NULL;
 #endif
 
 
@@ -122,7 +113,7 @@ IMPORT_C extern GCond *sync_cond;
 GET_GLOBAL_VAR_FROM_TLS(check_mutex,gstcheck,GMutex *)
 #define check_mutex (*GET_GSTREAMER_WSD_VAR_NAME(check_mutex,gstcheck,g)())
 #else 
-IMPORT_C extern GMutex *check_mutex;
+extern GMutex *check_mutex = NULL;
 #endif
 //
 //extern GCond *check_cond;
@@ -130,7 +121,7 @@ IMPORT_C extern GMutex *check_mutex;
 GET_GLOBAL_VAR_FROM_TLS(check_cond,gstcheck,GCond *)
 #define check_cond (*GET_GSTREAMER_WSD_VAR_NAME(check_cond,gstcheck,g)())
 #else 
-IMPORT_C extern GCond *check_cond;
+extern GCond *check_cond = NULL;
 #endif
 static const gchar dummytext[] =
     "Quick Brown Fox Jumps over a Lazy Frog Quick Brown "
@@ -322,26 +313,11 @@ char *args[] = {
 */
 //GST_CHECK_MAIN (decodebin);
 
-//int main (int argc, char **argv)
-//{
-////gst_init(&argc, &argv);                
-//gst_check_init (NULL, NULL); 
-//test_text_plain_streams();
-//test_reuse_without_decoders();
-//
-//}
+int main (int argc, char **argv)
+{
+//gst_init(&argc, &argv);                
+gst_check_init (NULL, NULL); 
+test_text_plain_streams();
+test_reuse_without_decoders();
 
-
-#if 1
-void (*fn[2]) (void) = {
-        test_text_plain_streams,
-        test_text_plain_streams
-};
-
-char *args[] = {
-        "test_text_plain_streams",
-        "test_text_plain_streams"
-};
-
-GST_CHECK_MAIN (filesrc);
-#endif
+}

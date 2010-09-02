@@ -6,7 +6,7 @@
 #include <string.h>
 #define LOG_FILE "c:\\logs\\amr_record_logs.txt" 
 #include "std_log_result.h" 
-#include <gstspeechencoderconfig.h>
+#include <gst/interfaces/gstspeechencoderconfig.h>
 #define LOG_FILENAME_LINE __FILE__, __LINE__
 #define LOG_FILENAME_LEN 256
 #define _DEBUG 1

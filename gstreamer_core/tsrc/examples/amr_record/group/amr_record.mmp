@@ -38,7 +38,6 @@ VENDORID        VID_DEFAULT
 
 MACRO           HAVE_CONFIG_H
 
-USERINCLUDE	 /sf/mw/gstreamer/gst_plugins_symbian/gst/devsound
 USERINCLUDE				..
 USERINCLUDE             ../libs/gst/base
 USERINCLUDE             ../gst
@@ -76,8 +75,7 @@ LIBRARY         libz.lib
 LIBRARY         libgstreamer.lib
 LIBRARY			libgstbase.lib
 LIBRARY			libgstcontroller.lib
-LIBRARY         libgstdevsoundext.lib
-LIBRARY         SpeechEncoderConfig.lib
+LIBRARY			libgstdevsoundext.lib
 
 STATICLIBRARY	libcrt0.lib
 //VENDORID VID_DEFAULT 

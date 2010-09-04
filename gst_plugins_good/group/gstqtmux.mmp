@@ -66,7 +66,7 @@ LIBRARY         libgthread.lib
 LIBRARY         libm.lib
 LIBRARY         libz.lib
 LIBRARY         libgstreamer.lib
-LIBRARY         LIBGSTRIFF.lib
+LIBRARY         libgstriff.lib
 LIBRARY         libgstbase.lib
 LIBRARY         libgstaudio.lib
 LIBRARY         libgstinterfaces.lib

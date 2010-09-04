@@ -248,7 +248,8 @@
 #define HAVE_SYS_TYPES_H 1
 
 /* Define to 1 if you have the <sys/utsname.h> header file. */
-#define HAVE_SYS_UTSNAME_H 1
+//[fix me ] undefining it , because of Uname its taking 3 mins for gst_init() 
+//#define HAVE_SYS_UTSNAME_H 1
 
 /* Define to 1 if you have the <ucontext.h> header file. */
 #define HAVE_UCONTEXT_H 1

@@ -136,7 +136,7 @@ void CGSTPlayerAppUi::HandleCommandL(TInt aCommand)
             if (pipeline!=NULL && pipeline ->current_state
                     == GST_STATE_PLAYING)
                 {
-
+                gst_element_send_event (pipeline, gst_event_new_eos ());
                 gst_element_set_state(pipeline, GST_STATE_NULL);
                 gst_object_unref(GST_OBJECT (pipeline));
 

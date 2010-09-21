@@ -1,16 +1,3 @@
- /*
- *  Copyright © 2008 Nokia Corporation.
- *  This material, including documentation and any related 
- *  computer programs, is protected by copyright controlled by 
- *  Nokia Corporation. All rights are reserved. Copying, 
- *  including reproducing, storing, adapting or translating, any 
- *  or all of this material requires the prior written consent of 
- *  Nokia Corporation. This material also contains confidential 
- *  information which may not be disclosed to others without the 
- *  prior written consent of Nokia Corporation.
- * ============================================================================
- */
-
 /* GStreamer
  * Copyright (C) <2004> David Schleef <david at schleef dot org>
  * Copyright (C) <2005> Thomas Vander Stichele <thomas at apestaart dot org>

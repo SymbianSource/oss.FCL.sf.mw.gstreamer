@@ -400,6 +400,7 @@ gst_decode_bin_init (GstDecodeBin * decode_bin)
 
     /* get the sinkpad */
     pad = gst_element_get_static_pad (decode_bin->typefind, "sink");
+    g_return_if_fail (pad != NULL);
 
     /* ghost the sink pad to ourself */
     gpad = gst_ghost_pad_new ("sink", pad);

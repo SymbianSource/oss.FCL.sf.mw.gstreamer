@@ -780,6 +780,8 @@ gst_play_sink_find_property_sinks (GstPlaySink * playsink, GstElement * obj,
   GstElement *result = NULL;
   GstIterator *it;
 
+  if (!obj)
+      return result;
   if (g_object_class_find_property (G_OBJECT_GET_CLASS (obj), name)) {
     result = obj;
   } else if (GST_IS_BIN (obj)) {

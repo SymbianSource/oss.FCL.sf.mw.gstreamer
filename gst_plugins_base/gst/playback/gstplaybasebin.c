@@ -1764,6 +1764,8 @@ setup_substreams (GstPlayBaseBin * play_base_bin)
 
   /* Remove the eat probes */
   group = get_active_group (play_base_bin);
+  g_return_if_fail (group != NULL);
+  
   for (item = group->streaminfo; item; item = item->next) {
     GstStreamInfo *info = item->data;
     gpointer data;
